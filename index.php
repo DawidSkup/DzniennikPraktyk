@@ -16,6 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $data   = trim((string) ($_POST['data'] ?? ''));
 
+    if ($action === 'delete_all') {
+        delete_all_wpisy();
+        header('Location: index.php?usunieto=1');
+        exit;
+    }
+
     if (($action === 'save' || $action === 'delete') && is_valid_date($data)) {
         if ($action === 'delete') {
             delete_wpis($data);
@@ -64,6 +70,7 @@ $theme_vars = sprintf(
 );
 
 $zapisano = isset($_GET['zapisano']);
+$usunieto = isset($_GET['usunieto']);
 
 // --- Statystyki do panelu bocznego --------------------------------------
 $wszystkie = all_wpisy();
@@ -168,6 +175,10 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
 
     <?php if ($zapisano): ?>
         <p class="alert no-print">✔ Wpis został zapisany.</p>
+    <?php endif; ?>
+
+    <?php if ($usunieto): ?>
+        <p class="alert alert-danger no-print">🧹 Usunięto wszystkie wpisy z dziennika.</p>
     <?php endif; ?>
 
     <!-- Dokument dnia (widok do wydruku) -->
@@ -303,6 +314,21 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
     <footer class="footer no-print">
         Dziennik Praktyk · jeden dzień na stronę · przełączaj strzałkami ← →
     </footer>
+
+    <!-- Strefa usuwania: na samym dole strony -->
+    <?php if ($ilosc_dni > 0): ?>
+        <section class="danger-zone no-print">
+            <div class="danger-text">
+                <strong>Strefa usuwania</strong>
+                <span>Trwale usuwa wszystkie wpisy z dziennika. Tej operacji nie można cofnąć.</span>
+            </div>
+            <form method="post" action="index.php"
+                  onsubmit="return confirm('UWAGA! Trwale usuniesz WSZYSTKIE wpisy z dziennika. Kontynuować?');">
+                <input type="hidden" name="action" value="delete_all">
+                <button type="submit" class="btn btn-danger">🗑 Usuń wszystko</button>
+            </form>
+        </section>
+    <?php endif; ?>
 
 </div>
 <script src="assets/app.js"></script>

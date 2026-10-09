@@ -43,6 +43,12 @@ function delete_wpis(string $data): void
     $stmt->execute([':data' => $data]);
 }
 
+/** Usuwa wszystkie wpisy z dziennika. */
+function delete_all_wpisy(): void
+{
+    db()->exec('DELETE FROM wpisy');
+}
+
 /** Zwraca listę wszystkich dat wpisów, rosnąco. */
 function all_dates(): array
 {
