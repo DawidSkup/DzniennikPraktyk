@@ -64,6 +64,21 @@ $theme_vars = sprintf(
 );
 
 $zapisano = isset($_GET['zapisano']);
+
+// --- Statystyki do panelu bocznego --------------------------------------
+$wszystkie = all_wpisy();
+$total_min  = 0;
+$dni_z_czasem = 0;
+foreach ($wszystkie as $w) {
+    $min = minutes_between((string) $w['godzina_od'], (string) $w['godzina_do']);
+    if ($min !== null) {
+        $total_min   += $min;
+        $dni_z_czasem++;
+    }
+}
+$ilosc_dni   = count($wszystkie);
+$srednia_min = $dni_z_czasem > 0 ? intdiv($total_min, $dni_z_czasem) : 0;
+$dzien_min   = $wpis ? minutes_between((string) $wpis['godzina_od'], (string) $wpis['godzina_do']) : null;
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -90,6 +105,30 @@ $zapisano = isset($_GET['zapisano']);
             <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
         </div>
     </header>
+
+    <div class="layout">
+
+        <!-- Panel lewy: lista dni -->
+        <aside class="side no-print">
+            <div class="panel">
+                <h3>Dni w dzienniku</h3>
+                <?php if ($dates): ?>
+                    <ul class="day-list">
+                        <?php foreach ($dates as $d): ?>
+                            <li>
+                                <a href="index.php?data=<?= e($d) ?>" class="<?= $d === $data ? 'active' : '' ?>">
+                                    <?= e(format_date_short($d)) ?>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <p class="panel-empty">Brak wpisów.<br>Dodaj pierwszy dzień →</p>
+                <?php endif; ?>
+            </div>
+        </aside>
+
+        <main class="main">
 
     <!-- Nawigacja między dniami -->
     <nav class="daynav no-print">
@@ -209,6 +248,43 @@ $zapisano = isset($_GET['zapisano']);
             </form>
         <?php endif; ?>
     </section>
+
+        <!-- Panel prawy: statystyki -->
+        <aside class="side no-print">
+            <div class="side-stack">
+                <div class="panel">
+                    <h3>Podsumowanie</h3>
+                    <div class="stat"><span>Dni z wpisem</span><b><?= $ilosc_dni ?></b></div>
+                    <div class="stat"><span>Łącznie godzin</span><b><?= $total_min > 0 ? e(format_duration($total_min)) : '—' ?></b></div>
+                    <div class="stat"><span>Średnio / dzień</span><b><?= $dni_z_czasem > 0 ? e(format_duration($srednia_min)) : '—' ?></b></div>
+                </div>
+
+                <div class="panel">
+                    <h3>Ten dzień</h3>
+                    <div class="stat"><span>Godziny</span><b><?= $dzien_min !== null ? e(format_duration($dzien_min)) : '—' ?></b></div>
+                    <div class="stat"><span>Status</span><b><?= $wpis ? 'Uzupełniony' : 'Pusty' ?></b></div>
+                </div>
+
+                <div class="panel">
+                    <h3>Motyw dnia</h3>
+                    <div class="swatches">
+                        <span class="swatch" style="background: <?= e($theme['primary']) ?>"></span>
+                        <span class="swatch" style="background: <?= e($theme['accent']) ?>"></span>
+                        <span class="swatch" style="background: <?= e($theme['tint']) ?>"></span>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Skróty</h3>
+                    <ul class="hints">
+                        <li><span class="kbd">←</span> <span class="kbd">→</span> zmiana dnia</li>
+                        <li><span class="kbd">Ctrl</span> + <span class="kbd">P</span> wydruk dnia</li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+    </div><!-- /layout -->
 
     <footer class="footer no-print">
         Dziennik Praktyk · jeden dzień na stronę · przełączaj strzałkami ← →

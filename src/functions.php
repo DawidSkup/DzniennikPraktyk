@@ -86,6 +86,51 @@ function is_valid_date(string $data): bool
     return $d !== false && $d->format('Y-m-d') === $data;
 }
 
+/** Zwraca wszystkie wpisy, posortowane rosnąco po dacie. */
+function all_wpisy(): array
+{
+    return db()->query('SELECT * FROM wpisy ORDER BY data ASC')->fetchAll();
+}
+
+/** Liczba minut między godzinami (od–do) lub null, gdy nieprawidłowe. */
+function minutes_between(string $od, string $do): ?int
+{
+    if ($od === '' || $do === '' || !is_valid_time($od) || !is_valid_time($do)) {
+        return null;
+    }
+
+    [$h1, $m1] = array_map('intval', explode(':', $od));
+    [$h2, $m2] = array_map('intval', explode(':', $do));
+
+    $diff = ($h2 * 60 + $m2) - ($h1 * 60 + $m1);
+
+    return $diff > 0 ? $diff : null;
+}
+
+/** Formatuje liczbę minut jako „X h Y min". */
+function format_duration(int $minutes): string
+{
+    return intdiv($minutes, 60) . ' h ' . ($minutes % 60) . ' min';
+}
+
+/** Krótki zapis daty, np. „pt. 09.10.2026". */
+function format_date_short(string $data): string
+{
+    $short = [
+        'Monday'    => 'pon.',
+        'Tuesday'   => 'wt.',
+        'Wednesday' => 'śr.',
+        'Thursday'  => 'czw.',
+        'Friday'    => 'pt.',
+        'Saturday'  => 'sob.',
+        'Sunday'    => 'nd.',
+    ];
+
+    $dt = new DateTime($data);
+
+    return $short[$dt->format('l')] . ' ' . $dt->format('d.m.Y');
+}
+
 /** Waliduje godzinę w formacie HH:MM (lub pusty string). */
 function is_valid_time(string $time): bool
 {
