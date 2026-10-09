@@ -144,7 +144,7 @@ $zapisano = isset($_GET['zapisano']);
             </div>
 
             <section class="opis">
-                <h2>Wykonane czynności</span></h2>
+                <h2>Wykonane czynności</h2>
                 <p><?= nl2br(e($wpis['opis'])) ?: '<em>(brak opisu)</em>' ?></p>
             </section>
 
@@ -159,22 +159,30 @@ $zapisano = isset($_GET['zapisano']);
 
     <!-- Formularz (nie drukuje się) -->
     <section class="form-card no-print">
-        <h2 class="form-title"><?= $wpis ? '✏️ Edytuj wpis' : '➕ Dodaj wpis' ?></h2>
+        <header class="form-head">
+            <span class="form-head-icon"><?= $wpis ? '✏️' : '📝' ?></span>
+            <div>
+                <h2 class="form-title"><?= $wpis ? 'Edytuj wpis' : 'Dodaj wpis' ?></h2>
+                <p class="form-hint"><?= $wpis
+                    ? 'Zmień godziny lub opis, a następnie zapisz zmiany.'
+                    : 'Uzupełnij godziny pracy i opisz wykonane czynności.' ?></p>
+            </div>
+        </header>
 
-        <form method="post" action="index.php">
+        <form method="post" action="index.php" class="form-body">
             <input type="hidden" name="action" value="save">
 
             <div class="form-grid">
-                <div class="field field-wide">
+                <div class="field field-date">
                     <label for="f-data">Data</label>
                     <input id="f-data" type="date" name="data" value="<?= e($data) ?>" required>
                 </div>
                 <div class="field">
-                    <label for="f-od">Od</label>
+                    <label for="f-od">Godzina od</label>
                     <input id="f-od" type="time" name="godzina_od" value="<?= e($wpis['godzina_od'] ?? '08:00') ?>">
                 </div>
                 <div class="field">
-                    <label for="f-do">Do</label>
+                    <label for="f-do">Godzina do</label>
                     <input id="f-do" type="time" name="godzina_do" value="<?= e($wpis['godzina_do'] ?? '16:00') ?>">
                 </div>
             </div>
@@ -188,7 +196,7 @@ $zapisano = isset($_GET['zapisano']);
             <div class="form-actions">
                 <button type="submit" class="btn btn-save">💾 Zapisz wpis</button>
                 <?php if ($wpis): ?>
-                    <button type="submit" class="btn btn-danger" form="delete-form">Usuń</button>
+                    <button type="submit" class="btn btn-danger" form="delete-form">🗑 Usuń wpis</button>
                 <?php endif; ?>
             </div>
         </form>
