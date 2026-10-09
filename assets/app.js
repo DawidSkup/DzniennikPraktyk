@@ -9,10 +9,10 @@
             return;
         }
         if (event.key === 'ArrowLeft') {
-            const el = document.querySelector('.nav a[title="Poprzedni dzień"]');
+            const el = document.querySelector('.daynav a[title="Poprzedni dzień"]');
             if (el && el.getAttribute('aria-disabled') !== 'true') el.click();
         } else if (event.key === 'ArrowRight') {
-            const el = document.querySelector('.nav a[title="Następny dzień"]');
+            const el = document.querySelector('.nav a[title="Następny dzień"], .daynav a[title="Następny dzień"]');
             if (el && el.getAttribute('aria-disabled') !== 'true') el.click();
         }
     });
