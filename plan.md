@@ -5,42 +5,43 @@
 - [x] Spisać wymagania w `AGENTS.md`
 - [x] Zainicjować repozytorium Git
 - [x] Wrzucić `AGENTS.md` na GitHuba
-- [ ] Utworzyć strukturę projektu (`public/`, `src/`, `data/`)
+- [x] Utworzyć strukturę projektu (`index.php` w rootcie + `src/`, `assets/`, `data/`)
 
 ## Etap 2 — Baza danych (SQLite)
 
-- [ ] Utworzyć plik bazy `data/dziennik.db`
-- [ ] Tabela `wpisy`: `id`, `data` (unikalna), `godzina_od`, `godzina_do`, `opis`
-- [ ] Skrypt inicjalizujący bazę (auto-twórzenie przy pierwszym uruchomieniu)
+- [x] Plik bazy `data/dziennik.db` (tworzony automatycznie)
+- [x] Tabela `wpisy`: `id`, `data` (unikalna), `godzina_od`, `godzina_do`, `opis`
+- [x] Skrypt inicjalizujący bazę (`src/db.php` — auto-tworzenie schematu)
 
 ## Etap 3 — Backend (PHP)
 
-- [ ] Połączenie z bazą (PDO + SQLite)
-- [ ] Zapisywanie nowego wpisu (dodawanie)
-- [ ] Edycja istniejącego wpisu
-- [ ] Usuwanie wpisu
-- [ ] Pobieranie wpisu po dacie
-- [ ] Lista wszystkich dat (do nawigacji ← / →)
+- [x] Połączenie z bazą (PDO + SQLite)
+- [x] Zapisywanie nowego wpisu
+- [x] Edycja istniejącego wpisu (UPSERT po dacie)
+- [x] Usuwanie wpisu
+- [x] Pobieranie wpisu po dacie
+- [x] Lista wszystkich dat + poprzednia/następna data (do nawigacji)
 
 ## Etap 4 — Widok (HTML/CSS/JS)
 
-- [ ] Formularz wpisu: data, godziny (od–do), opis czynności
-- [ ] Wyświetlanie jednego dnia na ekranie
-- [ ] Guziki przełączania: ← poprzedni dzień / następny dzień →
-- [ ] Lista dni (skrócona) do szybkiego wyboru
-- [ ] Obsługa pustego dnia (komunikat + przycisk „Dodaj wpis")
-- [ ] Stylowanie CSS (czytelny, prosty wygląd)
+- [x] Formularz wpisu: data, godziny (od–do), opis czynności
+- [x] Wyświetlanie jednego dnia na ekranie
+- [x] Guziki przełączania: ← poprzedni dzień / następny dzień →
+- [x] Lista dni (select) do szybkiego wyboru + przycisk „Dzisiaj"
+- [x] Obsługa pustego dnia (komunikat + formularz dodania)
+- [x] Stylowanie CSS + skróty klawiszowe ← / → (`assets/app.js`)
 
 ## Etap 5 — Wydruk
 
-- [ ] Przycisk „Drukuj" dla aktualnego dnia
-- [ ] Style `@media print` — chowanie nawigacji i przycisków
-- [ ] Układ dokumentowy: nagłówek, data, godziny, opis, miejsce na podpis
+- [x] Przycisk „Drukuj" dla aktualnego dnia
+- [x] Style `@media print` — chowanie nawigacji i formularza
+- [x] Układ dokumentowy: nagłówek, data, godziny, opis, miejsce na podpis
 
 ## Etap 6 — Testy i finalizacja
 
-- [ ] Test dodawania / edycji / usuwania wpisów
-- [ ] Test nawigacji między dniami
-- [ ] Test wydruku (podgląd wydruku w przeglądarce)
-- [ ] Przegląd zgodności z `AGENTS.md`
+- [x] Test dodawania / edycji / usuwania wpisów
+- [x] Test nawigacji między dniami
+- [x] Test zapisu w bazie SQLite
+- [ ] Test wydruku (podgląd wydruku w przeglądarce — do sprawdzenia przez użytkownika)
+- [x] Przegląd zgodności z `AGENTS.md`
 - [ ] Commit i push na GitHuba

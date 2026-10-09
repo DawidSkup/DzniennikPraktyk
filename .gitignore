@@ -1,0 +1,7 @@
+# Baza danych SQLite (dane lokalne, generowane automatycznie)
+/data/*.db
+
+# Pliki tymczasowe / systemowe
+Thumbs.db
+desktop.ini
+*.log
