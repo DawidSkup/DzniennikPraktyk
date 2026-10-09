@@ -44,4 +44,4 @@
 - [x] Test zapisu w bazie SQLite
 - [ ] Test wydruku (podgląd wydruku w przeglądarce — do sprawdzenia przez użytkownika)
 - [x] Przegląd zgodności z `AGENTS.md`
-- [ ] Commit i push na GitHuba
+- [x] Commit i push na GitHuba
