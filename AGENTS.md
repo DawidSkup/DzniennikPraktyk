@@ -1,8 +1,21 @@
-1.wymaganie techniczne: baza danyc w sqlite 
-2.jezyk ptogramowania: php html css js
-3.Zrob tak zebym mogl wpisywac tam date i co robilem 
-4.napisz to w podpunktach 
-5.kazdy dzien ma byc na innej stronie
-6.dodaj guziki to przelaczanie miedzy stronami
-7.niech bedzie to gotowe do wydruku 
+# Dziennik Praktyk — wymagania
 
+## Wymagania techniczne
+
+- Baza danych: **SQLite** (plik `.db`, bez dodatkowego serwera baz danych)
+- Technologie: **PHP + HTML + CSS + JS**
+- Brak logowania — jeden wspólny dziennik, jedno konto, dane widoczne bez hasła
+
+## Funkcjonalność
+
+- Możliwość wpisywania **daty** oraz **co zrobiłem/am** danego dnia (opis czynności)
+- Każdy wpis zawiera dodatkowo **godziny pracy (od – do)**
+- Zakres dat **dowolny** — sam wpisuję daty, aplikacja pokazuje tylko wpisane dni
+- Każdy dzień wyświetlany jest na osobnej „stronie" (jeden dzień na ekranie)
+- Guziki przełączania między stronami: **← poprzedni dzień** / **następny dzień →**
+- Dodawanie, edycja i usuwanie wpisów
+
+## Wydruk
+
+- Gotowy do wydruku **pojedynczy dzień** — przycisk „Drukuj" drukuje aktualnie oglądany dzień
+- Układ wydruku: czysty, dokumentowy (bez zbędnych elementów GUI), styl `@media print`
