@@ -1,0 +1,20 @@
+# ============================================================================
+#  Dziennik Praktyk — ochrona zasobów serwera (Apache)
+#  Wymaga włączonego .htaccess (Laragon: <Directory> AllowOverride All).
+# ============================================================================
+
+# Brak listowania zawartości katalogów (gdyby ktoś trafił na pusty katalog).
+Options -Indexes
+
+# 1) Zablokuj pliki bazy danych oraz pliki towarzyszące (WAL / SHM / journal).
+<FilesMatch "(?i)\.(db|sqlite|sqlite3|db-journal|db-wal|db-shm|sql)$">
+    Require all denied
+</FilesMatch>
+
+# 2) Zablokuj pliki ukryte (m.in. .gitignore, .htaccess).
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# 3) Zablokuj katalog .git (historia repo) oraz bezpośredni dostęp do src/.
+RedirectMatch 404 (?i)/(\.git|src)(/|$)

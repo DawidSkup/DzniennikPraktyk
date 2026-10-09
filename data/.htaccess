@@ -1,0 +1,3 @@
+# Całkowicie zablokuj zdalny dostęp do katalogu z danymi.
+# Baza i tak leży poza docroot, to dodatkowa warstwa ochrony.
+Require all denied

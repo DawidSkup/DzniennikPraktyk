@@ -11,7 +11,7 @@ Prosta aplikacja w PHP + SQLite do prowadzenia dziennika praktyk: jeden dzień n
 
 1. Skopiuj projekt do katalogu serwera (np. `C:\laragon\www\DziennikPraktyk`).
 2. Otwórz w przeglądarce: `http://dziennikpraktyk/` (lub `http://localhost/DziennikPraktyk/`).
-3. Baza `data/dziennik.db` utworzy się automatycznie przy pierwszym uruchomieniu.
+3. Baza utworzy się automatycznie przy pierwszym uruchomieniu (patrz: „Dane i bezpieczeństwo").
 
 ## Funkcje
 
@@ -24,10 +24,26 @@ Prosta aplikacja w PHP + SQLite do prowadzenia dziennika praktyk: jeden dzień n
 
 ```
 index.php        — strona główna (widok dnia + obsługa formularza)
-src/db.php       — połączenie SQLite + schemat
+src/db.php       — połączenie SQLite + schemat + lokalizacja bazy
 src/functions.php— operacje CRUD i pomocnicze
 assets/style.css — style (z wersją do wydruku)
 assets/app.js    — skróty klawiszowe
-data/            — baza danych (ignorowana przez git)
+data/            — pusty katalog (baza leży poza docroot); .htaccess blokuje dostęp
+.htaccess        — ochrona zasobów Apache (baza, .git, src/)
 plan.md          — plan realizacji / postęp prac
 ```
+
+## Dane i bezpieczeństwo
+
+Baza **nie leży w katalogu serwera** (docroot), więc nie da się jej pobrać przez
+HTTP (np. `http://.../data/dziennik.db` zwróci 403). Kolejność wyboru lokalizacji:
+
+1. zmienna środowiskowa `DZIENNIK_DATA_DIR` (pełna ścieżka katalogu),
+2. katalog danych Laragona: `<laragon>/data/DziennikPraktyk`,
+3. katalog danych użytkownika (`%LOCALAPPDATA%\DziennikPraktyk` lub `~/.local/share/DziennikPraktyk`).
+
+Stara baza z `data/dziennik.db` jest przenoszona automatycznie przy pierwszym uruchomieniu.
+
+Dodatkowo plik `.htaccess` blokuje zdalny dostęp do plików bazy (`*.db`, `*.db-wal`,
+`*.db-shm`, `*.db-journal`), katalogu `.git` oraz kodu źródłowego w `src/`, a także
+wyłącza listowanie katalogów.
