@@ -1,5 +1,6 @@
 # Dziennik Praktyk — wymagania
 
+> Postęp prac śledzę w pliku **`plan.md`** — realizuję zadania po kolei i odhaczam je tam na bieżąco.
 ## Wymagania techniczne
 
 - Baza danych: **SQLite** (plik `.db`, bez dodatkowego serwera baz danych)
