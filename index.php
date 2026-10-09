@@ -79,6 +79,14 @@ foreach ($wszystkie as $w) {
 $ilosc_dni   = count($wszystkie);
 $srednia_min = $dni_z_czasem > 0 ? intdiv($total_min, $dni_z_czasem) : 0;
 $dzien_min   = $wpis ? minutes_between((string) $wpis['godzina_od'], (string) $wpis['godzina_do']) : null;
+
+// Czas pracy każdego dnia (do listy po lewej) + zakres dat
+$czas_wg_dnia = [];
+foreach ($wszystkie as $w) {
+    $czas_wg_dnia[$w['data']] = minutes_between((string) $w['godzina_od'], (string) $w['godzina_do']);
+}
+$pierwszy = $ilosc_dni > 0 ? format_date_short($wszystkie[0]['data']) : '—';
+$ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data']) : '—';
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -117,7 +125,11 @@ $dzien_min   = $wpis ? minutes_between((string) $wpis['godzina_od'], (string) $w
                         <?php foreach ($dates as $d): ?>
                             <li>
                                 <a href="index.php?data=<?= e($d) ?>" class="<?= $d === $data ? 'active' : '' ?>">
-                                    <?= e(format_date_short($d)) ?>
+                                    <span class="day-list-date"><?= e(format_date_short($d)) ?></span>
+                                    <?php $mm = $czas_wg_dnia[$d] ?? null; ?>
+                                    <?php if ($mm !== null): ?>
+                                        <span class="day-list-time"><?= e(format_duration($mm)) ?></span>
+                                    <?php endif; ?>
                                 </a>
                             </li>
                         <?php endforeach; ?>
@@ -257,6 +269,8 @@ $dzien_min   = $wpis ? minutes_between((string) $wpis['godzina_od'], (string) $w
                     <div class="stat"><span>Dni z wpisem</span><b><?= $ilosc_dni ?></b></div>
                     <div class="stat"><span>Łącznie godzin</span><b><?= $total_min > 0 ? e(format_duration($total_min)) : '—' ?></b></div>
                     <div class="stat"><span>Średnio / dzień</span><b><?= $dni_z_czasem > 0 ? e(format_duration($srednia_min)) : '—' ?></b></div>
+                    <div class="stat"><span>Od</span><b><?= $ilosc_dni > 0 ? e((new DateTime($wszystkie[0]['data']))->format('d.m.Y')) : '—' ?></b></div>
+                    <div class="stat"><span>Do</span><b><?= $ilosc_dni > 0 ? e((new DateTime($wszystkie[$ilosc_dni - 1]['data']))->format('d.m.Y')) : '—' ?></b></div>
                 </div>
 
                 <div class="panel">
