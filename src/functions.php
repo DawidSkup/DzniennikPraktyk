@@ -97,6 +97,78 @@ function is_valid_time(string $time): bool
     return $t !== false && $t->format('H:i') === $time;
 }
 
+/**
+ * Zwraca motyw (kolor + czcionka) przypisany do danego dnia.
+ * Motyw wybierany deterministycznie z numeru dnia w roku — każdy kolejny
+ * dzień dostaje inny motyw, cyklicznie.
+ *
+ * @return array{primary:string, primary_dark:string, accent:string, accent_dark:string, tint:string, tint2:string, font:string}
+ */
+function day_theme(string $data): array
+{
+    $themes = [
+        [   // 1 — indygo / bezszeryfowa
+            'primary'      => '#4f46e5',
+            'primary_dark' => '#4338ca',
+            'accent'       => '#0891b2',
+            'accent_dark'  => '#0e7490',
+            'tint'         => '#eef2ff',
+            'tint2'        => '#ecfeff',
+            'font'         => '"Segoe UI", system-ui, Roboto, Arial, sans-serif',
+        ],
+        [   // 2 — szmaragdowa / szeryfowa
+            'primary'      => '#059669',
+            'primary_dark' => '#047857',
+            'accent'       => '#0d9488',
+            'accent_dark'  => '#0f766e',
+            'tint'         => '#ecfdf5',
+            'tint2'        => '#f0fdfa',
+            'font'         => 'Georgia, "Times New Roman", serif',
+        ],
+        [   // 3 — bursztynowa / Trebuchet
+            'primary'      => '#d97706',
+            'primary_dark' => '#b45309',
+            'accent'       => '#ea580c',
+            'accent_dark'  => '#c2410c',
+            'tint'         => '#fffbeb',
+            'tint2'        => '#fff7ed',
+            'font'         => '"Trebuchet MS", "Segoe UI", sans-serif',
+        ],
+        [   // 4 — różana / Verdana
+            'primary'      => '#e11d48',
+            'primary_dark' => '#be123c',
+            'accent'       => '#c026d3',
+            'accent_dark'  => '#a21caf',
+            'tint'         => '#fff1f2',
+            'tint2'        => '#fdf4ff',
+            'font'         => 'Verdana, Geneva, sans-serif',
+        ],
+        [   // 5 — błękitna / Palatino (szeryfowa alt.)
+            'primary'      => '#0284c7',
+            'primary_dark' => '#0369a1',
+            'accent'       => '#2563eb',
+            'accent_dark'  => '#1d4ed8',
+            'tint'         => '#f0f9ff',
+            'tint2'        => '#eff6ff',
+            'font'         => '"Palatino Linotype", "Book Antiqua", Georgia, serif',
+        ],
+        [   // 6 — fioletowa / maszynowa (mono)
+            'primary'      => '#7c3aed',
+            'primary_dark' => '#6d28d9',
+            'accent'       => '#db2777',
+            'accent_dark'  => '#be185d',
+            'tint'         => '#f5f3ff',
+            'tint2'        => '#fdf2f8',
+            'font'         => '"Courier New", "Consolas", monospace',
+        ],
+    ];
+
+    $nr    = (int) (new DateTime($data))->format('z'); // 0..365
+    $index = $nr % count($themes);
+
+    return $themes[$index];
+}
+
 /** Bezpieczne wypisanie tekstu na stronie. */
 function e(?string $value): string
 {

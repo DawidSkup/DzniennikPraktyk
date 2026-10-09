@@ -10,6 +10,12 @@
 
     --primary: #4f46e5;
     --primary-dark: #4338ca;
+    --accent: #0891b2;
+    --accent-dark: #0e7490;
+    --tint: #eef2ff;
+    --tint2: #ecfeff;
+    --font: "Segoe UI", system-ui, Roboto, Arial, sans-serif;
+
     --today: #0891b2;
     --today-dark: #0e7490;
     --print: #7c3aed;
@@ -41,7 +47,7 @@ body {
         radial-gradient(900px 500px at -10% 0%, #ede9fe 0%, transparent 50%),
         linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%) fixed;
     color: var(--ink);
-    font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif;
+    font-family: var(--font);
     font-size: 16px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
@@ -74,9 +80,9 @@ body {
     width: 46px;
     height: 46px;
     font-size: 22px;
-    background: linear-gradient(135deg, var(--primary), var(--today));
+    background: linear-gradient(135deg, var(--primary), var(--accent));
     border-radius: 13px;
-    box-shadow: 0 6px 16px rgba(79, 70, 229, .35);
+    box-shadow: 0 6px 16px rgba(30, 41, 59, .18);
 }
 
 .brand-title {
@@ -117,7 +123,7 @@ body {
     width: 48px;
     flex: 0 0 auto;
     border-radius: var(--radius-sm);
-    background: linear-gradient(180deg, #3b82f6, var(--today));
+    background: linear-gradient(180deg, var(--primary), var(--accent));
     color: #fff;
     font-size: 20px;
     font-weight: 700;
@@ -132,10 +138,11 @@ body {
 .jump select {
     width: 100%;
     padding: 10px 14px;
-    border: 2px solid #c7d2fe;
+    border: 2px solid var(--primary);
     border-radius: var(--radius-sm);
     background: #fff;
     color: var(--primary-dark);
+    font-family: inherit;
     font-size: 15px;
     font-weight: 600;
     text-align: center;
@@ -171,25 +178,25 @@ body {
 .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
 
 .btn-today {
-    background: var(--today);
-    border-color: var(--today);
+    background: var(--primary);
+    border-color: var(--primary);
     color: #fff;
 }
 .btn-today:hover {
-    background: var(--today-dark);
-    border-color: var(--today-dark);
-    box-shadow: 0 6px 16px rgba(8, 145, 178, .35);
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    box-shadow: 0 6px 16px rgba(30, 41, 59, .25);
 }
 
 .btn-print {
-    background: var(--print);
-    border-color: var(--print);
+    background: var(--accent);
+    border-color: var(--accent);
     color: #fff;
 }
 .btn-print:hover {
-    background: var(--print-dark);
-    border-color: var(--print-dark);
-    box-shadow: 0 6px 16px rgba(124, 58, 237, .35);
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    box-shadow: 0 6px 16px rgba(30, 41, 59, .25);
 }
 
 .btn-save {
@@ -248,7 +255,7 @@ body {
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, var(--primary), var(--today), var(--save), var(--print));
+    background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
 }
 
 .sheet-head {
@@ -297,7 +304,7 @@ body {
 }
 
 .info {
-    background: #f8faff;
+    background: var(--tint);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
     padding: 12px 16px;
@@ -320,12 +327,12 @@ body {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
-.chip-from { background: var(--sky); color: var(--sky-ink); }
-.chip-to   { background: var(--mint); color: var(--mint-ink); }
+.chip-from { background: var(--tint); color: var(--primary-dark); }
+.chip-to   { background: var(--tint2); color: var(--accent-dark); }
 .chip-sep  { color: var(--muted); margin: 0 6px; font-weight: 700; }
 
 .opis {
-    background: #f8faff;
+    background: var(--tint);
     border: 1px solid var(--line);
     border-left: 5px solid var(--primary);
     border-radius: var(--radius-sm);

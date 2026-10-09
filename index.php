@@ -50,7 +50,18 @@ $wpis  = get_wpis($data);
 $prev  = prev_date($data);
 $next  = next_date($data);
 $dates = all_dates();
-$ile   = count($dates);
+
+$theme = day_theme($data);
+$theme_vars = sprintf(
+    '--primary:%s;--primary-dark:%s;--accent:%s;--accent-dark:%s;--tint:%s;--tint2:%s;--font:%s;',
+    $theme['primary'],
+    $theme['primary_dark'],
+    $theme['accent'],
+    $theme['accent_dark'],
+    $theme['tint'],
+    $theme['tint2'],
+    $theme['font']
+);
 
 $zapisano = isset($_GET['zapisano']);
 ?>
@@ -62,7 +73,7 @@ $zapisano = isset($_GET['zapisano']);
     <title>Dziennik Praktyk — <?= e($data) ?></title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
-<body>
+<body style="<?= e($theme_vars) ?>">
 <div class="app">
 
     <!-- Nagłówek aplikacji -->
