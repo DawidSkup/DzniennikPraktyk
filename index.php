@@ -67,7 +67,7 @@ $zapisano = isset($_GET['zapisano']);
 
     <!-- Pasek nawigacji (nie drukuje się) -->
     <nav class="nav no-print">
-        <a class="btn" href="index.php?data=<?= e($prev ?? $data) ?>"
+        <a class="btn btn-nav" href="index.php?data=<?= e($prev ?? $data) ?>"
            <?= $prev === null ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>
            title="Poprzedni dzień">← Poprzedni</a>
 
@@ -84,14 +84,14 @@ $zapisano = isset($_GET['zapisano']);
             </select>
         </form>
 
-        <a class="btn" href="index.php?data=<?= e($next ?? $data) ?>"
+        <a class="btn btn-nav" href="index.php?data=<?= e($next ?? $data) ?>"
            <?= $next === null ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>
            title="Następny dzień">Następny →</a>
 
         <span class="spacer"></span>
 
-        <a class="btn btn-primary" href="index.php?data=<?= e(date('Y-m-d')) ?>">Dzisiaj</a>
-        <button type="button" class="btn" onclick="window.print()">🖨 Drukuj</button>
+        <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?>">Dzisiaj</a>
+        <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
     </nav>
 
     <?php if ($zapisano): ?>
@@ -109,7 +109,11 @@ $zapisano = isset($_GET['zapisano']);
             <table class="meta">
                 <tr>
                     <th>Godziny pracy</th>
-                    <td><?= e($wpis['godzina_od']) ?: '—' ?> – <?= e($wpis['godzina_do']) ?: '—' ?></td>
+                    <td>
+                        <span class="chip chip-from"><?= e($wpis['godzina_od']) ?: '—' ?></span>
+                        <span class="chip-sep">→</span>
+                        <span class="chip chip-to"><?= e($wpis['godzina_do']) ?: '—' ?></span>
+                    </td>
                 </tr>
             </table>
 
@@ -151,7 +155,7 @@ $zapisano = isset($_GET['zapisano']);
             </label>
 
             <div class="actions">
-                <button type="submit" class="btn btn-primary">Zapisz</button>
+                <button type="submit" class="btn btn-save">💾 Zapisz</button>
             </div>
         </form>
 
