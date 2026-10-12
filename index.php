@@ -186,7 +186,8 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                     <ul class="day-list">
                         <?php foreach ($dates as $d): ?>
                             <li>
-                                <a href="index.php?data=<?= e($d) ?><?= $widok_qs ?>" class="<?= $d === $data ? 'active' : '' ?>">
+                                <a href="index.php?data=<?= e($d) ?><?= $widok_qs ?>"
+                                   class="<?= $d === $data ? 'active' : '' ?><?= (int) (new DateTime($d))->format('N') >= 6 ? ' is-weekend' : '' ?>">
                                     <span class="day-list-date"><?= e(format_date_short($d)) ?></span>
                                     <?php $mm = $czas_wg_dnia[$d] ?? null; ?>
                                     <?php if ($mm !== null): ?>

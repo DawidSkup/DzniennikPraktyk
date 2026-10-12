@@ -149,6 +149,12 @@ body {
     box-shadow: 0 3px 10px rgba(30, 41, 59, .18);
 }
 
+/* Weekend (sob/niedz) w liście dni — na czerwono */
+.day-list a.is-weekend:not(.active) { color: var(--danger); }
+.day-list a.is-weekend:not(.active) .day-list-date { font-weight: 700; }
+.day-list a.is-weekend:not(.active) .day-list-time { color: var(--danger); }
+.day-list a.is-weekend:not(.active):hover { background: #fee2e2; }
+
 .stat {
     display: flex;
     align-items: baseline;
