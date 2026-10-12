@@ -215,6 +215,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
         </div>
         <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
         <a class="btn btn-save" href="index.php?data=<?= e($dodaj_data) ?>&dodaj=1#dodaj-wpis"
+           onclick="return confirm('Dodać kolejny dzień:\n<?= e(format_date_full($dodaj_data)) ?>?');"
            title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</a>
         <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
     </div>
