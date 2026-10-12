@@ -687,8 +687,8 @@ body {
 /* --- Przełącznik widoku (dzień / tydzień) — ramka + styl spójny z .btn --- */
 .viewswitch {
     display: inline-flex;
-    gap: 6px;
-    padding: 6px;
+    gap: 8px;
+    padding: 8px;
     margin-bottom: 12px;
     background: rgba(255, 255, 255, .8);
     border: 2px solid var(--line);
@@ -701,8 +701,8 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 10px 16px;
-    border: 2px solid var(--line);
+    padding: 9px 16px;
+    border: 2px solid #cbd5e1;
     border-radius: var(--radius-sm);
     background: #fff;
     color: var(--ink);
@@ -711,6 +711,7 @@ body {
     font-family: inherit;
     text-decoration: none;
     white-space: nowrap;
+    box-shadow: var(--shadow-sm);
     transition: transform .12s, background .15s, border-color .15s, box-shadow .15s, color .15s;
 }
 
@@ -720,13 +721,14 @@ body {
     transform: translateY(-1px);
     border-color: var(--primary);
     color: var(--primary-dark);
+    box-shadow: 0 4px 10px rgba(30, 41, 59, .12);
 }
 
 .viewswitch-btn.active {
     background: var(--primary);
     border-color: var(--primary);
     color: #fff;
-    box-shadow: 0 6px 16px rgba(30, 41, 59, .18);
+    box-shadow: 0 4px 12px rgba(30, 41, 59, .22);
 }
 .viewswitch-btn.active:hover {
     background: var(--primary-dark);
