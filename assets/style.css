@@ -876,6 +876,18 @@ body {
 }
 .wk-edit-ico { font-size: 15px; line-height: 1; }
 
+/* Zmiana koloru po najechaniu myszką */
+.wk-edit-link:hover {
+    background: var(--tint);
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+.wk-edit-link.btn-today:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    color: #fff;
+}
+
 .week-notice {
     margin: 16px 0 0;
     padding: 12px 18px;
