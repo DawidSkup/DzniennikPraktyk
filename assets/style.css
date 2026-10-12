@@ -684,46 +684,49 @@ body {
     color: #991b1b;
 }
 
-/* --- Przełącznik widoku (dzień / tydzień) --- */
+/* --- Przełącznik widoku (dzień / tydzień) — styl spójny z .btn --- */
 .viewswitch {
     display: inline-flex;
-    gap: 4px;
-    padding: 4px;
+    gap: 8px;
     margin-bottom: 12px;
-    background: rgba(255, 255, 255, .8);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    box-shadow: var(--shadow-sm);
-    backdrop-filter: blur(6px);
 }
 
 .viewswitch-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 18px;
-    border-radius: 999px;
-    color: var(--muted);
-    font-size: 14px;
-    font-weight: 700;
+    padding: 10px 16px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
     text-decoration: none;
     white-space: nowrap;
-    transition: background .15s, color .15s, box-shadow .15s, transform .12s;
+    transition: transform .12s, background .15s, border-color .15s, box-shadow .15s, color .15s;
 }
 
-.viewswitch-btn .viewswitch-ico { font-size: 15px; line-height: 1; }
+.viewswitch-btn .viewswitch-ico { font-size: 16px; line-height: 1; }
 
 .viewswitch-btn:hover {
+    transform: translateY(-1px);
+    border-color: var(--primary);
     color: var(--primary-dark);
-    background: var(--tint);
 }
 
 .viewswitch-btn.active {
-    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background: var(--primary);
+    border-color: var(--primary);
     color: #fff;
-    box-shadow: 0 4px 12px rgba(30, 41, 59, .22);
+    box-shadow: 0 6px 16px rgba(30, 41, 59, .18);
 }
-.viewswitch-btn.active:hover { color: #fff; }
+.viewswitch-btn.active:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    color: #fff;
+}
 
 .viewswitch-btn:focus-visible,
 .wk-edit-link:focus-visible {
@@ -970,7 +973,7 @@ body {
     .form-grid .field:first-child { grid-column: 1 / -1; }
     .week-table { min-width: 760px; }
     .viewswitch { display: flex; }
-    .viewswitch-btn { flex: 1; text-align: center; }
+    .viewswitch-btn { flex: 1; justify-content: center; }
 }
 
 @media (max-width: 620px) {
