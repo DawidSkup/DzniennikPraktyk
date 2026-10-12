@@ -57,3 +57,12 @@
 - [ ] Test wydruku (podgląd wydruku w przeglądarce — do sprawdzenia przez użytkownika)
 - [x] Przegląd zgodności z `AGENTS.md`
 - [x] Commit i push na GitHuba
+
+## Etap 8 — Kopia zapasowa
+
+- [x] Endpoint `backup.php` — pobranie spójnej kopii bazy jako plik `.db` (`VACUUM INTO`, fallback `copy`)
+- [x] Przywracanie dziennika z wgranej kopii `.db` (walidacja struktury bazy)
+- [x] Automatyczna kopia bezpieczeństwa obecnego stanu przed przywróceniem
+- [x] Okno „Kopia zapasowa" w UI: pobierz / przywróć (z potwierdzeniem)
+- [x] Komunikaty sukcesu i błędów kopii zapasowej
+- [ ] Test kopii i przywrócenia — do sprawdzenia przez użytkownika

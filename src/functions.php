@@ -303,3 +303,18 @@ function format_date_full(string $data): string
 
     return $names[(new DateTime($data))->format('l')][0] . ', ' . (new DateTime($data))->format('d.m.Y');
 }
+
+/** Czytelny komunikat błędu kopii zapasowej dla kodu zwracanego przez backup.php. */
+function backup_error_message(string $code): string
+{
+    $messages = [
+        'brak-pliku'    => 'Nie wybrano pliku kopii zapasowej.',
+        'za-duzy'       => 'Plik kopii jest za duży (przekroczono limit wgrywania na serwerze).',
+        'blad-uploadu'  => 'Nie udało się wgrać pliku kopii zapasowej.',
+        'nie-baza'      => 'Wybrany plik nie jest poprawną kopią dziennika (brak wymaganej struktury bazy).',
+        'blad-zapisu'   => 'Nie udało się zapisać przywróconej bazy na serwerze.',
+        'nieznana-akcja' => 'Nieznana operacja kopii zapasowej.',
+    ];
+
+    return $messages[$code] ?? 'Nieznany błąd kopii zapasowej (' . $code . ').';
+}

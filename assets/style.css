@@ -437,6 +437,18 @@ body {
     box-shadow: 0 6px 16px rgba(225, 29, 72, .3);
 }
 
+.btn-backup {
+    background: #fff;
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+.btn-backup:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(79, 70, 229, .25);
+}
+
 .alert {
     display: flex;
     align-items: center;
@@ -786,6 +798,72 @@ body {
     border-top: 1px solid var(--line);
 }
 body.modal-open { overflow: hidden; }
+
+/* --- Popup „Kopia zapasowa" --- */
+.backup-block {
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    background: var(--tint);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+
+.backup-block-danger {
+    background: #fff5f5;
+    border-color: #fca5a5;
+}
+
+.backup-title {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--primary-dark);
+}
+.backup-block-danger .backup-title { color: #b91c1c; }
+
+.backup-text {
+    margin: 0 0 12px;
+    font-size: 13.5px;
+    color: var(--muted);
+}
+
+.backup-text code {
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, .06);
+    font-size: 12.5px;
+}
+
+.backup-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.backup-file {
+    flex: 1 1 220px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+}
+
+.backup-file::file-selector-button {
+    margin-right: 10px;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+}
 
 /* --- Stopka --- */
 .footer {
@@ -1167,11 +1245,13 @@ body.modal-open { overflow: hidden; }
 :root[data-theme="dark"] .modal input:hover,
 :root[data-theme="dark"] .modal textarea:hover { border-color: #475569; }
 
-:root[data-theme="dark"] .btn:not(.btn-today):not(.btn-print):not(.btn-save):not(.btn-danger) {
+:root[data-theme="dark"] .btn:not(.btn-today):not(.btn-print):not(.btn-save):not(.btn-danger):not(.btn-backup) {
     background: #1e293b;
     border-color: #334155;
     color: var(--ink);
 }
+:root[data-theme="dark"] .btn-backup { background: #1e293b; border-color: var(--primary); color: #a5b4fc; }
+:root[data-theme="dark"] .btn-backup:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
 :root[data-theme="dark"] .btn-danger { background: #2a1220; border-color: var(--danger); color: #fda4af; }
 :root[data-theme="dark"] .btn-danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
@@ -1232,6 +1312,13 @@ body.modal-open { overflow: hidden; }
 }
 :root[data-theme="dark"] .danger-text strong { color: #f87171; }
 :root[data-theme="dark"] .danger-text span { color: #fda4af; }
+
+:root[data-theme="dark"] .backup-block { background: #16202f; border-color: #334155; }
+:root[data-theme="dark"] .backup-block-danger { background: #241319; border-color: #7f1d1d; }
+:root[data-theme="dark"] .backup-title { color: #a5b4fc; }
+:root[data-theme="dark"] .backup-block-danger .backup-title { color: #f87171; }
+:root[data-theme="dark"] .backup-text code { background: rgba(255, 255, 255, .1); }
+:root[data-theme="dark"] .backup-file { background: #0f172a; border-color: #334155; color: var(--ink); }
 
 :root[data-theme="dark"] .chip-from { background: #1e1b4b; color: #a5b4fc; }
 :root[data-theme="dark"] .chip-to { background: #164e63; color: #67e8f9; }

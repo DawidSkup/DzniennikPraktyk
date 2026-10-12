@@ -139,8 +139,10 @@ $theme_vars = sprintf(
     $theme['font']
 );
 
-$zapisano = isset($_GET['zapisano']);
-$usunieto = isset($_GET['usunieto']);
+$zapisano     = isset($_GET['zapisano']);
+$usunieto     = isset($_GET['usunieto']);
+$przywrocono  = isset($_GET['przywrocono']);
+$blad_kopii   = trim((string) ($_GET['blad'] ?? ''));
 
 // --- Statystyki do panelu bocznego --------------------------------------
 $wszystkie = all_wpisy();
@@ -216,6 +218,8 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
         <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
         <button type="button" class="btn btn-save" data-open-dodaj
                 title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</button>
+        <button type="button" class="btn btn-backup" data-open-backup
+                title="Kopia zapasowa — pobierz lub przywróć dziennik">💾 Kopia</button>
         <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
     </div>
 
@@ -308,6 +312,14 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
 
     <?php if ($usunieto): ?>
         <p class="alert alert-danger no-print">🧹 Usunięto wszystkie wpisy z dziennika.</p>
+    <?php endif; ?>
+
+    <?php if ($przywrocono): ?>
+        <p class="alert no-print">✔ Dziennik przywrócony z kopii zapasowej. Kopia poprzedniego stanu została zapisana na serwerze.</p>
+    <?php endif; ?>
+
+    <?php if ($blad_kopii !== ''): ?>
+        <p class="alert alert-danger no-print">⚠ <?= e(backup_error_message($blad_kopii)) ?></p>
     <?php endif; ?>
 
     <?php if ($tydzien): ?>
@@ -647,6 +659,47 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                     <button type="button" class="btn" data-close-modal>Anuluj</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Popup „Kopia zapasowa" -->
+    <div class="modal no-print" id="backup-modal" hidden>
+        <div class="modal-backdrop" data-close-backup></div>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="backup-modal-title">
+            <header class="modal-head">
+                <span class="modal-icon">💾</span>
+                <div>
+                    <h2 id="backup-modal-title" class="modal-title">Kopia zapasowa</h2>
+                    <p class="modal-hint">Zapisz dziennik do pliku albo przywróć go z wcześniejszej kopii.</p>
+                </div>
+            </header>
+
+            <div class="backup-block">
+                <h3 class="backup-title">⬇ Pobierz kopię</h3>
+                <p class="backup-text">
+                    Plik <code>.db</code> zawiera wszystkie wpisy dziennika. Trzymaj go w bezpiecznym miejscu.
+                </p>
+                <a class="btn btn-save" href="backup.php?action=download">💾 Pobierz kopię zapasową</a>
+            </div>
+
+            <div class="backup-block backup-block-danger">
+                <h3 class="backup-title">⬆ Przywróć z kopii</h3>
+                <p class="backup-text">
+                    Uwaga: przywrócenie <strong>nadpisze</strong> obecne wpisy zawartością pliku.
+                    Przed przywróceniem zapisujemy kopię obecnego stanu na serwerze.
+                </p>
+                <form method="post" action="backup.php" enctype="multipart/form-data" class="backup-form"
+                      onsubmit="return confirm('Przywrócić dziennik z wybranego pliku?\nObecne wpisy zostaną nadpisane.');">
+                    <input type="hidden" name="action" value="restore">
+                    <input class="backup-file" type="file" name="kopia" required
+                           accept=".db,.sqlite,.sqlite3,application/octet-stream,application/x-sqlite3">
+                    <button type="submit" class="btn btn-danger">⬆ Przywróć dziennik</button>
+                </form>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn" data-close-backup>Zamknij</button>
+            </div>
         </div>
     </div>
 

@@ -18,6 +18,7 @@
 - Przełączanie widoku **dzień / tydzień** — widok tygodniowy pokazuje cały tydzień
   (poniedziałek–niedziela) w tabeli z podsumowaniem
 - Dodawanie, edycja i usuwanie wpisów
+- Kopia zapasowa: pobranie dziennika do pliku `.db` oraz przywrócenie z kopii
 
 ## Wydruk
 

@@ -94,4 +94,36 @@
             }
         });
     }
+
+    // Popup „Kopia zapasowa".
+    const backupModal = document.getElementById('backup-modal');
+    const openBackupBtn = document.querySelector('[data-open-backup]');
+
+    function openBackupModal() {
+        if (!backupModal) return;
+        backupModal.hidden = false;
+        document.body.classList.add('modal-open');
+        const first = backupModal.querySelector('a, input, button');
+        if (first) first.focus();
+    }
+
+    function closeBackupModal() {
+        if (!backupModal) return;
+        backupModal.hidden = true;
+        document.body.classList.remove('modal-open');
+    }
+
+    if (openBackupBtn) {
+        openBackupBtn.addEventListener('click', openBackupModal);
+    }
+    if (backupModal) {
+        backupModal.querySelectorAll('[data-close-backup]').forEach(function (el) {
+            el.addEventListener('click', closeBackupModal);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !backupModal.hidden) {
+                closeBackupModal();
+            }
+        });
+    }
 })();
