@@ -77,7 +77,9 @@ $tygodnie = array_keys($tygodnie);
 sort($tygodnie);
 $tydz_dni    = [];
 $tydz_total  = 0;
-$tydz_filled = 0;
+// Dni praktyk = poniedziałek–piątek (weekend to dni bez praktyk).
+$tydz_dni_roboczych  = 5;
+$tydz_filled_robocze = 0;
 for ($i = 0; $i < 7; $i++) {
     $d   = date_shift($tydz_start, $i);
     $w   = $mapa_wpisow[$d] ?? null;
@@ -85,12 +87,12 @@ for ($i = 0; $i < 7; $i++) {
     if ($min !== null) {
         $tydz_total += $min;
     }
-    if ($w) {
-        $tydz_filled++;
+    if ($w && $i < $tydz_dni_roboczych) {
+        $tydz_filled_robocze++;
     }
     $tydz_dni[$d] = ['wpis' => $w, 'min' => $min];
 }
-$tydz_srednia = $tydz_filled > 0 ? intdiv($tydz_total, $tydz_filled) : 0;
+$tydz_srednia = $tydz_filled_robocze > 0 ? intdiv($tydz_total, $tydz_filled_robocze) : 0;
 
 // --- Cele nawigacji: w widoku tygodniowym skaczemy o 7 dni --------------
 if ($tydzien) {
@@ -269,8 +271,8 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                 <p class="sheet-kicker">Dziennik Praktyk · tydzień <?= e(week_number($data)) ?></p>
                 <p class="sheet-date"><?= e(format_date_short($tydz_start)) ?> — <?= e(format_date_short($tydz_end)) ?></p>
             </div>
-            <span class="status-pill <?= $tydz_filled > 0 ? 'is-done' : 'is-empty' ?>">
-                <?= $tydz_filled ?> z 7 dni
+            <span class="status-pill <?= $tydz_filled_robocze > 0 ? 'is-done' : 'is-empty' ?>">
+                <?= $tydz_filled_robocze ?> z <?= $tydz_dni_roboczych ?> dni praktyk
             </span>
         </header>
 
@@ -281,11 +283,11 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             </div>
             <div class="week-fact">
                 <span>Dni z wpisem</span>
-                <b><?= $tydz_filled ?> / 7</b>
+                <b><?= $tydz_filled_robocze ?> / <?= $tydz_dni_roboczych ?></b>
             </div>
             <div class="week-fact">
                 <span>Średnio / dzień</span>
-                <b><?= $tydz_filled > 0 ? e(format_duration($tydz_srednia)) : '—' ?></b>
+                <b><?= $tydz_filled_robocze > 0 ? e(format_duration($tydz_srednia)) : '—' ?></b>
             </div>
         </div>
 
@@ -302,8 +304,9 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                 <tbody>
                 <?php foreach ($tydz_dni as $d => $info): $w = $info['wpis']; $mm = $info['min']; ?>
                     <?php
+                        $weekend = (int) (new DateTime($d))->format('N') >= 6;
                         $klasy = $w ? 'is-done' : 'is-empty';
-                        if ((int) (new DateTime($d))->format('N') >= 6) {
+                        if ($weekend) {
                             $klasy .= ' is-weekend';
                         }
                         if ($d === $dzis) {
@@ -342,6 +345,8 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                                 <?= nl2br(e($w['opis'])) ?>
                             <?php elseif ($w): ?>
                                 <span class="wk-none">(brak opisu)</span>
+                            <?php elseif ($weekend): ?>
+                                <span class="wk-off">Dzień bez praktyk</span>
                             <?php else: ?>
                                 <span class="wk-none">Brak wpisu</span>
                             <?php endif; ?>
@@ -351,6 +356,8 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                                 <a class="btn wk-edit-link" href="index.php?data=<?= e($d) ?>">
                                     <span class="wk-edit-ico" aria-hidden="true">📄</span> Otwórz
                                 </a>
+                            <?php elseif ($weekend): ?>
+                                <span class="wk-none" aria-hidden="true">—</span>
                             <?php else: ?>
                                 <a class="btn btn-today wk-edit-link" href="index.php?data=<?= e($d) ?>">
                                     <span class="wk-edit-ico" aria-hidden="true">➕</span> Dodaj
@@ -364,7 +371,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                     <tr>
                         <th scope="row" class="wk-day">Razem</th>
                         <td class="wk-hours wk-total"><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></td>
-                        <td class="wk-opis wk-total"><?= $tydz_filled ?> z 7 dni z wpisem</td>
+                        <td class="wk-opis wk-total"><?= $tydz_filled_robocze ?> z <?= $tydz_dni_roboczych ?> dni praktyk z wpisem</td>
                         <td class="wk-edit no-print"></td>
                     </tr>
                 </tfoot>
@@ -492,7 +499,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                 <?php if ($tydzien): ?>
                 <div class="panel">
                     <h3>Ten tydzień</h3>
-                    <div class="stat"><span>Dni z wpisem</span><b><?= $tydz_filled ?> / 7</b></div>
+                    <div class="stat"><span>Dni z wpisem</span><b><?= $tydz_filled_robocze ?> / <?= $tydz_dni_roboczych ?></b></div>
                     <div class="stat"><span>Łącznie godzin</span><b><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></b></div>
                     <div class="stat"><span>Tydzień</span><b>nr <?= e(week_number($data)) ?></b></div>
                 </div>

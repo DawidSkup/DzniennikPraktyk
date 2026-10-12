@@ -784,6 +784,22 @@ body {
 .week-table tbody tr.is-empty .wk-opis { color: #6b7280; }
 .week-table tbody tr.is-weekend .wk-weekday { color: var(--muted); }
 
+/* Weekend — dni bez praktyk */
+.week-table tbody tr.is-weekend { background: #f8fafc; }
+.week-table tbody tr.is-weekend:hover { background: var(--tint2); }
+.week-table tbody tr.is-weekend.is-active { background: var(--tint); }
+
+.wk-off {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 .wk-day { width: 156px; }
 .wk-hours { width: 250px; white-space: nowrap; }
 .week-table .wk-edit { width: 160px; text-align: right; vertical-align: middle; }
