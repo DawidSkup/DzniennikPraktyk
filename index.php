@@ -63,6 +63,18 @@ $next  = next_date($data);
 $dates = all_dates();
 $dzis  = date('Y-m-d');
 
+// Data dla przycisku „Dodaj kolejny dzień": pierwszy dzień roboczy (pon–pt)
+// po ostatnim wpisie; gdy dziennik pusty — dzisiaj (lub najbliższy poniedziałek).
+$dodaj_data = $dzis;
+$ostatni_wpis = last_date();
+if ($ostatni_wpis !== null) {
+    $dodaj_data = date_shift($ostatni_wpis, 1);
+}
+$dow = (int) (new DateTime($dodaj_data))->format('N');
+if ($dow >= 6) {
+    $dodaj_data = date_shift($dodaj_data, 8 - $dow); // sob → pon (+2), niedz → pon (+1)
+}
+
 // Czy oglądany dzień to weekend (sobota/niedziela) — dni bez praktyk.
 $dzien_weekend = (int) (new DateTime($data))->format('N') >= 6;
 
@@ -199,6 +211,8 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
         </div>
         <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
+        <a class="btn btn-save" href="index.php?data=<?= e($dodaj_data) ?>"
+           title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</a>
         <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
     </div>
 
