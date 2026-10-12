@@ -883,9 +883,10 @@ body {
     color: #fff;
 }
 .wk-edit-link.btn-today:hover {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark);
+    background: var(--save);
+    border-color: var(--save);
     color: #fff;
+    box-shadow: 0 6px 14px rgba(5, 150, 105, .3);
 }
 
 .week-notice {
