@@ -348,11 +348,11 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                         </td>
                         <td class="wk-edit no-print">
                             <?php if ($w): ?>
-                                <a class="wk-edit-link wk-edit-open" href="index.php?data=<?= e($d) ?>">
+                                <a class="btn wk-edit-link" href="index.php?data=<?= e($d) ?>">
                                     <span class="wk-edit-ico" aria-hidden="true">✏️</span> Otwórz
                                 </a>
                             <?php else: ?>
-                                <a class="wk-edit-link wk-edit-add" href="index.php?data=<?= e($d) ?>">
+                                <a class="btn btn-today wk-edit-link" href="index.php?data=<?= e($d) ?>">
                                     <span class="wk-edit-ico" aria-hidden="true">➕</span> Dodaj
                                 </a>
                             <?php endif; ?>

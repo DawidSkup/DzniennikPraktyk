@@ -786,7 +786,7 @@ body {
 
 .wk-day { width: 156px; }
 .wk-hours { width: 250px; white-space: nowrap; }
-.week-table .wk-edit { width: 112px; text-align: right; vertical-align: middle; }
+.week-table .wk-edit { width: 160px; text-align: right; vertical-align: middle; }
 
 .wk-range { display: inline-flex; align-items: center; }
 
@@ -869,45 +869,12 @@ body {
     text-transform: uppercase;
 }
 
+/* Przyciski akcji w tabeli — korzystają ze wspólnego stylu .btn / .btn-today */
 .wk-edit-link {
-    display: inline-flex;
-    align-items: center;
     justify-content: center;
-    gap: 6px;
-    min-width: 88px;
-    padding: 7px 12px;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    background: #fff;
-    color: var(--primary-dark);
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .12s;
+    min-width: 96px;
 }
-.wk-edit-ico { font-size: 13px; line-height: 1; }
-
-/* Dzień z wpisem — otwarcie istniejącego wpisu */
-.wk-edit-open:hover {
-    background: var(--tint);
-    border-color: var(--primary);
-    color: var(--primary-dark);
-    transform: translateY(-1px);
-}
-
-/* Pusty dzień — dodanie nowego wpisu */
-.wk-edit-add {
-    background: var(--mint);
-    border-color: transparent;
-    color: var(--mint-ink);
-}
-.wk-edit-add:hover {
-    background: var(--save);
-    border-color: var(--save);
-    color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(5, 150, 105, .28);
-}
+.wk-edit-ico { font-size: 15px; line-height: 1; }
 
 .week-notice {
     margin: 16px 0 0;
