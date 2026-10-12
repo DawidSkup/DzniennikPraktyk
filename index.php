@@ -214,9 +214,8 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
         </div>
         <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
-        <a class="btn btn-save" href="index.php?data=<?= e($dodaj_data) ?>&dodaj=1#dodaj-wpis"
-           onclick="return confirm('Dodać kolejny dzień:\n<?= e(format_date_full($dodaj_data)) ?>?');"
-           title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</a>
+        <button type="button" class="btn btn-save" data-open-dodaj
+                title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</button>
         <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
     </div>
 
@@ -611,6 +610,45 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             </form>
         </section>
     <?php endif; ?>
+
+    <!-- Popup „Dodaj wpis" -->
+    <div class="modal no-print" id="dodaj-modal" hidden>
+        <div class="modal-backdrop" data-close-modal></div>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="dodaj-modal-title">
+            <header class="modal-head">
+                <span class="modal-icon">📝</span>
+                <div>
+                    <h2 id="dodaj-modal-title" class="modal-title">Dodaj wpis</h2>
+                    <p class="modal-hint">Uzupełnij godziny pracy i opisz wykonane czynności.</p>
+                </div>
+            </header>
+            <form method="post" action="index.php" class="modal-form">
+                <input type="hidden" name="action" value="save">
+                <div class="field">
+                    <label for="m-data">Data</label>
+                    <input id="m-data" type="date" name="data" value="<?= e($dodaj_data) ?>" required>
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="m-od">Godzina od</label>
+                        <input id="m-od" type="time" name="godzina_od" value="08:00">
+                    </div>
+                    <div class="field">
+                        <label for="m-do">Godzina do</label>
+                        <input id="m-do" type="time" name="godzina_do" value="16:00">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="m-opis">Co robiłem/am</label>
+                    <textarea id="m-opis" name="opis" rows="5" placeholder="Opisz wykonane czynności..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-save">💾 Zapisz wpis</button>
+                    <button type="button" class="btn" data-close-modal>Anuluj</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </div>
 <script src="assets/app.js?v=<?= @filemtime(__DIR__ . '/assets/app.js') ?: time() ?>"></script>

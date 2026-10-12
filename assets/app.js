@@ -62,4 +62,36 @@
             }
         });
     }
+
+    // Popup „Dodaj wpis".
+    const dodajModal = document.getElementById('dodaj-modal');
+    const openDodajBtn = document.querySelector('[data-open-dodaj]');
+
+    function openDodajModal() {
+        if (!dodajModal) return;
+        dodajModal.hidden = false;
+        document.body.classList.add('modal-open');
+        const first = dodajModal.querySelector('input, textarea, select');
+        if (first) first.focus();
+    }
+
+    function closeDodajModal() {
+        if (!dodajModal) return;
+        dodajModal.hidden = true;
+        document.body.classList.remove('modal-open');
+    }
+
+    if (openDodajBtn) {
+        openDodajBtn.addEventListener('click', openDodajModal);
+    }
+    if (dodajModal) {
+        dodajModal.querySelectorAll('[data-close-modal]').forEach(function (el) {
+            el.addEventListener('click', closeDodajModal);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !dodajModal.hidden) {
+                closeDodajModal();
+            }
+        });
+    }
 })();
