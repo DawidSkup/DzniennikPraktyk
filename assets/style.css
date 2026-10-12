@@ -619,6 +619,7 @@ body {
     padding-bottom: 26px;
     box-shadow: var(--shadow);
     overflow: hidden;
+    scroll-margin-top: 84px; /* dociągnięcie pod przyklejony pasek akcji */
 }
 
 .form-head {

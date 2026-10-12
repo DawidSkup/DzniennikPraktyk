@@ -57,6 +57,9 @@ $widok      = (($_GET['widok'] ?? 'dzien') === 'tydzien') ? 'tydzien' : 'dzien';
 $tydzien    = $widok === 'tydzien';
 $widok_qs   = $tydzien ? '&widok=tydzien' : ''; // doklejane do linków GET
 
+// Tryb „Dodaj": po kliknięciu „Dodaj dzień" pokazujemy od razu sam formularz „Dodaj wpis".
+$dodaj_flow = !$tydzien && (($_GET['dodaj'] ?? '') === '1');
+
 $wpis  = get_wpis($data);
 $prev  = prev_date($data);
 $next  = next_date($data);
@@ -211,7 +214,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
         </div>
         <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
-        <a class="btn btn-save" href="index.php?data=<?= e($dodaj_data) ?>"
+        <a class="btn btn-save" href="index.php?data=<?= e($dodaj_data) ?>&dodaj=1#dodaj-wpis"
            title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</a>
         <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
     </div>
@@ -431,6 +434,9 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
         </div>
     </article>
     <?php else: ?>
+    <?php if ($dodaj_flow && !$wpis): ?>
+        <!-- Tryb „Dodaj": bez pustego dokumentu — od razu formularz -->
+    <?php else: ?>
     <!-- Dokument dnia (widok do wydruku) -->
     <article class="sheet<?= $dzien_weekend ? ' sheet-weekend' : '' ?>">
         <header class="sheet-head">
@@ -473,6 +479,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             <p class="empty">Brak wpisu na ten dzień. Uzupełnij formularz poniżej i zapisz.</p>
         <?php endif; ?>
     </article>
+    <?php endif; /* tryb „Dodaj" – ukrywamy pusty dokument */ ?>
     <?php endif; ?>
 
     <?php if ($tydzien): ?>
@@ -483,7 +490,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
         </p>
     <?php else: ?>
     <!-- Formularz (nie drukuje się) -->
-    <section class="form-card no-print">
+    <section class="form-card no-print" id="dodaj-wpis">
         <header class="form-head">
             <span class="form-head-icon"><?= $wpis ? '✏️' : '📝' ?></span>
             <div>
