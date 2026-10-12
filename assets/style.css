@@ -266,6 +266,9 @@ body {
     position: sticky;
     top: 8px;
     z-index: 40;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
