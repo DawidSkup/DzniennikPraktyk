@@ -72,7 +72,7 @@ body {
 
 .side {
     position: sticky;
-    top: 84px;
+    top: 72px;
 }
 
 .side-stack {
@@ -218,11 +218,8 @@ body {
     color: var(--ink);
 }
 
-/* --- Nagłówek aplikacji: tytuł przyklejony u góry --- */
+/* --- Nagłówek aplikacji: tytuł przewija się ze stroną --- */
 .topbar {
-    position: sticky;
-    top: 8px;
-    z-index: 40;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -266,11 +263,20 @@ body {
 }
 
 .topbar-actions {
+    position: sticky;
+    top: 8px;
+    z-index: 40;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 16px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, .82);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(8px);
 }
 
 /* Przełącznik motywu: dzień / noc / automatyczny */
@@ -1069,7 +1075,8 @@ body {
     background: rgba(255, 255, 255, .05);
     border-color: var(--line);
 }
-:root[data-theme="dark"] .topbar {
+:root[data-theme="dark"] .topbar,
+:root[data-theme="dark"] .topbar-actions {
     background: rgba(15, 23, 42, .82);
 }
 :root[data-theme="dark"] .theme-btn:hover { background: rgba(255, 255, 255, .12); }
