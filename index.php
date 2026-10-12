@@ -158,6 +158,24 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
     <link rel="icon" type="image/png" href="favicon.png">
     <title>Dziennik Praktyk — <?= $tydzien ? 'tydzień ' . e(week_number($data)) : e($data) ?></title>
     <link rel="stylesheet" href="assets/style.css?v=<?= @filemtime(__DIR__ . '/assets/style.css') ?: time() ?>">
+    <script>
+    (function () {
+        'use strict';
+        var key = 'dp-theme';
+        function getMode() {
+            try { return localStorage.getItem(key) || 'auto'; } catch (e) { return 'auto'; }
+        }
+        function applyTheme() {
+            var m = getMode();
+            var dark = m === 'dark' ||
+                (m === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme-mode', m);
+        }
+        applyTheme();
+        window.__dpTheme = { key: key, getMode: getMode, applyTheme: applyTheme };
+    })();
+    </script>
 </head>
 <body style="<?= e($theme_vars) ?>">
 <div class="app">
@@ -172,6 +190,11 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             </div>
         </div>
         <div class="topbar-actions">
+            <div class="theme-switch no-print" role="group" aria-label="Motyw: jasny, ciemny lub automatyczny">
+                <button type="button" class="theme-btn" data-theme-mode="light" aria-pressed="false" title="Tryb jasny (dzień)">☀️</button>
+                <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
+                <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
+            </div>
             <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
             <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
         </div>

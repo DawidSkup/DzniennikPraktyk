@@ -31,4 +31,35 @@
             if (clicked(inactive)) event.preventDefault();
         }
     });
+
+    // Przełącznik motywu: jasny / ciemny / automatyczny.
+    const theme = window.__dpTheme || { key: 'dp-theme', getMode: () => 'auto', applyTheme: () => {} };
+
+    function paintThemeButtons() {
+        const mode = theme.getMode();
+        document.querySelectorAll('.theme-btn').forEach((btn) => {
+            const active = btn.getAttribute('data-theme-mode') === mode;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+    }
+
+    document.querySelectorAll('.theme-btn').forEach((btn) => {
+        btn.addEventListener('click', function () {
+            const mode = btn.getAttribute('data-theme-mode');
+            try { localStorage.setItem(theme.key, mode); } catch (e) { /* brak dostępu do localStorage */ }
+            theme.applyTheme();
+            paintThemeButtons();
+        });
+    });
+    paintThemeButtons();
+
+    // W trybie „auto'' reaguj na zmianę ustawień systemu (dzień ↔ noc).
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+            if (theme.getMode() === 'auto') {
+                theme.applyTheme();
+            }
+        });
+    }
 })();

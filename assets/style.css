@@ -263,6 +263,41 @@ body {
     gap: 8px;
 }
 
+/* Przełącznik motywu: dzień / noc / automatyczny */
+.theme-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px;
+    background: rgba(255, 255, 255, .8);
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(6px);
+}
+.theme-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 34px;
+    padding: 0 11px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .15s, color .15s, box-shadow .15s, transform .12s;
+}
+.theme-btn:hover { background: var(--tint); }
+.theme-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(30, 41, 59, .22);
+}
+
 /* --- Nawigacja między dniami --- */
 .daynav {
     display: flex;
@@ -994,6 +1029,127 @@ body {
     .week-facts .week-fact:last-child { grid-column: 1 / -1; }
 }
 
+/* --- Tryb ciemny (data-theme="dark" na <html>) --- */
+:root[data-theme="dark"] {
+    --bg1: #0f172a;
+    --bg2: #0f1b2d;
+    --bg3: #191436;
+    --card: #1e293b;
+    --ink: #e2e8f0;
+    --muted: #94a3b8;
+    --line: #334155;
+    --shadow-sm: 0 2px 10px rgba(0, 0, 0, .4);
+    --shadow: 0 12px 32px rgba(0, 0, 0, .5);
+    --sky: #0e293d;
+    --sky-ink: #7dd3fc;
+    --mint: #0e3326;
+    --mint-ink: #6ee7b7;
+}
+
+:root[data-theme="dark"] body {
+    background:
+        radial-gradient(1100px 500px at 100% -10%, #172554 0%, transparent 55%),
+        radial-gradient(900px 500px at -10% 0%, #2e1065 0%, transparent 50%),
+        linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%) fixed;
+}
+
+:root[data-theme="dark"] .daynav,
+:root[data-theme="dark"] .viewswitch,
+:root[data-theme="dark"] .theme-switch {
+    background: rgba(255, 255, 255, .05);
+    border-color: var(--line);
+}
+:root[data-theme="dark"] .theme-btn:hover { background: rgba(255, 255, 255, .12); }
+
+:root[data-theme="dark"] .jump select,
+:root[data-theme="dark"] .form-card input,
+:root[data-theme="dark"] .form-card textarea,
+:root[data-theme="dark"] .kbd {
+    background: #0f172a;
+    border-color: #334155;
+    color: var(--ink);
+}
+:root[data-theme="dark"] .form-card input:hover,
+:root[data-theme="dark"] .form-card textarea:hover { border-color: #475569; }
+
+:root[data-theme="dark"] .btn:not(.btn-today):not(.btn-print):not(.btn-save):not(.btn-danger) {
+    background: #1e293b;
+    border-color: #334155;
+    color: var(--ink);
+}
+:root[data-theme="dark"] .btn-danger { background: #2a1220; border-color: var(--danger); color: #fda4af; }
+:root[data-theme="dark"] .btn-danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+:root[data-theme="dark"] .week-scroll { background: #16202f; }
+
+:root[data-theme="dark"] .week-table thead th,
+:root[data-theme="dark"] .week-table tfoot th,
+:root[data-theme="dark"] .week-table tfoot td,
+:root[data-theme="dark"] .week-fact,
+:root[data-theme="dark"] .info {
+    background: #16202f;
+}
+:root[data-theme="dark"] .week-table tbody tr:nth-child(even) { background: #172231; }
+:root[data-theme="dark"] .week-table tbody tr:hover { background: #1f2b3f; }
+:root[data-theme="dark"] .week-table tbody tr.is-active { background: #1f2740; }
+:root[data-theme="dark"] .day-list a:hover { background: #243046; }
+
+:root[data-theme="dark"] .week-table tbody tr.is-weekend { background: #3a1d25; }
+:root[data-theme="dark"] .week-table tbody tr.is-weekend:hover { background: #46222c; }
+:root[data-theme="dark"] .day-list a.is-weekend:not(.active):hover { background: #3b1f28; }
+:root[data-theme="dark"] .day-list a.is-weekend.active {
+    background: #471f2b;
+    color: #fb7185;
+}
+:root[data-theme="dark"] .sheet-weekend {
+    background: #2b1920;
+    border-color: #5b2733;
+}
+:root[data-theme="dark"] .wk-off {
+    background: #331923;
+    color: #f9a8b8;
+}
+
+:root[data-theme="dark"] .status-pill.is-empty {
+    background: #3b2a17;
+    color: #fbbf24;
+}
+
+:root[data-theme="dark"] .empty {
+    background: #33271a;
+    border-color: #7c5a24;
+    color: #fcd34d;
+}
+
+:root[data-theme="dark"] .alert,
+:root[data-theme="dark"] .week-notice {
+    background: #172037;
+    color: var(--ink);
+}
+:root[data-theme="dark"] .alert-danger {
+    background: linear-gradient(90deg, #3d1a22, #45202a);
+    color: #fecdd3;
+}
+
+:root[data-theme="dark"] .danger-zone {
+    background: #241319;
+    border-color: #7f1d1d;
+}
+:root[data-theme="dark"] .danger-text strong { color: #f87171; }
+:root[data-theme="dark"] .danger-text span { color: #fda4af; }
+
+:root[data-theme="dark"] .chip-from { background: #1e1b4b; color: #a5b4fc; }
+:root[data-theme="dark"] .chip-to { background: #164e63; color: #67e8f9; }
+
+/* Tekst oznaczony kolorem motywu rozjaśniamy na ciemnym tle */
+:root[data-theme="dark"] .wk-weekday,
+:root[data-theme="dark"] .week-table thead th,
+:root[data-theme="dark"] .week-table tfoot .wk-day,
+:root[data-theme="dark"] .week-fact b,
+:root[data-theme="dark"] .panel h3,
+:root[data-theme="dark"] .jump select { color: #a5b4fc; }
+:root[data-theme="dark"] .wk-date { color: #94a3b8; }
+
 /* --- Wydruk --- */
 @media print {
     body {
@@ -1014,6 +1170,9 @@ body {
         padding: 0;
         background: #fff;
     }
+    .sheet-weekend { background: #fff; }
+    .sheet-weekend .sheet-kicker,
+    .sheet-weekend .sheet-date { color: #000; }
 
     .sheet::before { display: none; }
 
@@ -1054,7 +1213,7 @@ body {
     }
 
     /* Widok tygodniowy */
-    .week-scroll { overflow: visible; border: 0; }
+    .week-scroll { overflow: visible; border: 0; background: none; }
     .week-table { min-width: 0; font-size: 10.5pt; page-break-inside: auto; }
     .week-table th,
     .week-table td {
@@ -1084,6 +1243,11 @@ body {
     .wk-dur-pill {
         background: none !important;
         color: #000 !important;
+        padding: 0;
+    }
+    .wk-off {
+        background: none;
+        color: #000;
         padding: 0;
     }
     .wk-edit-link { display: none; }
