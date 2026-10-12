@@ -290,8 +290,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                 <thead>
                     <tr>
                         <th class="wk-day" scope="col">Dzień</th>
-                        <th class="wk-hours" scope="col">Godziny</th>
-                        <th class="wk-dur" scope="col">Czas</th>
+                        <th class="wk-hours" scope="col">Godziny i czas</th>
                         <th class="wk-opis" scope="col">Wykonane czynności</th>
                         <th class="wk-edit no-print" scope="col"><span class="sr-only">Akcje</span></th>
                     </tr>
@@ -322,16 +321,14 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                         </th>
                         <td class="wk-hours">
                             <?php if ($w): ?>
-                                <span class="chip chip-from"><?= e($w['godzina_od']) ?: '—' ?></span>
-                                <span class="chip-sep">–</span>
-                                <span class="chip chip-to"><?= e($w['godzina_do']) ?: '—' ?></span>
-                            <?php else: ?>
-                                <span class="wk-none">—</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="wk-dur">
-                            <?php if ($mm !== null): ?>
-                                <span class="wk-dur-pill"><?= e(format_duration_compact($mm)) ?></span>
+                                <span class="wk-range">
+                                    <span class="chip chip-from"><?= e($w['godzina_od']) ?: '—' ?></span>
+                                    <span class="chip-sep">–</span>
+                                    <span class="chip chip-to"><?= e($w['godzina_do']) ?: '—' ?></span>
+                                </span>
+                                <?php if ($mm !== null): ?>
+                                    <span class="wk-dur-pill"><?= e(format_duration_compact($mm)) ?></span>
+                                <?php endif; ?>
                             <?php else: ?>
                                 <span class="wk-none">—</span>
                             <?php endif; ?>
@@ -354,8 +351,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                 <tfoot>
                     <tr>
                         <th scope="row" class="wk-day">Razem</th>
-                        <td class="wk-hours"></td>
-                        <td class="wk-dur wk-total"><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></td>
+                        <td class="wk-hours wk-total"><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></td>
                         <td class="wk-opis wk-total"><?= $tydz_filled ?> z 7 dni z wpisem</td>
                         <td class="wk-edit no-print"></td>
                     </tr>
