@@ -151,7 +151,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dziennik Praktyk — <?= $tydzien ? 'tydzień ' . e(week_number($data)) : e($data) ?></title>
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/style.css?v=<?= @filemtime(__DIR__ . '/assets/style.css') ?: time() ?>">
 </head>
 <body style="<?= e($theme_vars) ?>">
 <div class="app">
@@ -546,6 +546,6 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
     <?php endif; ?>
 
 </div>
-<script src="assets/app.js"></script>
+<script src="assets/app.js?v=<?= @filemtime(__DIR__ . '/assets/app.js') ?: time() ?>"></script>
 </body>
 </html>

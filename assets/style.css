@@ -878,9 +878,9 @@ body {
 
 /* Zmiana koloru po najechaniu myszką */
 .wk-edit-link:hover {
-    background: var(--tint);
+    background: var(--primary);
     border-color: var(--primary);
-    color: var(--primary-dark);
+    color: #fff;
 }
 .wk-edit-link.btn-today:hover {
     background: var(--primary-dark);
