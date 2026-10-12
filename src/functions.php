@@ -163,6 +163,22 @@ function format_duration(int $minutes): string
     return intdiv($minutes, 60) . ' h ' . ($minutes % 60) . ' min';
 }
 
+/** Zwięzły zapis czasu trwania, np. „8 h", „45 min", „7 h 30 min". */
+function format_duration_compact(int $minutes): string
+{
+    $h = intdiv($minutes, 60);
+    $m = $minutes % 60;
+
+    if ($m === 0) {
+        return $h . ' h';
+    }
+    if ($h === 0) {
+        return $m . ' min';
+    }
+
+    return $h . ' h ' . $m . ' min';
+}
+
 /** Słownik nazw dni tygodnia: [pełna, skrócona]. */
 function weekday_names(): array
 {

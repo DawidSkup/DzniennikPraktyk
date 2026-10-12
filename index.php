@@ -61,6 +61,7 @@ $wpis  = get_wpis($data);
 $prev  = prev_date($data);
 $next  = next_date($data);
 $dates = all_dates();
+$dzis  = date('Y-m-d');
 
 // --- Dane widoku tygodniowego (poniedziałek–niedziela) -------------------
 $tydz_start  = week_start($data);
@@ -89,6 +90,7 @@ for ($i = 0; $i < 7; $i++) {
     }
     $tydz_dni[$d] = ['wpis' => $w, 'min' => $min];
 }
+$tydz_srednia = $tydz_filled > 0 ? intdiv($tydz_total, $tydz_filled) : 0;
 
 // --- Cele nawigacji: w widoku tygodniowym skaczemy o 7 dni --------------
 if ($tydzien) {
@@ -268,28 +270,68 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             </span>
         </header>
 
+        <div class="week-facts no-print">
+            <div class="week-fact">
+                <span>Łączny czas pracy</span>
+                <b><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></b>
+            </div>
+            <div class="week-fact">
+                <span>Dni z wpisem</span>
+                <b><?= $tydz_filled ?> / 7</b>
+            </div>
+            <div class="week-fact">
+                <span>Średnio / dzień</span>
+                <b><?= $tydz_filled > 0 ? e(format_duration($tydz_srednia)) : '—' ?></b>
+            </div>
+        </div>
+
         <div class="week-scroll">
             <table class="week-table">
                 <thead>
                     <tr>
                         <th class="wk-day" scope="col">Dzień</th>
                         <th class="wk-hours" scope="col">Godziny</th>
+                        <th class="wk-dur" scope="col">Czas</th>
                         <th class="wk-opis" scope="col">Wykonane czynności</th>
                         <th class="wk-edit no-print" scope="col"><span class="sr-only">Akcje</span></th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($tydz_dni as $d => $info): $w = $info['wpis']; ?>
-                    <tr class="<?= $w ? 'is-done' : 'is-empty' ?><?= $d === $data ? ' is-active' : '' ?>">
+                <?php foreach ($tydz_dni as $d => $info): $w = $info['wpis']; $mm = $info['min']; ?>
+                    <?php
+                        $klasy = $w ? 'is-done' : 'is-empty';
+                        if ((int) (new DateTime($d))->format('N') >= 6) {
+                            $klasy .= ' is-weekend';
+                        }
+                        if ($d === $dzis) {
+                            $klasy .= ' is-today';
+                        }
+                        if ($d === $data) {
+                            $klasy .= ' is-active';
+                        }
+                    ?>
+                    <tr class="<?= $klasy ?>">
                         <th scope="row" class="wk-day">
-                            <span class="wk-weekday"><?= e(format_weekday_short($d)) ?></span>
-                            <span class="wk-date"><?= e((new DateTime($d))->format('d.m.Y')) ?></span>
+                            <span class="wk-daycell">
+                                <span class="wk-dot" aria-hidden="true"></span>
+                                <span class="wk-daytext">
+                                    <span class="wk-weekday"><?= e(format_weekday_short($d)) ?></span>
+                                    <span class="wk-date"><?= e((new DateTime($d))->format('d.m.Y')) ?><?= $d === $dzis ? ' <span class="wk-today">dziś</span>' : '' ?></span>
+                                </span>
+                            </span>
                         </th>
                         <td class="wk-hours">
                             <?php if ($w): ?>
                                 <span class="chip chip-from"><?= e($w['godzina_od']) ?: '—' ?></span>
-                                <span class="chip-sep">→</span>
+                                <span class="chip-sep">–</span>
                                 <span class="chip chip-to"><?= e($w['godzina_do']) ?: '—' ?></span>
+                            <?php else: ?>
+                                <span class="wk-none">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="wk-dur">
+                            <?php if ($mm !== null): ?>
+                                <span class="wk-dur-pill"><?= e(format_duration_compact($mm)) ?></span>
                             <?php else: ?>
                                 <span class="wk-none">—</span>
                             <?php endif; ?>
@@ -304,7 +346,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                             <?php endif; ?>
                         </td>
                         <td class="wk-edit no-print">
-                            <a class="wk-edit-link" href="index.php?data=<?= e($d) ?>"><?= $w ? 'Edytuj' : 'Dodaj' ?></a>
+                            <a class="wk-edit-link" href="index.php?data=<?= e($d) ?>"><?= $w ? 'Otwórz' : 'Dodaj' ?></a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -312,8 +354,10 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                 <tfoot>
                     <tr>
                         <th scope="row" class="wk-day">Razem</th>
-                        <td class="wk-hours wk-total"><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></td>
-                        <td colspan="2" class="wk-opis wk-total"><?= $tydz_filled ?> z 7 dni z wpisem</td>
+                        <td class="wk-hours"></td>
+                        <td class="wk-dur wk-total"><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></td>
+                        <td class="wk-opis wk-total"><?= $tydz_filled ?> z 7 dni z wpisem</td>
+                        <td class="wk-edit no-print"></td>
                     </tr>
                 </tfoot>
             </table>
