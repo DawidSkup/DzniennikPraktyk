@@ -46,6 +46,7 @@
 - [x] Skróty/edycja pojedynczego dnia z poziomu tabeli tygodnia
 - [x] Wydruk całego tygodnia (`@media print` dla tabeli)
 - [x] Poprawa czytelności: większa typografia, zebra, scalenie „Godziny i czas", lepszy kontrast
+- [x] Klasyczna tabela z siatką (wyraźne linie komórek), także na wydruku
 
 ## Etap 7 — Testy i finalizacja
 

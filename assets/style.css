@@ -765,15 +765,11 @@ body {
 
 .week-table th,
 .week-table td {
-    padding: 16px 18px;
-    border: 0;
-    border-bottom: 1px solid var(--line);
+    padding: 14px 16px;
+    border: 1px solid var(--line);
     text-align: left;
     vertical-align: top;
 }
-
-.week-table tbody tr:last-child th,
-.week-table tbody tr:last-child td { border-bottom: 0; }
 
 .week-table thead th {
     background: var(--tint);
@@ -782,7 +778,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .7px;
-    border-bottom: 2px solid var(--line);
+    border-bottom: 2px solid var(--primary);
     white-space: nowrap;
     vertical-align: middle;
 }
@@ -1019,8 +1015,7 @@ body {
     .week-table { min-width: 0; font-size: 10.5pt; page-break-inside: auto; }
     .week-table th,
     .week-table td {
-        border: 0;
-        border-bottom: 1px solid #000;
+        border: 1px solid #000;
         padding: 6px 8px;
     }
     .week-table thead th {
@@ -1037,7 +1032,6 @@ body {
     .week-table tfoot td {
         background: none;
         border-top: 2px solid #000;
-        border-bottom: 0;
     }
     .wk-weekday,
     .wk-date,
