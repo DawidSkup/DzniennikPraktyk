@@ -37,10 +37,20 @@
 - [x] Style `@media print` — chowanie nawigacji i formularza
 - [x] Układ dokumentowy: nagłówek, data, godziny, opis, miejsce na podpis
 
-## Etap 6 — Testy i finalizacja
+## Etap 6 — Widok tygodniowy
+
+- [x] Przełącznik widoku **dzień / tydzień** (`widok=dzien|tydzien`)
+- [x] Tabela tygodnia: poniedziałek–niedziela (data, godziny, opis, status)
+- [x] Podsumowanie tygodnia (łączny czas pracy, liczba dni z wpisem)
+- [x] Nawigacja ← / → skacząca o tydzień oraz skrót klawiszowy `T`
+- [x] Skróty/edycja pojedynczego dnia z poziomu tabeli tygodnia
+- [x] Wydruk całego tygodnia (`@media print` dla tabeli)
+
+## Etap 7 — Testy i finalizacja
 
 - [x] Test dodawania / edycji / usuwania wpisów
 - [x] Test nawigacji między dniami
+- [x] Test przełączania widoku dzień / tydzień i nawigacji tygodniowej
 - [x] Test zapisu w bazie SQLite
 - [ ] Test wydruku (podgląd wydruku w przeglądarce — do sprawdzenia przez użytkownika)
 - [x] Przegląd zgodności z `AGENTS.md`

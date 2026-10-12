@@ -52,10 +52,58 @@ if (!is_valid_date($data)) {
     $data = last_date() ?? date('Y-m-d');
 }
 
+// --- Wybrany widok: „dzien" (jeden dzień) lub „tydzien" ------------------
+$widok      = (($_GET['widok'] ?? 'dzien') === 'tydzien') ? 'tydzien' : 'dzien';
+$tydzien    = $widok === 'tydzien';
+$widok_qs   = $tydzien ? '&widok=tydzien' : ''; // doklejane do linków GET
+
 $wpis  = get_wpis($data);
 $prev  = prev_date($data);
 $next  = next_date($data);
 $dates = all_dates();
+
+// --- Dane widoku tygodniowego (poniedziałek–niedziela) -------------------
+$tydz_start  = week_start($data);
+$tydz_end    = week_end($data);
+$mapa_wpisow = wpisy_map();
+
+// Unikalne tygodnie (poniedziałki), które mają jakikolwiek wpis — do listy wyboru.
+$tygodnie = [];
+foreach ($dates as $d) {
+    $tygodnie[week_start($d)] = true;
+}
+$tygodnie = array_keys($tygodnie);
+sort($tygodnie);
+$tydz_dni    = [];
+$tydz_total  = 0;
+$tydz_filled = 0;
+for ($i = 0; $i < 7; $i++) {
+    $d   = date_shift($tydz_start, $i);
+    $w   = $mapa_wpisow[$d] ?? null;
+    $min = $w ? minutes_between((string) $w['godzina_od'], (string) $w['godzina_do']) : null;
+    if ($min !== null) {
+        $tydz_total += $min;
+    }
+    if ($w) {
+        $tydz_filled++;
+    }
+    $tydz_dni[$d] = ['wpis' => $w, 'min' => $min];
+}
+
+// --- Cele nawigacji: w widoku tygodniowym skaczemy o 7 dni --------------
+if ($tydzien) {
+    $nav_prev = date_shift($data, -7);
+    $nav_next = date_shift($data, 7);
+    $prev_off = false;
+    $next_off = false;
+} else {
+    $nav_prev = $prev;
+    $nav_next = $next;
+    $prev_off = $prev === null;
+    $next_off = $next === null;
+}
+$nav_label_prev = $tydzien ? 'Poprzedni tydzień' : 'Poprzedni dzień';
+$nav_label_next = $tydzien ? 'Następny tydzień' : 'Następny dzień';
 
 $theme = day_theme($data);
 $theme_vars = sprintf(
@@ -100,7 +148,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dziennik Praktyk — <?= e($data) ?></title>
+    <title>Dziennik Praktyk — <?= $tydzien ? 'tydzień ' . e(week_number($data)) : e($data) ?></title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body style="<?= e($theme_vars) ?>">
@@ -116,7 +164,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             </div>
         </div>
         <div class="topbar-actions">
-            <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?>">Dzisiaj</a>
+            <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
             <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
         </div>
     </header>
@@ -131,7 +179,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                     <ul class="day-list">
                         <?php foreach ($dates as $d): ?>
                             <li>
-                                <a href="index.php?data=<?= e($d) ?>" class="<?= $d === $data ? 'active' : '' ?>">
+                                <a href="index.php?data=<?= e($d) ?><?= $widok_qs ?>" class="<?= $d === $data ? 'active' : '' ?>">
                                     <span class="day-list-date"><?= e(format_date_short($d)) ?></span>
                                     <?php $mm = $czas_wg_dnia[$d] ?? null; ?>
                                     <?php if ($mm !== null): ?>
@@ -149,28 +197,54 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
 
         <main class="main">
 
-    <!-- Nawigacja między dniami -->
+    <!-- Przełącznik widoku: dzień / tydzień -->
+    <div class="viewswitch no-print" role="group" aria-label="Przełącz widok">
+        <a class="viewswitch-btn<?= $tydzien ? '' : ' active' ?>"
+           href="index.php?data=<?= e($data) ?>"<?= $tydzien ? '' : ' aria-current="true"' ?>>📅 Dzień</a>
+        <a class="viewswitch-btn<?= $tydzien ? ' active' : '' ?>"
+           href="index.php?data=<?= e($data) ?>&widok=tydzien"<?= $tydzien ? ' aria-current="true"' : '' ?>>🗓 Tydzień</a>
+    </div>
+
+    <!-- Nawigacja między dniami / tygodniami -->
     <nav class="daynav no-print">
-        <a class="daynav-arrow" href="index.php?data=<?= e($prev ?? $data) ?>"
-           <?= $prev === null ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>
-           title="Poprzedni dzień">←</a>
+        <a class="daynav-arrow daynav-prev" href="index.php?data=<?= e($nav_prev ?? $data) ?><?= $widok_qs ?>"
+           <?= $prev_off ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>
+           title="<?= e($nav_label_prev) ?>">←</a>
 
         <form class="jump" method="get" action="index.php">
-            <select name="data" onchange="this.form.submit()" aria-label="Wybierz dzień">
-                <?php if (!$dates): ?>
-                    <option value="<?= e($data) ?>"><?= e(format_date_full($data)) ?></option>
-                <?php endif; ?>
-                <?php foreach ($dates as $d): ?>
-                    <option value="<?= e($d) ?>" <?= $d === $data ? 'selected' : '' ?>>
-                        <?= e(format_date_full($d)) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <?php if ($tydzien): ?>
+                <input type="hidden" name="widok" value="tydzien">
+            <?php endif; ?>
+            <?php if ($tydzien): ?>
+                <select name="data" onchange="this.form.submit()" aria-label="Wybierz tydzień">
+                    <?php if (!in_array($tydz_start, $tygodnie, true)): ?>
+                        <option value="<?= e($tydz_start) ?>" selected>
+                            <?= e(format_date_short($tydz_start)) ?> – <?= e(format_date_short($tydz_end)) ?>
+                        </option>
+                    <?php endif; ?>
+                    <?php foreach ($tygodnie as $ws): ?>
+                        <option value="<?= e($ws) ?>" <?= $ws === $tydz_start ? 'selected' : '' ?>>
+                            <?= e(format_date_short($ws)) ?> – <?= e(format_date_short(date_shift($ws, 6))) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            <?php else: ?>
+                <select name="data" onchange="this.form.submit()" aria-label="Wybierz dzień">
+                    <?php if (!in_array($data, $dates, true)): ?>
+                        <option value="<?= e($data) ?>" selected><?= e(format_date_full($data)) ?></option>
+                    <?php endif; ?>
+                    <?php foreach ($dates as $d): ?>
+                        <option value="<?= e($d) ?>" <?= $d === $data ? 'selected' : '' ?>>
+                            <?= e(format_date_full($d)) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            <?php endif; ?>
         </form>
 
-        <a class="daynav-arrow" href="index.php?data=<?= e($next ?? $data) ?>"
-           <?= $next === null ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>
-           title="Następny dzień">→</a>
+        <a class="daynav-arrow daynav-next" href="index.php?data=<?= e($nav_next ?? $data) ?><?= $widok_qs ?>"
+           <?= $next_off ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>
+           title="<?= e($nav_label_next) ?>">→</a>
     </nav>
 
     <?php if ($zapisano): ?>
@@ -181,6 +255,76 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
         <p class="alert alert-danger no-print">🧹 Usunięto wszystkie wpisy z dziennika.</p>
     <?php endif; ?>
 
+    <?php if ($tydzien): ?>
+    <!-- Dokument tygodnia (widok do wydruku) -->
+    <article class="sheet week-sheet">
+        <header class="sheet-head">
+            <div>
+                <p class="sheet-kicker">Dziennik Praktyk · tydzień <?= e(week_number($data)) ?></p>
+                <p class="sheet-date"><?= e(format_date_short($tydz_start)) ?> — <?= e(format_date_short($tydz_end)) ?></p>
+            </div>
+            <span class="status-pill <?= $tydz_filled > 0 ? 'is-done' : 'is-empty' ?>">
+                <?= $tydz_filled ?> z 7 dni
+            </span>
+        </header>
+
+        <div class="week-scroll">
+            <table class="week-table">
+                <thead>
+                    <tr>
+                        <th class="wk-day" scope="col">Dzień</th>
+                        <th class="wk-hours" scope="col">Godziny</th>
+                        <th class="wk-opis" scope="col">Wykonane czynności</th>
+                        <th class="wk-edit no-print" scope="col"><span class="sr-only">Akcje</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($tydz_dni as $d => $info): $w = $info['wpis']; ?>
+                    <tr class="<?= $w ? 'is-done' : 'is-empty' ?><?= $d === $data ? ' is-active' : '' ?>">
+                        <th scope="row" class="wk-day">
+                            <span class="wk-weekday"><?= e(format_weekday_short($d)) ?></span>
+                            <span class="wk-date"><?= e((new DateTime($d))->format('d.m.Y')) ?></span>
+                        </th>
+                        <td class="wk-hours">
+                            <?php if ($w): ?>
+                                <span class="chip chip-from"><?= e($w['godzina_od']) ?: '—' ?></span>
+                                <span class="chip-sep">→</span>
+                                <span class="chip chip-to"><?= e($w['godzina_do']) ?: '—' ?></span>
+                            <?php else: ?>
+                                <span class="wk-none">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="wk-opis">
+                            <?php if ($w && trim((string) $w['opis']) !== ''): ?>
+                                <?= nl2br(e($w['opis'])) ?>
+                            <?php elseif ($w): ?>
+                                <span class="wk-none">(brak opisu)</span>
+                            <?php else: ?>
+                                <span class="wk-none">Brak wpisu</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="wk-edit no-print">
+                            <a class="wk-edit-link" href="index.php?data=<?= e($d) ?>"><?= $w ? 'Edytuj' : 'Dodaj' ?></a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th scope="row" class="wk-day">Razem</th>
+                        <td class="wk-hours wk-total"><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></td>
+                        <td colspan="2" class="wk-opis wk-total"><?= $tydz_filled ?> z 7 dni z wpisem</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="signature">
+            <span>Podpis opiekuna praktyk</span>
+            <span class="line"></span>
+        </div>
+    </article>
+    <?php else: ?>
     <!-- Dokument dnia (widok do wydruku) -->
     <article class="sheet">
         <header class="sheet-head">
@@ -218,7 +362,15 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             <p class="empty">Brak wpisu na ten dzień. Uzupełnij formularz poniżej i zapisz.</p>
         <?php endif; ?>
     </article>
+    <?php endif; ?>
 
+    <?php if ($tydzien): ?>
+        <p class="week-notice no-print">
+            To podgląd całego tygodnia — do przeglądu i wydruku. Aby dodać nowy lub poprawić
+            istniejący wpis, <a href="index.php?data=<?= e($data) ?>">przejdź do widoku dnia</a>
+            albo skorzystaj z przycisku przy wybranym dniu.
+        </p>
+    <?php else: ?>
     <!-- Formularz (nie drukuje się) -->
     <section class="form-card no-print">
         <header class="form-head">
@@ -271,6 +423,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             </form>
         <?php endif; ?>
     </section>
+    <?php endif; ?>
 
         <!-- Panel prawy: statystyki -->
         <aside class="side no-print">
@@ -284,11 +437,20 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                     <div class="stat"><span>Do</span><b><?= $ilosc_dni > 0 ? e((new DateTime($wszystkie[$ilosc_dni - 1]['data']))->format('d.m.Y')) : '—' ?></b></div>
                 </div>
 
+                <?php if ($tydzien): ?>
+                <div class="panel">
+                    <h3>Ten tydzień</h3>
+                    <div class="stat"><span>Dni z wpisem</span><b><?= $tydz_filled ?> / 7</b></div>
+                    <div class="stat"><span>Łącznie godzin</span><b><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></b></div>
+                    <div class="stat"><span>Tydzień</span><b>nr <?= e(week_number($data)) ?></b></div>
+                </div>
+                <?php else: ?>
                 <div class="panel">
                     <h3>Ten dzień</h3>
                     <div class="stat"><span>Godziny</span><b><?= $dzien_min !== null ? e(format_duration($dzien_min)) : '—' ?></b></div>
                     <div class="stat"><span>Status</span><b><?= $wpis ? 'Uzupełniony' : 'Pusty' ?></b></div>
                 </div>
+                <?php endif; ?>
 
                 <div class="panel">
                     <h3>Motyw dnia</h3>
@@ -302,8 +464,9 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                 <div class="panel">
                     <h3>Skróty</h3>
                     <ul class="hints">
-                        <li><span class="kbd">←</span> <span class="kbd">→</span> zmiana dnia</li>
-                        <li><span class="kbd">Ctrl</span> + <span class="kbd">P</span> wydruk dnia</li>
+                        <li><span class="kbd">←</span> <span class="kbd">→</span> <?= $tydzien ? 'zmiana tygodnia' : 'zmiana dnia' ?></li>
+                        <li><span class="kbd">T</span> dzień / tydzień</li>
+                        <li><span class="kbd">Ctrl</span> + <span class="kbd">P</span> wydruk <?= $tydzien ? 'tygodnia' : 'dnia' ?></li>
                     </ul>
                 </div>
             </div>
@@ -312,7 +475,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
     </div><!-- /layout -->
 
     <footer class="footer no-print">
-        Dziennik Praktyk · jeden dzień na stronę · przełączaj strzałkami ← →
+        Dziennik Praktyk · przełączaj dni i tygodnie strzałkami ← → · widok: <?= $tydzien ? 'tygodniowy' : 'dzienny' ?>
     </footer>
 
     <!-- Strefa usuwania: na samym dole strony -->

@@ -16,9 +16,10 @@ Prosta aplikacja w PHP + SQLite do prowadzenia dziennika praktyk: jeden dzień n
 ## Funkcje
 
 - Dodawanie / edycja / usuwanie wpisów (data, godziny od–do, opis czynności)
-- Jeden dzień na ekranie, przełączanie przyciskami ← / → oraz strzałkami na klawiaturze
+- Dwa widoki: **dzienny** (jeden dzień na ekranie) i **tygodniowy** (tabela pon.–nd. z podsumowaniem)
+- Przełączanie przyciskami ← / → oraz strzałkami na klawiaturze (skok o dzień lub tydzień), skrót `T` przełącza widok
 - Lista dni do szybkiego wyboru + przycisk „Dzisiaj"
-- Wydruk pojedynczego dnia (przycisk „Drukuj", style `@media print`)
+- Wydruk pojedynczego dnia lub całego tygodnia (przycisk „Drukuj", style `@media print`)
 
 ## Struktura
 

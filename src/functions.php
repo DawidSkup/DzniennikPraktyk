@@ -98,6 +98,50 @@ function all_wpisy(): array
     return db()->query('SELECT * FROM wpisy ORDER BY data ASC')->fetchAll();
 }
 
+/** Wpisy w formie mapy [data => wiersz]. */
+function wpisy_map(): array
+{
+    $map = [];
+    foreach (all_wpisy() as $w) {
+        $map[$w['data']] = $w;
+    }
+
+    return $map;
+}
+
+/** Przesuwa datę o podaną liczbę dni (wartości ujemne cofają). */
+function date_shift(string $data, int $days): string
+{
+    $dt = new DateTime($data);
+    $dt->modify(($days >= 0 ? '+' : '') . $days . ' day');
+
+    return $dt->format('Y-m-d');
+}
+
+/** Poniedziałek tygodnia, do którego należy podana data. */
+function week_start(string $data): string
+{
+    $dt  = new DateTime($data);
+    $dow = (int) $dt->format('N'); // 1 = poniedziałek … 7 = niedziela
+    if ($dow > 1) {
+        $dt->modify('-' . ($dow - 1) . ' day');
+    }
+
+    return $dt->format('Y-m-d');
+}
+
+/** Niedziela tygodnia, do którego należy podana data. */
+function week_end(string $data): string
+{
+    return date_shift(week_start($data), 6);
+}
+
+/** Numer tygodnia ISO, np. „41". */
+function week_number(string $data): string
+{
+    return (new DateTime($data))->format('W');
+}
+
 /** Liczba minut między godzinami (od–do) lub null, gdy nieprawidłowe. */
 function minutes_between(string $od, string $do): ?int
 {
@@ -119,22 +163,32 @@ function format_duration(int $minutes): string
     return intdiv($minutes, 60) . ' h ' . ($minutes % 60) . ' min';
 }
 
+/** Słownik nazw dni tygodnia: [pełna, skrócona]. */
+function weekday_names(): array
+{
+    return [
+        'Monday'    => ['poniedziałek', 'pon.'],
+        'Tuesday'   => ['wtorek', 'wt.'],
+        'Wednesday' => ['środa', 'śr.'],
+        'Thursday'  => ['czwartek', 'czw.'],
+        'Friday'    => ['piątek', 'pt.'],
+        'Saturday'  => ['sobota', 'sob.'],
+        'Sunday'    => ['niedziela', 'nd.'],
+    ];
+}
+
+/** Krótka nazwa dnia tygodnia, np. „pt.". */
+function format_weekday_short(string $data): string
+{
+    $names = weekday_names();
+
+    return $names[(new DateTime($data))->format('l')][1];
+}
+
 /** Krótki zapis daty, np. „pt. 09.10.2026". */
 function format_date_short(string $data): string
 {
-    $short = [
-        'Monday'    => 'pon.',
-        'Tuesday'   => 'wt.',
-        'Wednesday' => 'śr.',
-        'Thursday'  => 'czw.',
-        'Friday'    => 'pt.',
-        'Saturday'  => 'sob.',
-        'Sunday'    => 'nd.',
-    ];
-
-    $dt = new DateTime($data);
-
-    return $short[$dt->format('l')] . ' ' . $dt->format('d.m.Y');
+    return format_weekday_short($data) . ' ' . (new DateTime($data))->format('d.m.Y');
 }
 
 /** Waliduje godzinę w formacie HH:MM (lub pusty string). */
@@ -229,17 +283,7 @@ function e(?string $value): string
 /** Formatuje datę ISO na czytelną wersję (np. poniedziałek, 09.10.2026). */
 function format_date_full(string $data): string
 {
-    $dni = [
-        'Monday'    => 'poniedziałek',
-        'Tuesday'   => 'wtorek',
-        'Wednesday' => 'środa',
-        'Thursday'  => 'czwartek',
-        'Friday'    => 'piątek',
-        'Saturday'  => 'sobota',
-        'Sunday'    => 'niedziela',
-    ];
+    $names = weekday_names();
 
-    $dt = new DateTime($data);
-
-    return $dni[$dt->format('l')] . ', ' . $dt->format('d.m.Y');
+    return $names[(new DateTime($data))->format('l')][0] . ', ' . (new DateTime($data))->format('d.m.Y');
 }

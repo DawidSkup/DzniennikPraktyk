@@ -15,9 +15,11 @@
 - Zakres dat **dowolny** — sam wpisuję daty, aplikacja pokazuje tylko wpisane dni
 - Każdy dzień wyświetlany jest na osobnej „stronie" (jeden dzień na ekranie)
 - Guziki przełączania między stronami: **← poprzedni dzień** / **następny dzień →**
+- Przełączanie widoku **dzień / tydzień** — widok tygodniowy pokazuje cały tydzień
+  (poniedziałek–niedziela) w tabeli z podsumowaniem
 - Dodawanie, edycja i usuwanie wpisów
 
 ## Wydruk
 
-- Gotowy do wydruku **pojedynczy dzień** — przycisk „Drukuj" drukuje aktualnie oglądany dzień
+- Gotowy do wydruku **pojedynczy dzień** lub **cały tydzień** — przycisk „Drukuj" drukuje aktualnie oglądany widok
 - Układ wydruku: czysty, dokumentowy (bez zbędnych elementów GUI), styl `@media print`
