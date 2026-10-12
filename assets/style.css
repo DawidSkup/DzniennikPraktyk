@@ -220,12 +220,21 @@ body {
 
 /* --- Nagłówek aplikacji --- */
 .topbar {
+    position: sticky;
+    top: 8px;
+    z-index: 40;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
     margin-bottom: 16px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, .82);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(8px);
 }
 
 .brand {
@@ -1058,6 +1067,9 @@ body {
 :root[data-theme="dark"] .theme-switch {
     background: rgba(255, 255, 255, .05);
     border-color: var(--line);
+}
+:root[data-theme="dark"] .topbar {
+    background: rgba(15, 23, 42, .82);
 }
 :root[data-theme="dark"] .theme-btn:hover { background: rgba(255, 255, 255, .12); }
 
