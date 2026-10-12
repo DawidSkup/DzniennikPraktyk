@@ -155,6 +155,15 @@ body {
 .day-list a.is-weekend:not(.active) .day-list-time { color: var(--danger); }
 .day-list a.is-weekend:not(.active):hover { background: #fee2e2; }
 
+/* Kliknięty (aktywny) weekend — jasnoczerwone tło */
+.day-list a.is-weekend.active {
+    background: #fee2e2;
+    color: var(--danger);
+    font-weight: 700;
+    box-shadow: inset 3px 0 0 var(--danger);
+}
+.day-list a.is-weekend.active .day-list-time { color: var(--danger); }
+
 .stat {
     display: flex;
     align-items: baseline;
@@ -456,6 +465,10 @@ body {
 .status-pill-weekend { background: var(--danger); color: #fff; }
 
 /* Weekend w widoku dnia — na czerwono */
+.sheet-weekend {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
 .sheet-weekend .sheet-kicker,
 .sheet-weekend .sheet-date { color: var(--danger); }
 .sheet-weekend::before {
@@ -999,6 +1012,7 @@ body {
         border-radius: 0;
         box-shadow: none;
         padding: 0;
+        background: #fff;
     }
 
     .sheet::before { display: none; }
