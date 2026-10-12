@@ -72,7 +72,7 @@ body {
 
 .side {
     position: sticky;
-    top: 20px;
+    top: 84px;
 }
 
 .side-stack {
@@ -218,16 +218,14 @@ body {
     color: var(--ink);
 }
 
-/* --- Nagłówek aplikacji --- */
+/* --- Nagłówek aplikacji: tytuł przyklejony u góry --- */
 .topbar {
     position: sticky;
     top: 8px;
     z-index: 40;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 16px;
-    flex-wrap: wrap;
     margin-bottom: 16px;
     padding: 10px 14px;
     background: rgba(255, 255, 255, .82);
@@ -269,7 +267,10 @@ body {
 
 .topbar-actions {
     display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
+    margin-bottom: 16px;
 }
 
 /* Przełącznik motywu: dzień / noc / automatyczny */

@@ -180,7 +180,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
 <body style="<?= e($theme_vars) ?>">
 <div class="app">
 
-    <!-- Nagłówek aplikacji -->
+    <!-- Nagłówek aplikacji: tylko tytuł przyklejony u góry -->
     <header class="topbar no-print">
         <div class="brand">
             <span class="brand-icon">📘</span>
@@ -189,16 +189,18 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                 <p class="brand-sub"><?= count($dates) ?> <?= count($dates) === 1 ? 'wpis' : 'wpisów' ?> w dzienniku</p>
             </div>
         </div>
-        <div class="topbar-actions">
-            <div class="theme-switch no-print" role="group" aria-label="Motyw: jasny, ciemny lub automatyczny">
-                <button type="button" class="theme-btn" data-theme-mode="light" aria-pressed="false" title="Tryb jasny (dzień)">☀️</button>
-                <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
-                <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
-            </div>
-            <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
-            <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
-        </div>
     </header>
+
+    <!-- Akcje przewijają się razem ze stroną -->
+    <div class="topbar-actions no-print" role="toolbar" aria-label="Akcje">
+        <div class="theme-switch no-print" role="group" aria-label="Motyw: jasny, ciemny lub automatyczny">
+            <button type="button" class="theme-btn" data-theme-mode="light" aria-pressed="false" title="Tryb jasny (dzień)">☀️</button>
+            <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
+            <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
+        </div>
+        <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
+        <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
+    </div>
 
     <div class="layout">
 
