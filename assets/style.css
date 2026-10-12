@@ -698,24 +698,38 @@ body {
 }
 
 .viewswitch-btn {
-    padding: 7px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
     border-radius: 999px;
     color: var(--muted);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
-    transition: background .15s, color .15s, box-shadow .15s;
+    transition: background .15s, color .15s, box-shadow .15s, transform .12s;
 }
 
-.viewswitch-btn:hover { color: var(--primary-dark); background: var(--tint); }
+.viewswitch-btn .viewswitch-ico { font-size: 15px; line-height: 1; }
+
+.viewswitch-btn:hover {
+    color: var(--primary-dark);
+    background: var(--tint);
+}
 
 .viewswitch-btn.active {
     background: linear-gradient(135deg, var(--primary), var(--accent));
     color: #fff;
-    box-shadow: 0 3px 10px rgba(30, 41, 59, .18);
+    box-shadow: 0 4px 12px rgba(30, 41, 59, .22);
 }
-.viewswitch-btn.active:hover { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+.viewswitch-btn.active:hover { color: #fff; }
+
+.viewswitch-btn:focus-visible,
+.wk-edit-link:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+}
 
 /* --- Tabela tygodnia --- */
 .week-facts {
@@ -798,7 +812,7 @@ body {
 
 .wk-day { width: 156px; }
 .wk-hours { width: 250px; white-space: nowrap; }
-.week-table .wk-edit { width: 104px; text-align: right; vertical-align: middle; }
+.week-table .wk-edit { width: 112px; text-align: right; vertical-align: middle; }
 
 .wk-range { display: inline-flex; align-items: center; }
 
@@ -884,22 +898,41 @@ body {
 .wk-edit-link {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 7px 13px;
+    min-width: 88px;
+    padding: 7px 12px;
     border: 1px solid var(--line);
     border-radius: 9px;
     background: #fff;
     color: var(--primary-dark);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
-    transition: background .15s, color .15s, border-color .15s, transform .12s;
+    transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .12s;
 }
-.wk-edit-link:hover {
-    background: var(--primary);
+.wk-edit-ico { font-size: 13px; line-height: 1; }
+
+/* Dzień z wpisem — otwarcie istniejącego wpisu */
+.wk-edit-open:hover {
+    background: var(--tint);
     border-color: var(--primary);
+    color: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+/* Pusty dzień — dodanie nowego wpisu */
+.wk-edit-add {
+    background: var(--mint);
+    border-color: transparent;
+    color: var(--mint-ink);
+}
+.wk-edit-add:hover {
+    background: var(--save);
+    border-color: var(--save);
     color: #fff;
     transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(5, 150, 105, .28);
 }
 
 .week-notice {

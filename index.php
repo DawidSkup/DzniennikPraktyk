@@ -202,9 +202,13 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
     <!-- Przełącznik widoku: dzień / tydzień -->
     <div class="viewswitch no-print" role="group" aria-label="Przełącz widok">
         <a class="viewswitch-btn<?= $tydzien ? '' : ' active' ?>"
-           href="index.php?data=<?= e($data) ?>"<?= $tydzien ? '' : ' aria-current="true"' ?>>📅 Dzień</a>
+           href="index.php?data=<?= e($data) ?>"<?= $tydzien ? '' : ' aria-current="true"' ?>>
+            <span class="viewswitch-ico" aria-hidden="true">📅</span> Dzień
+        </a>
         <a class="viewswitch-btn<?= $tydzien ? ' active' : '' ?>"
-           href="index.php?data=<?= e($data) ?>&widok=tydzien"<?= $tydzien ? ' aria-current="true"' : '' ?>>🗓 Tydzień</a>
+           href="index.php?data=<?= e($data) ?>&widok=tydzien"<?= $tydzien ? ' aria-current="true"' : '' ?>>
+            <span class="viewswitch-ico" aria-hidden="true">🗓️</span> Tydzień
+        </a>
     </div>
 
     <!-- Nawigacja między dniami / tygodniami -->
@@ -343,7 +347,15 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                             <?php endif; ?>
                         </td>
                         <td class="wk-edit no-print">
-                            <a class="wk-edit-link" href="index.php?data=<?= e($d) ?>"><?= $w ? 'Otwórz' : 'Dodaj' ?></a>
+                            <?php if ($w): ?>
+                                <a class="wk-edit-link wk-edit-open" href="index.php?data=<?= e($d) ?>">
+                                    <span class="wk-edit-ico" aria-hidden="true">✏️</span> Otwórz
+                                </a>
+                            <?php else: ?>
+                                <a class="wk-edit-link wk-edit-add" href="index.php?data=<?= e($d) ?>">
+                                    <span class="wk-edit-ico" aria-hidden="true">➕</span> Dodaj
+                                </a>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
