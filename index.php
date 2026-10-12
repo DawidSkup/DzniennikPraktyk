@@ -63,6 +63,9 @@ $next  = next_date($data);
 $dates = all_dates();
 $dzis  = date('Y-m-d');
 
+// Czy oglądany dzień to weekend (sobota/niedziela) — dni bez praktyk.
+$dzien_weekend = (int) (new DateTime($data))->format('N') >= 6;
+
 // --- Dane widoku tygodniowego (poniedziałek–niedziela) -------------------
 $tydz_start  = week_start($data);
 $tydz_end    = week_end($data);
@@ -388,15 +391,20 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
     </article>
     <?php else: ?>
     <!-- Dokument dnia (widok do wydruku) -->
-    <article class="sheet">
+    <article class="sheet<?= $dzien_weekend ? ' sheet-weekend' : '' ?>">
         <header class="sheet-head">
             <div>
                 <p class="sheet-kicker">Dziennik Praktyk</p>
                 <p class="sheet-date"><?= e(format_date_full($data)) ?></p>
             </div>
-            <span class="status-pill <?= $wpis ? 'is-done' : 'is-empty' ?>">
-                <?= $wpis ? 'Uzupełniony' : 'Brak wpisu' ?>
-            </span>
+            <div class="sheet-pills">
+                <?php if ($dzien_weekend): ?>
+                    <span class="status-pill status-pill-weekend">Dzień bez praktyk</span>
+                <?php endif; ?>
+                <span class="status-pill <?= $wpis ? 'is-done' : 'is-empty' ?>">
+                    <?= $wpis ? 'Uzupełniony' : 'Brak wpisu' ?>
+                </span>
+            </div>
         </header>
 
         <?php if ($wpis): ?>

@@ -441,6 +441,21 @@ body {
 .status-pill.is-done { background: var(--mint); color: var(--mint-ink); }
 .status-pill.is-empty { background: #ffedd5; color: #b45309; }
 
+.sheet-pills {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.status-pill-weekend { background: var(--danger); color: #fff; }
+
+/* Weekend w widoku dnia — na czerwono */
+.sheet-weekend .sheet-kicker,
+.sheet-weekend .sheet-date { color: var(--danger); }
+.sheet-weekend::before {
+    background: linear-gradient(90deg, var(--danger), var(--danger-dark), var(--danger));
+}
+
 .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
