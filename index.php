@@ -155,6 +155,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
     <title>Dziennik Praktyk — <?= $tydzien ? 'tydzień ' . e(week_number($data)) : e($data) ?></title>
     <link rel="stylesheet" href="assets/style.css?v=<?= @filemtime(__DIR__ . '/assets/style.css') ?: time() ?>">
 </head>
