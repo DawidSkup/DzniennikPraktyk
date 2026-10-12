@@ -684,11 +684,17 @@ body {
     color: #991b1b;
 }
 
-/* --- Przełącznik widoku (dzień / tydzień) — styl spójny z .btn --- */
+/* --- Przełącznik widoku (dzień / tydzień) — ramka + styl spójny z .btn --- */
 .viewswitch {
     display: inline-flex;
-    gap: 8px;
+    gap: 6px;
+    padding: 6px;
     margin-bottom: 12px;
+    background: rgba(255, 255, 255, .8);
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(6px);
 }
 
 .viewswitch-btn {
