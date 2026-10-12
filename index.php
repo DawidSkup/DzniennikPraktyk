@@ -357,7 +357,10 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                                     <span class="wk-edit-ico" aria-hidden="true">📄</span> Otwórz
                                 </a>
                             <?php elseif ($weekend): ?>
-                                <span class="wk-none" aria-hidden="true">—</span>
+                                <a class="btn btn-today wk-edit-link" href="index.php?data=<?= e($d) ?>"
+                                   onclick="return confirm('Czy na pewno chcesz dodać wpis w weekend?\nSobota i niedziela to dni bez praktyk.');">
+                                    <span class="wk-edit-ico" aria-hidden="true">➕</span> Dodaj
+                                </a>
                             <?php else: ?>
                                 <a class="btn btn-today wk-edit-link" href="index.php?data=<?= e($d) ?>">
                                     <span class="wk-edit-ico" aria-hidden="true">➕</span> Dodaj
