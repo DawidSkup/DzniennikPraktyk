@@ -18,3 +18,24 @@ Options -Indexes
 
 # 3) Zablokuj katalog .git (historia repo) oraz bezpośredni dostęp do src/.
 RedirectMatch 404 (?i)/(\.git|src)(/|$)
+
+# 4) Kompresja odpowiedzi tekstowych (mniejszy transfer, szybsze ładowanie).
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+    AddOutputFilterByType DEFLATE text/javascript application/javascript application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# 5) Buforowanie zasobów statycznych. Pliki CSS/JS/obrazów są odwoływane
+#    z parametrem ?v=<mtime>, więc po zmianie adres się zmienia i można je
+#    trzymać w przeglądarce bardzo długo.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css                  "access plus 1 year"
+    ExpiresByType text/javascript           "access plus 1 year"
+    ExpiresByType application/javascript    "access plus 1 year"
+    ExpiresByType image/png                 "access plus 1 year"
+    ExpiresByType image/svg+xml             "access plus 1 year"
+    ExpiresByType image/x-icon              "access plus 1 year"
+    ExpiresByType image/vnd.microsoft.icon  "access plus 1 year"
+</IfModule>

@@ -314,6 +314,7 @@ function backup_error_message(string $code): string
         'nie-baza'      => 'Wybrany plik nie jest poprawną kopią dziennika (brak wymaganej struktury bazy).',
         'blad-zapisu'   => 'Nie udało się zapisać przywróconej bazy na serwerze.',
         'nieznana-akcja' => 'Nieznana operacja kopii zapasowej.',
+        'csrf'          => 'Sesja wygasła. Odśwież stronę i spróbuj ponownie.',
     ];
 
     return $messages[$code] ?? 'Nieznany błąd kopii zapasowej (' . $code . ').';

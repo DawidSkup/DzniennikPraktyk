@@ -12,7 +12,10 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/src/functions.php';
+require_once __DIR__ . '/src/auth.php';
+
+// Kopia zapasowa dostępna tylko po zalogowaniu.
+auth_require_login();
 
 /**
  * Tworzy tymczasowy plik ze spójną kopią bazy i zwraca jego ścieżkę.
@@ -137,7 +140,9 @@ function backup_restore(): string
  * ------------------------------------------------------------------ */
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (empty($_POST) && empty($_FILES) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    if (!csrf_check($_POST['csrf'] ?? null)) {
+        $err = 'csrf';
+    } elseif (empty($_POST) && empty($_FILES) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
         $err = 'za-duzy'; // przekroczony limit post_max_size
     } elseif (($_POST['action'] ?? '') !== 'restore') {
         $err = 'nieznana-akcja';

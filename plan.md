@@ -66,3 +66,45 @@
 - [x] Okno „Kopia zapasowa" w UI: pobierz / przywróć (z potwierdzeniem)
 - [x] Komunikaty sukcesu i błędów kopii zapasowej
 - [ ] Test kopii i przywrócenia — do sprawdzenia przez użytkownika
+
+## Etap 9 — Logowanie
+
+- [x] Tabela `uzytkownicy` (login + hash hasła) w `src/db.php`
+- [x] Moduł `src/auth.php`: sesja, konto, logowanie, wylogowanie, zmiana hasła
+- [x] Kreator pierwszego konta (`login.php` — tryb „setup" gdy brak konta)
+- [x] Ekran logowania (`login.php`) — kolorowy, z tęczowym akcentem
+- [x] Wylogowanie (`logout.php`)
+- [x] Zmiana hasła w UI (okno „Zmień hasło") + panel konta na dole strony
+- [x] Ochrona całej aplikacji, w tym kopii zapasowej (`auth_require_login()`)
+- [x] Ochrona CSRF dla wszystkich operacji zapisu (`csrf_field()` / `csrf_check()`)
+- [x] Wspólny skrypt motywu `assets/theme.js`
+- [x] Testy: dostęp bez logowania, kreator, logowanie, zmiana hasła, CSRF, wylogowanie
+
+## Etap 10 — Strona „O mnie"
+
+- [x] Osobna strona `o-mnie.php` (za logowaniem)
+- [x] Dane autora edytowalne w tablicy `$autor` na górze pliku
+- [x] Awatar z inicjałami, opis, kafelki z danymi (szkoła, klasa, opiekun, rok, kontakt)
+- [x] Link „O mnie" na samym dole strony głównej (+ powrót do dziennika)
+
+## Etap 11 — Pasek akcji chowający się w bok
+
+- [x] Pasek (Dzisiaj / Dodaj / Kopia / Drukuj) zsuwa się w bok przy przewijaniu w dół
+- [x] Wraca przy przewijaniu w górę i przy samej górze strony
+- [x] Przycisk „⋮" po prawej — ręczne schowanie / przywołanie paska
+- [x] Bez poziomego paska przewijania (`overflow-x: clip`), obsługa `prefers-reduced-motion`
+
+## Etap 12 — Optymalizacja
+
+- [x] SQLite: `journal_mode=WAL`, `synchronous=NORMAL`, `busy_timeout=5000`, `temp_store=MEMORY`, `cache_size=-20000`
+- [x] `index.php`: jedno zapytanie `all_wpisy()` zamiast wielu (daty, mapa, czasy, statystyki, prev/next z pamięci)
+- [x] `konto_login` z sesji (`auth_user()`) zamiast dodatkowego zapytania — ok. 11 → 3 zapytań na stronę
+- [x] `.htaccess`: kompresja `mod_deflate` + długie buforowanie zasobów (`mod_expires`, pliki z `?v=mtime`)
+- [x] Zachowanie bez zmian (nawigacja, widok tygodnia, statystyki) — potwierdzone testami
+
+## Etap 13 — Płynne przewijanie
+
+- [x] Tło przeniesione z `background-attachment: fixed` na osobną warstwę `body::before` (`position: fixed`) — koniec odmalowywania wielkiego tła przy każdej klatce
+- [x] Usunięty `backdrop-filter` z elementów przewijanych/przyklejonych (topbar, pasek akcji, „⋮", motyw, nawigacja, przełącznik widoku, pasek konta) — zostaje tylko na nakładce modala
+- [x] Lekko podniesiona kryjność teł (`rgba(...,.82)` → `,.9`/`.92`), by zachować kontrast bez rozmycia
+- [x] Dotyczy też ekranu logowania (`body.auth-body::before`) i trybu ciemnego

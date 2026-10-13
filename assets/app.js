@@ -126,4 +126,82 @@
             }
         });
     }
+
+    // Popup „Zmień hasło".
+    const passwordModal = document.getElementById('password-modal');
+    const openPasswordBtn = document.querySelector('[data-open-password]');
+
+    function openPasswordModal() {
+        if (!passwordModal) return;
+        passwordModal.hidden = false;
+        document.body.classList.add('modal-open');
+        const first = passwordModal.querySelector('input, textarea, select');
+        if (first) first.focus();
+    }
+
+    function closePasswordModal() {
+        if (!passwordModal) return;
+        passwordModal.hidden = true;
+        document.body.classList.remove('modal-open');
+    }
+
+    if (openPasswordBtn) {
+        openPasswordBtn.addEventListener('click', openPasswordModal);
+    }
+    if (passwordModal) {
+        passwordModal.querySelectorAll('[data-close-password]').forEach(function (el) {
+            el.addEventListener('click', closePasswordModal);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !passwordModal.hidden) {
+                closePasswordModal();
+            }
+        });
+    }
+
+    // Pasek akcji (Dzisiaj / Dodaj / Kopia / Drukuj): zsuwa się w bok przy
+    // przewijaniu w dół, wraca przy przewijaniu w górę (i zawsze u góry strony).
+    // Przycisk „⋮" przywołuje go / chowa ręcznie.
+    const actionBar = document.querySelector('.topbar-actions');
+    const actionsToggle = document.querySelector('.actions-toggle');
+
+    if (actionBar) {
+        let lastY = window.pageYOffset || document.documentElement.scrollTop || 0;
+        let ticking = false;
+
+        function setBarHidden(hidden) {
+            actionBar.classList.toggle('is-hidden', hidden);
+            if (actionsToggle) {
+                actionsToggle.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+            }
+        }
+
+        function updateActionBar() {
+            const y = window.pageYOffset || document.documentElement.scrollTop || 0;
+
+            if (y <= 60) {
+                setBarHidden(false);                  // blisko góry — zawsze widoczny
+            } else if (y > lastY + 6) {
+                setBarHidden(true);                   // w dół — zsuń w bok
+            } else if (y < lastY - 6) {
+                setBarHidden(false);                  // w górę — wysuń z powrotem
+            }
+
+            lastY = y;
+            ticking = false;
+        }
+
+        window.addEventListener('scroll', function () {
+            if (!ticking) {
+                ticking = true;
+                window.requestAnimationFrame(updateActionBar);
+            }
+        }, { passive: true });
+
+        if (actionsToggle) {
+            actionsToggle.addEventListener('click', function () {
+                setBarHidden(!actionBar.classList.contains('is-hidden'));
+            });
+        }
+    }
 })();

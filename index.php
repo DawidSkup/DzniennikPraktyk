@@ -7,6 +7,10 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/src/functions.php';
+require_once __DIR__ . '/src/auth.php';
+
+// Wymagane zalogowanie (brak konta → kreator, brak sesji → logowanie).
+auth_require_login();
 
 /* ------------------------------------------------------------------ *
  *  Obsługa akcji (POST) — wzorzec POST/Redirect/GET
@@ -15,6 +19,32 @@ require_once __DIR__ . '/src/functions.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $data   = trim((string) ($_POST['data'] ?? ''));
+
+    // Token CSRF wymagany przy każdej zmianie stanu.
+    if (!csrf_check($_POST['csrf'] ?? null)) {
+        $target = 'index.php' . (is_valid_date($data) ? '?data=' . urlencode($data) . '&blad_csrf=1' : '?blad_csrf=1');
+        header('Location: ' . $target);
+        exit;
+    }
+
+    if ($action === 'change_password') {
+        $obecne = (string) ($_POST['obecne_haslo'] ?? '');
+        $nowe   = (string) ($_POST['nowe_haslo'] ?? '');
+        $powt   = (string) ($_POST['nowe_haslo2'] ?? '');
+
+        if (strlen($nowe) < 6) {
+            $haslo_kod = 'krotkie';
+        } elseif ($nowe !== $powt) {
+            $haslo_kod = 'niezgodne';
+        } elseif (!auth_change_password($obecne, $nowe)) {
+            $haslo_kod = 'zle';
+        } else {
+            $haslo_kod = 'ok';
+        }
+
+        header('Location: index.php?haslo=' . urlencode($haslo_kod));
+        exit;
+    }
 
     if ($action === 'delete_all') {
         delete_all_wpisy();
@@ -46,11 +76,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// --- Pobranie wpisów (jedno zapytanie) i wyliczenie danych pochodnych ----
+// Listę dat, mapę wpisów, czasy pracy i statystyki liczymy z jednego
+// zapytania, zamiast odpytywać bazę wielokrotnie.
+$wszystkie    = all_wpisy();          // posortowane rosnąco po dacie
+$ilosc_dni    = count($wszystkie);
+$mapa_wpisow  = [];
+$czas_wg_dnia = [];
+$dates        = [];
+$total_min    = 0;
+$dni_z_czasem = 0;
+foreach ($wszystkie as $w) {
+    $d                   = (string) $w['data'];
+    $mapa_wpisow[$d]     = $w;
+    $dates[]             = $d;
+    $min                 = minutes_between((string) $w['godzina_od'], (string) $w['godzina_do']);
+    $czas_wg_dnia[$d]    = $min;
+    if ($min !== null) {
+        $total_min += $min;
+        $dni_z_czasem++;
+    }
+}
+$srednia_min = $dni_z_czasem > 0 ? intdiv($total_min, $dni_z_czasem) : 0;
+
 // --- Bieżąca data widoku -------------------------------------------------
 $data = isset($_GET['data']) ? trim((string) $_GET['data']) : '';
 if (!is_valid_date($data)) {
-    $data = last_date() ?? date('Y-m-d');
+    $data = $dates !== [] ? $dates[$ilosc_dni - 1] : date('Y-m-d');
 }
+
+// Wpis oglądanego dnia (null, gdy dzień bez wpisu).
+$wpis = $mapa_wpisow[$data] ?? null;
+
+// Najbliższy wpis przed / po oglądanej dacie — z pobranej listy dat.
+$prev = null;
+$next = null;
+foreach ($dates as $d) {
+    if ($d < $data) {
+        $prev = $d;
+    } elseif ($d > $data) {
+        $next = $d;
+        break;
+    }
+}
+
+$dzis = date('Y-m-d');
 
 // --- Wybrany widok: „dzien" (jeden dzień) lub „tydzien" ------------------
 $widok      = (($_GET['widok'] ?? 'dzien') === 'tydzien') ? 'tydzien' : 'dzien';
@@ -60,19 +130,10 @@ $widok_qs   = $tydzien ? '&widok=tydzien' : ''; // doklejane do linków GET
 // Tryb „Dodaj": po kliknięciu „Dodaj dzień" pokazujemy od razu sam formularz „Dodaj wpis".
 $dodaj_flow = !$tydzien && (($_GET['dodaj'] ?? '') === '1');
 
-$wpis  = get_wpis($data);
-$prev  = prev_date($data);
-$next  = next_date($data);
-$dates = all_dates();
-$dzis  = date('Y-m-d');
-
 // Data dla przycisku „Dodaj kolejny dzień": pierwszy dzień roboczy (pon–pt)
 // po ostatnim wpisie; gdy dziennik pusty — dzisiaj (lub najbliższy poniedziałek).
-$dodaj_data = $dzis;
-$ostatni_wpis = last_date();
-if ($ostatni_wpis !== null) {
-    $dodaj_data = date_shift($ostatni_wpis, 1);
-}
+$ostatni_wpis = $dates !== [] ? $dates[$ilosc_dni - 1] : null;
+$dodaj_data   = $ostatni_wpis !== null ? date_shift($ostatni_wpis, 1) : $dzis;
 $dow = (int) (new DateTime($dodaj_data))->format('N');
 if ($dow >= 6) {
     $dodaj_data = date_shift($dodaj_data, 8 - $dow); // sob → pon (+2), niedz → pon (+1)
@@ -84,7 +145,6 @@ $dzien_weekend = (int) (new DateTime($data))->format('N') >= 6;
 // --- Dane widoku tygodniowego (poniedziałek–niedziela) -------------------
 $tydz_start  = week_start($data);
 $tydz_end    = week_end($data);
-$mapa_wpisow = wpisy_map();
 
 // Unikalne tygodnie (poniedziałki), które mają jakikolwiek wpis — do listy wyboru.
 $tygodnie = [];
@@ -143,29 +203,15 @@ $zapisano     = isset($_GET['zapisano']);
 $usunieto     = isset($_GET['usunieto']);
 $przywrocono  = isset($_GET['przywrocono']);
 $blad_kopii   = trim((string) ($_GET['blad'] ?? ''));
+$witaj        = isset($_GET['witaj']);
+$blad_csrf    = isset($_GET['blad_csrf']);
+$haslo_kod    = trim((string) ($_GET['haslo'] ?? ''));
+$konto_login  = (string) (auth_user()['login'] ?? '');
 
-// --- Statystyki do panelu bocznego --------------------------------------
-$wszystkie = all_wpisy();
-$total_min  = 0;
-$dni_z_czasem = 0;
-foreach ($wszystkie as $w) {
-    $min = minutes_between((string) $w['godzina_od'], (string) $w['godzina_do']);
-    if ($min !== null) {
-        $total_min   += $min;
-        $dni_z_czasem++;
-    }
-}
-$ilosc_dni   = count($wszystkie);
-$srednia_min = $dni_z_czasem > 0 ? intdiv($total_min, $dni_z_czasem) : 0;
-$dzien_min   = $wpis ? minutes_between((string) $wpis['godzina_od'], (string) $wpis['godzina_do']) : null;
-
-// Czas pracy każdego dnia (do listy po lewej) + zakres dat
-$czas_wg_dnia = [];
-foreach ($wszystkie as $w) {
-    $czas_wg_dnia[$w['data']] = minutes_between((string) $w['godzina_od'], (string) $w['godzina_do']);
-}
-$pierwszy = $ilosc_dni > 0 ? format_date_short($wszystkie[0]['data']) : '—';
-$ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data']) : '—';
+// --- Statystyki do panelu bocznego (z już pobranych danych) -------------
+$dzien_min = $wpis !== null ? ($czas_wg_dnia[$data] ?? null) : null;
+$pierwszy  = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[0]['data']) : '—';
+$ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni - 1]['data']) : '—';
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -175,24 +221,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
     <link rel="icon" type="image/png" href="favicon.png">
     <title>Dziennik Praktyk — <?= $tydzien ? 'tydzień ' . e(week_number($data)) : e($data) ?></title>
     <link rel="stylesheet" href="assets/style.css?v=<?= @filemtime(__DIR__ . '/assets/style.css') ?: time() ?>">
-    <script>
-    (function () {
-        'use strict';
-        var key = 'dp-theme';
-        function getMode() {
-            try { return localStorage.getItem(key) || 'auto'; } catch (e) { return 'auto'; }
-        }
-        function applyTheme() {
-            var m = getMode();
-            var dark = m === 'dark' ||
-                (m === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-            document.documentElement.setAttribute('data-theme-mode', m);
-        }
-        applyTheme();
-        window.__dpTheme = { key: key, getMode: getMode, applyTheme: applyTheme };
-    })();
-    </script>
+    <script src="assets/theme.js?v=<?= @filemtime(__DIR__ . '/assets/theme.js') ?: time() ?>"></script>
 </head>
 <body style="<?= e($theme_vars) ?>">
 <div class="app">
@@ -208,19 +237,24 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
         </div>
     </header>
 
-    <!-- Akcje przewijają się razem ze stroną -->
-    <div class="topbar-actions no-print" role="toolbar" aria-label="Akcje">
-        <div class="theme-switch no-print" role="group" aria-label="Motyw: jasny, ciemny lub automatyczny">
-            <button type="button" class="theme-btn" data-theme-mode="light" aria-pressed="false" title="Tryb jasny (dzień)">☀️</button>
-            <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
-            <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
+    <!-- Akcje: pasek chowający się w bok + przycisk „⋮" do przywołania -->
+    <div class="actions-dock no-print">
+        <div class="topbar-actions" id="actions-bar" role="toolbar" aria-label="Akcje">
+            <div class="theme-switch no-print" role="group" aria-label="Motyw: jasny, ciemny lub automatyczny">
+                <button type="button" class="theme-btn" data-theme-mode="light" aria-pressed="false" title="Tryb jasny (dzień)">☀️</button>
+                <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
+                <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
+            </div>
+            <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
+            <button type="button" class="btn btn-save" data-open-dodaj
+                    title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</button>
+            <button type="button" class="btn btn-backup" data-open-backup
+                    title="Kopia zapasowa — pobierz lub przywróć dziennik">💾 Kopia</button>
+            <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
         </div>
-        <a class="btn btn-today" href="index.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
-        <button type="button" class="btn btn-save" data-open-dodaj
-                title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</button>
-        <button type="button" class="btn btn-backup" data-open-backup
-                title="Kopia zapasowa — pobierz lub przywróć dziennik">💾 Kopia</button>
-        <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
+        <button type="button" class="actions-toggle" id="actions-toggle"
+                aria-controls="actions-bar" aria-expanded="true"
+                title="Pokaż lub ukryj pasek akcji" aria-label="Pokaż lub ukryj pasek akcji">⋮</button>
     </div>
 
     <div class="layout">
@@ -320,6 +354,24 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
 
     <?php if ($blad_kopii !== ''): ?>
         <p class="alert alert-danger no-print">⚠ <?= e(backup_error_message($blad_kopii)) ?></p>
+    <?php endif; ?>
+
+    <?php if ($witaj): ?>
+        <p class="alert no-print">👋 Konto utworzone. Miłej pracy z dziennikiem!</p>
+    <?php endif; ?>
+
+    <?php if ($blad_csrf): ?>
+        <p class="alert alert-danger no-print">⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.</p>
+    <?php endif; ?>
+
+    <?php if ($haslo_kod === 'ok'): ?>
+        <p class="alert no-print">✔ Hasło zostało zmienione.</p>
+    <?php elseif ($haslo_kod === 'krotkie'): ?>
+        <p class="alert alert-danger no-print">⚠ Nowe hasło musi mieć co najmniej 6 znaków.</p>
+    <?php elseif ($haslo_kod === 'niezgodne'): ?>
+        <p class="alert alert-danger no-print">⚠ Nowe hasła nie są identyczne.</p>
+    <?php elseif ($haslo_kod === 'zle'): ?>
+        <p class="alert alert-danger no-print">⚠ Obecne hasło jest nieprawidłowe.</p>
     <?php endif; ?>
 
     <?php if ($tydzien): ?>
@@ -515,6 +567,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
 
         <form method="post" action="index.php" class="form-body">
             <input type="hidden" name="action" value="save">
+            <?= csrf_field() ?>
 
             <div class="form-grid">
                 <div class="field field-date">
@@ -550,6 +603,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                   onsubmit="return confirm('Usunąć wpis z dnia <?= e($data) ?>?');">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="data" value="<?= e($data) ?>">
+                <?= csrf_field() ?>
             </form>
         <?php endif; ?>
     </section>
@@ -618,10 +672,32 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             <form method="post" action="index.php"
                   onsubmit="return confirm('UWAGA! Trwale usuniesz WSZYSTKIE wpisy z dziennika. Kontynuować?');">
                 <input type="hidden" name="action" value="delete_all">
+                <?= csrf_field() ?>
                 <button type="submit" class="btn btn-danger">🗑 Usuń wszystko</button>
             </form>
         </section>
     <?php endif; ?>
+
+    <!-- Konto: na samym dole strony -->
+    <section class="account-bar no-print">
+        <div class="account-text">
+            <strong>🔐 Konto</strong>
+            <span>Zalogowany jako <b><?= e($konto_login) ?></b></span>
+        </div>
+        <div class="account-actions">
+            <button type="button" class="btn btn-account" data-open-password
+                    title="Zmień hasło do dziennika">🔑 Zmień hasło</button>
+            <form method="post" action="logout.php" class="logout-form">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-logout" title="Wyloguj się">🚪 Wyloguj</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Linki informacyjne na samym dole -->
+    <nav class="pagefoot no-print" aria-label="Informacje">
+        <a href="o-mnie.php">ℹ️ O mnie</a>
+    </nav>
 
     <!-- Popup „Dodaj wpis" -->
     <div class="modal no-print" id="dodaj-modal" hidden>
@@ -636,6 +712,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             </header>
             <form method="post" action="index.php" class="modal-form">
                 <input type="hidden" name="action" value="save">
+                <?= csrf_field() ?>
                 <div class="field">
                     <label for="m-data">Data</label>
                     <input id="m-data" type="date" name="data" value="<?= e($dodaj_data) ?>" required>
@@ -691,6 +768,7 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
                 <form method="post" action="backup.php" enctype="multipart/form-data" class="backup-form"
                       onsubmit="return confirm('Przywrócić dziennik z wybranego pliku?\nObecne wpisy zostaną nadpisane.');">
                     <input type="hidden" name="action" value="restore">
+                    <?= csrf_field() ?>
                     <input class="backup-file" type="file" name="kopia" required
                            accept=".db,.sqlite,.sqlite3,application/octet-stream,application/x-sqlite3">
                     <button type="submit" class="btn btn-danger">⬆ Przywróć dziennik</button>
@@ -700,6 +778,40 @@ $ostatni  = $ilosc_dni > 0 ? format_date_short($wszystkie[$ilosc_dni - 1]['data'
             <div class="modal-actions">
                 <button type="button" class="btn" data-close-backup>Zamknij</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Popup „Zmień hasło" -->
+    <div class="modal no-print" id="password-modal" hidden>
+        <div class="modal-backdrop" data-close-password></div>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
+            <header class="modal-head">
+                <span class="modal-icon">🔑</span>
+                <div>
+                    <h2 id="password-modal-title" class="modal-title">Zmień hasło</h2>
+                    <p class="modal-hint">Konto: <?= e($konto_login) ?>. Do zmiany hasła podaj obecne hasło.</p>
+                </div>
+            </header>
+            <form method="post" action="index.php" class="modal-form">
+                <input type="hidden" name="action" value="change_password">
+                <?= csrf_field() ?>
+                <div class="field">
+                    <label for="p-obecne">Obecne hasło</label>
+                    <input id="p-obecne" type="password" name="obecne_haslo" autocomplete="current-password" required>
+                </div>
+                <div class="field">
+                    <label for="p-nowe">Nowe hasło</label>
+                    <input id="p-nowe" type="password" name="nowe_haslo" autocomplete="new-password" minlength="6" required>
+                </div>
+                <div class="field">
+                    <label for="p-nowe2">Powtórz nowe hasło</label>
+                    <input id="p-nowe2" type="password" name="nowe_haslo2" autocomplete="new-password" minlength="6" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-save">💾 Zmień hasło</button>
+                    <button type="button" class="btn" data-close-password>Anuluj</button>
+                </div>
+            </form>
         </div>
     </div>
 

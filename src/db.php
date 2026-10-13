@@ -107,7 +107,19 @@ function db(): PDO
     $pdo = new PDO('sqlite:' . $file);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+
+    // Strojenie SQLite pod szybkość i współbieżność (odczyt w trakcie zapisu):
+    //  - WAL: zapisy nie blokują odczytów, mniej fsync,
+    //  - synchronous=NORMAL: bezpieczne przy WAL, wyraźnie szybsze zapisy,
+    //  - busy_timeout: krótko czekamy, gdy baza jest chwilowo zajęta,
+    //  - temp_store/cache_size: mniejsze zużycie dysku i szybsze zapytania.
     $pdo->exec('PRAGMA foreign_keys = ON');
+    $pdo->exec('PRAGMA journal_mode = WAL');
+    $pdo->exec('PRAGMA synchronous = NORMAL');
+    $pdo->exec('PRAGMA busy_timeout = 5000');
+    $pdo->exec('PRAGMA temp_store = MEMORY');
+    $pdo->exec('PRAGMA cache_size = -20000');
 
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS wpisy (
@@ -116,6 +128,16 @@ function db(): PDO
             godzina_od TEXT NOT NULL DEFAULT "",
             godzina_do TEXT NOT NULL DEFAULT "",
             opis       TEXT NOT NULL DEFAULT ""
+        )'
+    );
+
+    // Konto do logowania (jedno wspólne) — hash hasła, nigdy hasło jawne.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS uzytkownicy (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            login      TEXT NOT NULL UNIQUE,
+            haslo_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT ""
         )'
     );
 

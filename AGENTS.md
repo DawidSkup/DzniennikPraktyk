@@ -6,7 +6,8 @@
 
 - Baza danych: **SQLite** (plik `.db`, bez dodatkowego serwera baz danych)
 - Technologie: **PHP + HTML + CSS + JS**
-- Brak logowania — jeden wspólny dziennik, jedno konto, dane widoczne bez hasła
+- Logowanie: **jedno wspólne konto** (login + hasło) — jeden dziennik, dane dostępne po zalogowaniu
+- Bezpieczeństwo: hasła hashowane (`password_hash`), sesja po stronie serwera, ochrona CSRF na operacjach zapisu. Konto tworzone przy pierwszym uruchomieniu (kreator), hasło zmieniane w UI
 
 ## Funkcjonalność
 
@@ -19,6 +20,7 @@
   (poniedziałek–niedziela) w tabeli z podsumowaniem
 - Dodawanie, edycja i usuwanie wpisów
 - Kopia zapasowa: pobranie dziennika do pliku `.db` oraz przywrócenie z kopii
+- Strona „O mnie" z danymi autora (link na samym dole strony)
 
 ## Wydruk
 
