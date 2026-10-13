@@ -1874,20 +1874,21 @@ body.auth-body::before {
 
 /* --- Załączniki (zdjęcia / pliki) --- */
 .zalaczniki {
-    margin-top: 22px;
-    border-top: 1px dashed var(--line);
+    margin-top: 24px;
     padding-top: 16px;
+    border-top: 1px solid var(--line);
 }
 
 .zalaczniki h2 {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: .7px;
-    color: var(--primary-dark);
     margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: var(--primary-dark);
 }
 
 .zal-count {
@@ -1896,11 +1897,13 @@ body.auth-body::before {
     min-width: 22px;
     height: 22px;
     padding: 0 7px;
+    border: 1px solid var(--line);
     border-radius: 999px;
     background: var(--tint);
     color: var(--primary-dark);
     font-size: 12px;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     letter-spacing: 0;
 }
 
@@ -1916,8 +1919,8 @@ body.auth-body::before {
 .zal-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
+    gap: 12px;
+    padding: 10px 12px;
     background: var(--tint);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
@@ -1928,13 +1931,19 @@ body.auth-body::before {
     flex: 0 0 auto;
     display: grid;
     place-items: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #fff;
+    width: 54px;
+    height: 54px;
     border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--card);
     text-decoration: none;
+    transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.zal-link:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, .22);
+    transform: translateY(-1px);
 }
 
 .zal-thumb {
@@ -1944,7 +1953,7 @@ body.auth-body::before {
     display: block;
 }
 
-.zal-ico { font-size: 26px; }
+.zal-ico { font-size: 26px; line-height: 1; }
 
 .zal-info {
     flex: 1 1 auto;
@@ -1966,13 +1975,18 @@ body.auth-body::before {
 
 .zal-name:hover { color: var(--primary); text-decoration: underline; }
 
-.zal-size { font-size: 12px; color: var(--muted); }
+.zal-size {
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
 
-.zal-del { margin: 0; }
+.zal-del { margin: 0; flex: 0 0 auto; }
 
+/* Kompaktowy przycisk akcji (np. „usuń plik") */
 .btn-sm {
-    padding: 6px 10px;
-    font-size: 13px;
+    padding: 7px 11px;
+    font-size: 14px;
     line-height: 1;
 }
 
@@ -1981,15 +1995,14 @@ body.auth-body::before {
     margin: 22px 26px 0;
     padding: 16px 18px;
     background: var(--tint);
-    border: 1px dashed var(--line);
+    border: 1px solid var(--line);
     border-radius: var(--radius-sm);
 }
 
 .zal-upload-title {
     margin: 0 0 10px;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: .6px;
+    font-size: 15px;
+    font-weight: 800;
     color: var(--primary-dark);
 }
 
@@ -2000,41 +2013,74 @@ body.auth-body::before {
     gap: 12px;
 }
 
-.zal-file {
+/* Podnosimy specyficzność ponad `.form-card input`, aby nasz wygląd wygrał */
+.zal-upload .zal-file {
     flex: 1 1 220px;
-    max-width: 100%;
+    width: auto;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    font-family: inherit;
     font-size: 14px;
     color: var(--ink);
+    transition: border-color .15s, box-shadow .15s;
 }
+.zal-upload .zal-file:hover { border-color: #cbd5e1; }
+.zal-upload .zal-file:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--tint);
+}
+.zal-upload .zal-file::file-selector-button {
+    margin-right: 12px;
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff;
+    font-weight: 600;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition: filter .15s;
+}
+.zal-upload .zal-file::file-selector-button:hover { filter: brightness(1.08); }
 
 .zal-upload-form .btn { flex: 0 0 auto; }
 
 .zal-hint {
     margin: 10px 0 0;
-    font-size: 12.5px;
+    font-size: 13px;
     color: var(--muted);
 }
+.zal-hint b { color: var(--primary-dark); }
 
 /* --- Znaczek z liczbą plików (lista dni / widok tygodnia) --- */
 .day-list-files {
     flex: 0 0 auto;
+    padding: 1px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--tint);
+    color: var(--primary-dark);
     font-size: 11.5px;
     font-weight: 700;
-    color: var(--primary-dark);
-    background: var(--tint);
-    border-radius: 999px;
-    padding: 1px 7px;
+    font-variant-numeric: tabular-nums;
 }
 
 .wk-files {
     display: inline-block;
     margin-top: 3px;
+    padding: 1px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--tint);
+    color: var(--primary-dark);
     font-size: 11px;
     font-weight: 700;
-    color: var(--primary-dark);
-    background: var(--tint);
-    border-radius: 999px;
-    padding: 1px 7px;
+    font-variant-numeric: tabular-nums;
 }
 
 /* Ciemny motyw */
@@ -2044,24 +2090,33 @@ body.auth-body::before {
 :root[data-theme="dark"] .day-list-files,
 :root[data-theme="dark"] .wk-files {
     background: #16202f;
-    border-color: var(--line);
+    border-color: #334155;
 }
-:root[data-theme="dark"] .zal-link { background: #0f172a; }
+:root[data-theme="dark"] .zal-link { background: #0f172a; border-color: #334155; }
+:root[data-theme="dark"] .zalaczniki { border-top-color: #334155; }
 :root[data-theme="dark"] .zalaczniki h2,
 :root[data-theme="dark"] .zal-upload-title,
 :root[data-theme="dark"] .zal-count,
+:root[data-theme="dark"] .zal-hint b,
 :root[data-theme="dark"] .day-list-files,
 :root[data-theme="dark"] .wk-files { color: #a5b4fc; }
+:root[data-theme="dark"] .zal-upload .zal-file {
+    background: #0f172a;
+    border-color: #334155;
+    color: var(--ink);
+}
+:root[data-theme="dark"] .zal-upload .zal-file:hover { border-color: #475569; }
 
 /* Wydruk — załączniki jako czytelna lista, bez elementów interaktywnych */
 @media print {
     .zalaczniki { border-top: 1px solid #000; }
     .zalaczniki h2 { color: #000; }
-    .zal-count { background: none; color: #000; padding: 0; }
-    .zal-item { background: none; border: 0; padding: 0; }
+    .zal-count { padding: 0; border: 0; background: none; color: #000; }
+    .zal-list { display: flex; flex-wrap: wrap; gap: 10px; }
+    .zal-item { padding: 0; border: 0; background: none; }
     .zal-link { border: 0; background: none; }
     .zal-name { color: #000; }
     .zal-thumb { max-width: 120px; }
     .day-list-files,
-    .wk-files { background: none; color: #000; padding: 0; }
+    .wk-files { padding: 0; border: 0; background: none; color: #000; }
 }
