@@ -109,7 +109,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (is_valid_time($od) && is_valid_time($do)) {
             save_wpis($data, $od, $do, $opis);
-            header('Location: index.php?data=' . urlencode($data) . '&zapisano=1');
+
+            // Plik opcjonalnie dołączony w oknie „Dodaj wpis" — zapisujemy
+            // razem z wpisem. Gdy nie wybrano pliku, nie robimy nic (żadnego
+            // komunikatu o błędzie).
+            $zal_kod = null;
+            if (isset($_FILES['zal']) && is_array($_FILES['zal'])
+                && (int) $_FILES['zal']['error'] !== UPLOAD_ERR_NO_FILE) {
+                $zal_kod = zal_add($data, $_FILES['zal']);
+            }
+
+            $qs = 'index.php?data=' . urlencode($data) . '&zapisano=1';
+            if ($zal_kod !== null) {
+                $qs .= '&zal=' . urlencode($zal_kod);
+            }
+            header('Location: ' . $qs);
             exit;
         }
     }
@@ -853,7 +867,7 @@ $zal_counts = zal_counts();
                     <p class="modal-hint">Uzupełnij godziny pracy i opisz wykonane czynności.</p>
                 </div>
             </header>
-            <form method="post" action="index.php" class="modal-form">
+            <form method="post" action="index.php" class="modal-form" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="save">
                 <?= csrf_field() ?>
                 <div class="field">
@@ -873,6 +887,15 @@ $zal_counts = zal_counts();
                 <div class="field">
                     <label for="m-opis">Co robiłem/am</label>
                     <textarea id="m-opis" name="opis" rows="5" placeholder="Opisz wykonane czynności..."></textarea>
+                </div>
+                <div class="field">
+                    <label for="m-zal">Załącznik — zdjęcie lub plik (opcjonalnie)</label>
+                    <input id="m-zal" class="zal-file" type="file" name="zal"
+                           aria-label="Wybierz zdjęcie lub plik (opcjonalnie)">
+                    <p class="zal-hint">
+                        Maks. <b><?= e(format_bytes(zal_max_bytes())) ?></b>.
+                        Zdjęcia pokazują się jako miniatury, pozostałe pliki można pobrać.
+                    </p>
                 </div>
                 <div class="modal-actions">
                     <button type="submit" class="btn btn-save">💾 Zapisz wpis</button>

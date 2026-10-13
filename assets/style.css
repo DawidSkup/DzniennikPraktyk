@@ -2013,8 +2013,9 @@ body.auth-body::before {
     gap: 12px;
 }
 
-/* Podnosimy specyficzność ponad `.form-card input`, aby nasz wygląd wygrał */
-.zal-upload .zal-file {
+/* Podnosimy specyficzność ponad `.form-card input` / `.modal input`, aby nasz wygląd wygrał */
+.zal-upload .zal-file,
+.modal .zal-file {
     flex: 1 1 220px;
     width: auto;
     min-width: 0;
@@ -2027,13 +2028,16 @@ body.auth-body::before {
     color: var(--ink);
     transition: border-color .15s, box-shadow .15s;
 }
-.zal-upload .zal-file:hover { border-color: #cbd5e1; }
-.zal-upload .zal-file:focus {
+.zal-upload .zal-file:hover,
+.modal .zal-file:hover { border-color: #cbd5e1; }
+.zal-upload .zal-file:focus,
+.modal .zal-file:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 4px var(--tint);
 }
-.zal-upload .zal-file::file-selector-button {
+.zal-upload .zal-file::file-selector-button,
+.modal .zal-file::file-selector-button {
     margin-right: 12px;
     padding: 7px 14px;
     border: 0;
@@ -2046,7 +2050,14 @@ body.auth-body::before {
     cursor: pointer;
     transition: filter .15s;
 }
-.zal-upload .zal-file::file-selector-button:hover { filter: brightness(1.08); }
+.zal-upload .zal-file::file-selector-button:hover,
+.modal .zal-file::file-selector-button:hover { filter: brightness(1.08); }
+
+/* W kolumnie `.field` plik ma naturalną wysokość (bez rozciągania) */
+.field .zal-file {
+    flex: 0 0 auto;
+    width: 100%;
+}
 
 .zal-upload-form .btn { flex: 0 0 auto; }
 
@@ -2055,6 +2066,7 @@ body.auth-body::before {
     font-size: 13px;
     color: var(--muted);
 }
+.field .zal-hint { margin-top: 0; }
 .zal-hint b { color: var(--primary-dark); }
 
 /* --- Znaczek z liczbą plików (lista dni / widok tygodnia) --- */
@@ -2100,12 +2112,14 @@ body.auth-body::before {
 :root[data-theme="dark"] .zal-hint b,
 :root[data-theme="dark"] .day-list-files,
 :root[data-theme="dark"] .wk-files { color: #a5b4fc; }
-:root[data-theme="dark"] .zal-upload .zal-file {
+:root[data-theme="dark"] .zal-upload .zal-file,
+:root[data-theme="dark"] .modal .zal-file {
     background: #0f172a;
     border-color: #334155;
     color: var(--ink);
 }
-:root[data-theme="dark"] .zal-upload .zal-file:hover { border-color: #475569; }
+:root[data-theme="dark"] .zal-upload .zal-file:hover,
+:root[data-theme="dark"] .modal .zal-file:hover { border-color: #475569; }
 
 /* Wydruk — załączniki jako czytelna lista, bez elementów interaktywnych */
 @media print {

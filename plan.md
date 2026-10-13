@@ -133,10 +133,12 @@
 - [x] Baza: tabela `zalaczniki` (`data`, `nazwa`, `plik`, `typ`, `rozmiar`, `dodano`) + indeks po dacie (auto-tworzona)
 - [x] Pliki trzymane na dysku w katalogu danych (`zalaczniki/`, poza docroot), losowe nazwy, metadane w bazie
 - [x] Wgrywanie w karcie wpisu (`enctype="multipart/form-data"`, akcja `add_file`), limit rozmiaru 10 MB, walidacja i rozpoznanie typu (`finfo`)
+- [x] Możliwość dołączenia pliku (opcjonalnie) bezpośrednio w oknie „➕ Dodaj wpis" — plik zapisuje się razem z wpisem (akcja `save`); brak pliku nie daje błędu, a odrzucony plik nie blokuje zapisu wpisu
 - [x] Odrzucanie niebezpiecznych rozszerzeń (php, phtml, phar, cgi, exe itd.)
 - [x] Serwowanie przez `plik.php` (za logowaniem): obrazy/PDF `inline`, pozostałe jako pobranie (`attachment`) z `X-Content-Type-Options: nosniff`
 - [x] Sekcja „Załączniki" w dokumencie dnia: miniatury zdjęć, ikony plików, nazwa + rozmiar, otwieranie/pobieranie, usuwanie pojedynczego pliku
 - [x] Znacznik 📎 z liczbą plików w liście dni i w widoku tygodnia
 - [x] Usunięcie wpisu oraz „Usuń wszystko" sprzątają też pliki z dysku; przywrócenie kopii nie usuwa plików z serwera (kopia `.db` nie zawiera samych plików — dopisek w oknie kopii)
 - [x] Style jasne/ciemne + wydruk (lista plików); brak ostrzeżeń PHP
+- [x] Wygląd sekcji załączników dopasowany do reszty aplikacji (bloki `--tint`, obramowanie 1px, pole pliku z firmowym przyciskiem `::file-selector-button` jak w oknie kopii)
 - [x] Testy: upload PNG/PDF (poprawny MIME), odrzucenie `.php` i pliku 11 MB, podgląd i pobranie, brak dostępu bez logowania (302), 404 dla braku pliku, sprzątanie przy usuwaniu wpisu i całości
