@@ -16,10 +16,10 @@ auth_require_login();
  *  DANE AUTORA — edytuj tutaj
  * ------------------------------------------------------------------ */
 $autor = [
-    'imie'    => 'Imię Nazwisko',
-    'opis'    => "Kilka zdań o sobie — czym się interesujesz, co robisz na praktykach,\nczego się uczysz. Ten tekst możesz dowolnie zmienić w pliku o-mnie.php.",
-    'szkola'  => 'Nazwa szkoły',
-    'klasa'   => 'Klasa / zawód',
+    'imie'    => 'Dawid Skupień',
+    'opis'    => "Intereruje sie rowerami i komputerami",
+    'szkola'  => 'ZST',
+    'klasa'   => '3T / Programista',
     'opiekun' => 'Imię i nazwisko opiekuna praktyk',
     'rok'     => 'Rok szkolny 2026/2027',
     'email'   => '',
