@@ -132,14 +132,43 @@ function db(): PDO
     );
 
     // Konto do logowania (jedno wspólne) — hash hasła, nigdy hasło jawne.
+    // Kolumny reset_* obsługują reset hasła kodem wysyłanym e-mailem.
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS uzytkownicy (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            login      TEXT NOT NULL UNIQUE,
-            haslo_hash TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT ""
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            login         TEXT NOT NULL UNIQUE,
+            haslo_hash    TEXT NOT NULL,
+            email         TEXT NOT NULL DEFAULT "",
+            reset_hash    TEXT NOT NULL DEFAULT "",
+            reset_wygasa  INTEGER NOT NULL DEFAULT 0,
+            reset_proby   INTEGER NOT NULL DEFAULT 0,
+            reset_wyslano INTEGER NOT NULL DEFAULT 0,
+            created_at    TEXT NOT NULL DEFAULT ""
         )'
     );
 
+    // Migracja starszych baz: dokładamy brakujące kolumny (SQLite: ADD COLUMN).
+    db_ensure_column($pdo, 'uzytkownicy', 'email', 'TEXT NOT NULL DEFAULT ""');
+    db_ensure_column($pdo, 'uzytkownicy', 'reset_hash', 'TEXT NOT NULL DEFAULT ""');
+    db_ensure_column($pdo, 'uzytkownicy', 'reset_wygasa', 'INTEGER NOT NULL DEFAULT 0');
+    db_ensure_column($pdo, 'uzytkownicy', 'reset_proby', 'INTEGER NOT NULL DEFAULT 0');
+    db_ensure_column($pdo, 'uzytkownicy', 'reset_wyslano', 'INTEGER NOT NULL DEFAULT 0');
+
     return $pdo;
+}
+
+/**
+ * Dodaje kolumnę do tabeli, jeśli jeszcze nie istnieje (prosta migracja SQLite).
+ * Nazwy tabeli/kolumny pochodzą z kodu, nie od użytkownika.
+ */
+function db_ensure_column(PDO $pdo, string $table, string $column, string $definition): void
+{
+    $stmt = $pdo->query('PRAGMA table_info(' . $table . ')');
+    foreach ($stmt->fetchAll() as $kol) {
+        if (($kol['name'] ?? '') === $column) {
+            return;
+        }
+    }
+
+    $pdo->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $definition);
 }

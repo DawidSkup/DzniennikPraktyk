@@ -1,0 +1,9 @@
+{
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "user": "twoj.adres@gmail.com",
+    "pass": "haslo-aplikacji-google",
+    "secure": "tls",
+    "from": "twoj.adres@gmail.com",
+    "debug": false
+}

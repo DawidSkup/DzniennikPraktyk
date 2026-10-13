@@ -46,6 +46,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'save_email') {
+        $mail = trim((string) ($_POST['email'] ?? ''));
+        if ($mail === '') {
+            // Puste pole NIE czyści zapisanego adresu (ochrona przed przypadkiem
+            // i przed starą, otwartą stroną z pustym polem).
+            header('Location: index.php?email=pusty');
+            exit;
+        }
+        if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
+            header('Location: index.php?email=zly');
+            exit;
+        }
+        auth_set_email($mail);
+        header('Location: index.php?email=ok');
+        exit;
+    }
+
     if ($action === 'delete_all') {
         delete_all_wpisy();
         header('Location: index.php?usunieto=1');
@@ -207,6 +224,8 @@ $witaj        = isset($_GET['witaj']);
 $blad_csrf    = isset($_GET['blad_csrf']);
 $haslo_kod    = trim((string) ($_GET['haslo'] ?? ''));
 $konto_login  = (string) (auth_user()['login'] ?? '');
+$konto_email  = trim((string) (auth_user()['email'] ?? ''));
+$email_kod    = trim((string) ($_GET['email'] ?? ''));
 
 // --- Statystyki do panelu bocznego (z już pobranych danych) -------------
 $dzien_min = $wpis !== null ? ($czas_wg_dnia[$data] ?? null) : null;
@@ -372,6 +391,14 @@ $ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni -
         <p class="alert alert-danger no-print">⚠ Nowe hasła nie są identyczne.</p>
     <?php elseif ($haslo_kod === 'zle'): ?>
         <p class="alert alert-danger no-print">⚠ Obecne hasło jest nieprawidłowe.</p>
+    <?php endif; ?>
+
+    <?php if ($email_kod === 'ok'): ?>
+        <p class="alert no-print">✔ Adres e-mail konta został zapisany.</p>
+    <?php elseif ($email_kod === 'zly'): ?>
+        <p class="alert alert-danger no-print">⚠ Podaj poprawny adres e-mail.</p>
+    <?php elseif ($email_kod === 'pusty'): ?>
+        <p class="alert alert-danger no-print">⚠ Pole e-mail było puste — zapisany adres pozostał bez zmian.</p>
     <?php endif; ?>
 
     <?php if ($tydzien): ?>
@@ -690,6 +717,17 @@ $ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni -
             <form method="post" action="logout.php" class="logout-form">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn-logout" title="Wyloguj się">🚪 Wyloguj</button>
+            </form>
+        </div>
+
+        <div class="account-email">
+            <form method="post" action="index.php" class="email-form">
+                <input type="hidden" name="action" value="save_email">
+                <?= csrf_field() ?>
+                <label for="acc-email">📧 E-mail do resetu hasła</label>
+                <input id="acc-email" type="email" name="email" value="<?= e($konto_email) ?>"
+                       placeholder="np. jan.kowalski@example.com" autocomplete="email" required>
+                <button type="submit" class="btn btn-account" title="Zapisz adres e-mail">💾 Zapisz</button>
             </form>
         </div>
     </section>

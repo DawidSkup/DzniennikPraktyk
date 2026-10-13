@@ -22,25 +22,37 @@ if (!$setup && auth_is_logged_in()) {
 }
 
 $error = '';
+$info  = '';
 $login = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $login  = trim((string) ($_POST['login'] ?? ''));
     $haslo  = (string) ($_POST['haslo'] ?? '');
     $haslo2 = (string) ($_POST['haslo2'] ?? '');
+    $email  = trim((string) ($_POST['email'] ?? ''));
 
     if (!csrf_check($_POST['csrf'] ?? null)) {
         $error = 'Sesja wygasła. Odśwież stronę i spróbuj ponownie.';
     } elseif (!$setup) {
         // --- Logowanie ---
-        if ($login === '' || $haslo === '') {
+        $pozostalo = auth_login_lock_remaining();
+
+        if ($pozostalo > 0) {
+            $error = 'Zbyt wiele nieudanych prób. Odczekaj ' . $pozostalo . ' s.';
+        } elseif ($login === '' || $haslo === '') {
             $error = 'Podaj login i hasło.';
         } elseif (auth_login($login, $haslo)) {
+            auth_login_reset();
             header('Location: index.php');
             exit;
         } else {
             usleep(400000); // drobne opóźnienie utrudniające zgadywanie hasła
-            $error = 'Nieprawidłowy login lub hasło.';
+            $blokada_teraz = auth_login_register_failure();
+            if ($blokada_teraz > 0) {
+                $error = 'Zbyt wiele nieudanych prób. Logowanie zablokowane na ' . $blokada_teraz . ' s.';
+            } else {
+                $error = 'Nieprawidłowy login lub hasło. Pozostało prób: ' . auth_login_attempts_left() . '.';
+            }
         }
     } else {
         // --- Kreator pierwszego konta ---
@@ -49,11 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Podaj login.';
         } elseif (strlen($login) < 3) {
             $error = 'Login musi mieć co najmniej 3 znaki.';
+        } elseif ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Podaj poprawny adres e-mail — posłuży do resetu hasła.';
         } elseif (strlen($haslo) < 6) {
             $error = 'Hasło musi mieć co najmniej 6 znaków.';
         } elseif ($haslo !== $haslo2) {
             $error = 'Hasła nie są identyczne.';
-        } elseif (!auth_create_account($login, $haslo)) {
+        } elseif (!auth_create_account($login, $haslo, $email)) {
             $error = 'Konto już istnieje. Zaloguj się.';
             $setup = false;
         } elseif (auth_login($login, $haslo)) {
@@ -64,6 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $setup = false;
         }
     }
+}
+
+// Blokada logowania po 5 nieudanych próbach — działa też po odświeżeniu strony.
+$blokada = $setup ? 0 : auth_login_lock_remaining();
+
+// Informacja po skutecznym resecie hasła (przekierowanie z reset-hasla.php).
+if (($_GET['zresetowano'] ?? '') === '1') {
+    $info = 'Hasło zostało zmienione. Zaloguj się nowym hasłem.';
 }
 
 $page_title = $setup ? 'Utwórz konto' : 'Zaloguj się';
@@ -95,6 +117,16 @@ $page_title = $setup ? 'Utwórz konto' : 'Zaloguj się';
             <p class="alert alert-danger">⚠ <?= e($error) ?></p>
         <?php endif; ?>
 
+        <?php if ($info !== ''): ?>
+            <p class="alert alert-ok">✓ <?= e($info) ?></p>
+        <?php endif; ?>
+
+        <?php if ($blokada > 0): ?>
+            <p class="alert alert-danger auth-lock" id="auth-lock" data-until="<?= time() + $blokada ?>">
+                ⏳ Zbyt wiele nieudanych prób. Odczekaj <b id="auth-lock-count"><?= (int) $blokada ?></b> s.
+            </p>
+        <?php endif; ?>
+
         <form method="post" action="login.php" class="auth-form" autocomplete="on">
             <?= csrf_field() ?>
 
@@ -107,7 +139,7 @@ $page_title = $setup ? 'Utwórz konto' : 'Zaloguj się';
             <div class="field">
                 <label for="a-haslo">Hasło</label>
                 <input id="a-haslo" type="password" name="haslo"
-                       autocomplete="<?= $setup ? 'new-password' : 'current-password' ?>" required>
+                       autocomplete="<?= $setup ? 'new-password' : 'current-password' ?>" required<?= $blokada > 0 ? ' disabled' : '' ?>>
             </div>
 
             <?php if ($setup): ?>
@@ -115,15 +147,58 @@ $page_title = $setup ? 'Utwórz konto' : 'Zaloguj się';
                     <label for="a-haslo2">Powtórz hasło</label>
                     <input id="a-haslo2" type="password" name="haslo2" autocomplete="new-password" required>
                 </div>
+                <div class="field">
+                    <label for="a-email">E-mail (do resetu hasła)</label>
+                    <input id="a-email" type="email" name="email" autocomplete="email"
+                           placeholder="np. jan.kowalski@example.com" required>
+                </div>
             <?php endif; ?>
 
-            <button type="submit" class="btn btn-save auth-submit">
+            <button type="submit" class="btn btn-save auth-submit"<?= $blokada > 0 ? ' disabled' : '' ?>>
                 <?= $setup ? '✅ Utwórz konto i zaloguj się' : '🔓 Zaloguj się' ?>
             </button>
         </form>
+
+        <?php if (!$setup): ?>
+            <p class="auth-links">
+                <a href="reset-hasla.php">Nie pamiętam hasła</a>
+            </p>
+        <?php endif; ?>
     </div>
 
     <p class="auth-foot">Dziennik Praktyk · dostęp do danych po zalogowaniu</p>
 </div>
+
+<script>
+(function () {
+    // Odliczanie blokady logowania po 5 nieudanych próbach.
+    var info = document.getElementById('auth-lock');
+    if (!info) return;
+
+    var until  = parseInt(info.getAttribute('data-until'), 10) || 0;
+    var count  = document.getElementById('auth-lock-count');
+    var pass   = document.getElementById('a-haslo');
+    var submit = document.querySelector('.auth-submit');
+
+    function left() {
+        return until - Math.floor(Date.now() / 1000);
+    }
+
+    function unlock() {
+        info.style.display = 'none';
+        if (pass) { pass.disabled = false; pass.focus(); }
+        if (submit) { submit.disabled = false; }
+    }
+
+    function tick() {
+        var s = left();
+        if (s <= 0) { unlock(); return; }
+        if (count) { count.textContent = String(s); }
+        window.setTimeout(tick, 250);
+    }
+
+    if (left() <= 0) { unlock(); } else { tick(); }
+})();
+</script>
 </body>
 </html>

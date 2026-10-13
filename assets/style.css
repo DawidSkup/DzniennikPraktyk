@@ -974,6 +974,12 @@ body.modal-open { overflow: hidden; }
     color: #991b1b;
 }
 
+.alert-ok {
+    background: linear-gradient(90deg, #e0f2fe, #bae6fd);
+    border-left-color: #0284c7;
+    color: #075985;
+}
+
 /* --- Przełącznik widoku (dzień / tydzień) — ramka, przyciski jak .btn --- */
 .viewswitch {
     display: inline-flex;
@@ -1337,11 +1343,38 @@ body.auth-body::before {
     box-shadow: 0 10px 26px rgba(168, 85, 247, .4);
 }
 
+/* Zablokowane pole/„Zaloguj się" w czasie blokady po nieudanych próbach */
+.auth-form input:disabled,
+.auth-submit:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    filter: none;
+}
+.auth-form input:disabled { background: #f1f5f9; }
+.auth-submit:disabled:hover { box-shadow: none; }
+
+/* Komunikat o blokadzie logowania z odliczaniem */
+.auth-lock { margin-bottom: 0; }
+.auth-lock b { font-variant-numeric: tabular-nums; }
+
 .auth-foot {
     margin: 0;
     font-size: 13px;
     color: var(--muted);
 }
+
+/* Linki pomocnicze na ekranie logowania / resetu (np. „Nie pamiętam hasła") */
+.auth-links {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: 14px;
+}
+.auth-links a {
+    color: var(--primary-dark);
+    font-weight: 600;
+    text-decoration: none;
+}
+.auth-links a:hover { text-decoration: underline; }
 
 /* --- Pasek konta na dole strony --- */
 .account-bar {
@@ -1368,6 +1401,40 @@ body.auth-body::before {
 .account-text b { color: var(--ink); }
 
 .account-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* E-mail konta (do resetu hasła) — pełna szerokość pod paskiem konta */
+.account-email {
+    flex: 1 1 100%;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+}
+.email-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.email-form label {
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--primary-dark);
+}
+.email-form input[type="email"] {
+    flex: 1 1 240px;
+    min-width: 0;
+    padding: 9px 12px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+}
+.email-form input[type="email"]:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, .18);
+}
 
 .logout-form { display: inline-flex; margin: 0; }
 
@@ -1606,6 +1673,7 @@ body.auth-body::before {
 :root[data-theme="dark"] .btn-logout:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
 :root[data-theme="dark"] .auth-form input { background: #0f172a; border-color: #334155; color: var(--ink); }
+:root[data-theme="dark"] .email-form input[type="email"] { background: #0f172a; border-color: #334155; color: var(--ink); }
 :root[data-theme="dark"] .account-bar { background: rgba(15, 23, 42, .82); }
 :root[data-theme="dark"] .account-text strong { color: #a5b4fc; }
 
@@ -1666,6 +1734,11 @@ body.auth-body::before {
 :root[data-theme="dark"] .alert-danger {
     background: linear-gradient(90deg, #3d1a22, #45202a);
     color: #fecdd3;
+}
+
+:root[data-theme="dark"] .alert-ok {
+    background: linear-gradient(90deg, #0c2b3d, #123a52);
+    color: #bae6fd;
 }
 
 :root[data-theme="dark"] .danger-zone {

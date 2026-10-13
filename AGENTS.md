@@ -7,7 +7,8 @@
 - Baza danych: **SQLite** (plik `.db`, bez dodatkowego serwera baz danych)
 - Technologie: **PHP + HTML + CSS + JS**
 - Logowanie: **jedno wspólne konto** (login + hasło) — jeden dziennik, dane dostępne po zalogowaniu
-- Bezpieczeństwo: hasła hashowane (`password_hash`), sesja po stronie serwera, ochrona CSRF na operacjach zapisu. Konto tworzone przy pierwszym uruchomieniu (kreator), hasło zmieniane w UI
+- Bezpieczeństwo: hasła hashowane (`password_hash`), sesja po stronie serwera, ochrona CSRF na operacjach zapisu. Konto tworzone przy pierwszym uruchomieniu (kreator), hasło zmieniane w UI. Po **5 nieudanych próbach** logowanie blokowane na **10 sekund** (licznik po stronie serwera; pole hasła zablokowane z odliczaniem)
+- Reset hasła: link „Nie pamiętam hasła" na ekranie logowania. Kod 6-cyfrowy wysyłany **e-mailem** (SMTP), ważny 10 min, max 5 błędnych prób. Adres e-mail ustawia się w kreatorze konta oraz w sekcji „Konto" w aplikacji. Gdy podane dane nie pasują do konta, aplikacja nic nie wysyła i nie pokazuje komunikatu. Uwaga: przywrócenie kopii zapasowej cofa też adres e-mail (bo kopia zawiera całą bazę)
 
 ## Funkcjonalność
 
@@ -26,3 +27,27 @@
 
 - Gotowy do wydruku **pojedynczy dzień** lub **cały tydzień** — przycisk „Drukuj" drukuje aktualnie oglądany widok
 - Układ wydruku: czysty, dokumentowy (bez zbędnych elementów GUI), styl `@media print`
+
+## Konfiguracja poczty (reset hasła e-mailem)
+
+Kod resetu wysyłany jest przez SMTP. Konfiguracja (w kolejności ważności):
+
+1. **Zmienne środowiskowe**: `DZIENNIK_SMTP_HOST`, `DZIENNIK_SMTP_PORT`, `DZIENNIK_SMTP_USER`,
+   `DZIENNIK_SMTP_PASS`, `DZIENNIK_SMTP_SECURE` (`tls`/`ssl`), `DZIENNIK_SMTP_FROM`.
+2. **Plik `poczta.json`** w katalogu danych (obok bazy, poza docroot) — wzór: `poczta.example.json`.
+
+```json
+{
+  "host":   "smtp.gmail.com",
+  "port":   587,
+  "user":   "twoj.adres@gmail.com",
+  "pass":   "haslo-aplikacji",
+  "secure": "tls",
+  "from":   "twoj.adres@gmail.com",
+  "debug":  false
+}
+```
+
+Tryb `"debug": true` **nie wysyła** wiadomości — zapisuje ją do pliku `poczta-log.txt`
+w katalogu danych (przydatne lokalnie, bez serwera SMTP). Uwaga: Gmail wymaga
+**hasła aplikacji**, nie zwykłego hasła do konta.

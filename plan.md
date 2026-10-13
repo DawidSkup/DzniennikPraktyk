@@ -108,3 +108,22 @@
 - [x] Usunięty `backdrop-filter` z elementów przewijanych/przyklejonych (topbar, pasek akcji, „⋮", motyw, nawigacja, przełącznik widoku, pasek konta) — zostaje tylko na nakładce modala
 - [x] Lekko podniesiona kryjność teł (`rgba(...,.82)` → `,.9`/`.92`), by zachować kontrast bez rozmycia
 - [x] Dotyczy też ekranu logowania (`body.auth-body::before`) i trybu ciemnego
+
+## Etap 14 — Blokada logowania po nieudanych próbach
+
+- [x] Licznik nieudanych prób po stronie serwera (plik `logowanie.json` obok bazy, poza docroot)
+- [x] Po **5** nieudanych próbach logowanie zablokowane na **10 s** (blokada działa też po odświeżeniu i z innej przeglądarki)
+- [x] W UI pole hasła i przycisk „Zaloguj się" wyłączone, z odliczaniem na żywo do końca blokady
+- [x] Po udanym logowaniu licznik zerowany; komunikat pokazuje liczbę pozostałych prób
+- [x] Testy: 5 prób → blokada (pole `disabled`), próba w trakcie blokady odrzucona, po 10 s poprawne logowanie → 302
+
+## Etap 15 — Reset hasła kodem e-mail
+
+- [x] Baza: kolumny `email` oraz `reset_hash`/`reset_wygasa`/`reset_proby`/`reset_wyslano` + automatyczna migracja starych baz (`ALTER TABLE`)
+- [x] E-mail konta ustawiany w kreatorze (wymagany) oraz w sekcji „Konto" w aplikacji (zapis + walidacja)
+- [x] Link „Nie pamiętam hasła" na ekranie logowania → `reset-hasla.php`
+- [x] Krok 1: login lub e-mail → wysyłka 6-cyfrowego kodu (ważny 10 min, max 5 prób, odstęp 30 s). Gdy dane nie pasują do konta — nic nie wysyłamy i nie pokazujemy komunikatu
+- [x] Pole e-maila w sekcji „Konto" zabezpieczone: `required` + puste pole nie czyści zapisanego adresu (chroni przed przypadkowym skasowaniem)
+- [x] Krok 2: kod + nowe hasło; po sukcesie przekierowanie na logowanie z komunikatem
+- [x] Wysyłka: `src/mail.php` (SMTP z STARTTLS/SSL, konfiguracja `poczta.json`/zmienne środowiskowe, tryb `debug`, awaryjnie `mail()`)
+- [x] Testy: migracja bazy, pełny reset (zły i poprawny kod), identyfikacja login/e-mail, limit 30 s, brak e-maila, brak konfiguracji poczty, brak ostrzeżeń PHP

@@ -6,8 +6,9 @@
 # Brak listowania zawartości katalogów (gdyby ktoś trafił na pusty katalog).
 Options -Indexes
 
-# 1) Zablokuj pliki bazy danych oraz pliki towarzyszące (WAL / SHM / journal).
-<FilesMatch "(?i)\.(db|sqlite|sqlite3|db-journal|db-wal|db-shm|sql)$">
+# 1) Zablokuj pliki bazy danych oraz pliki towarzyszące (WAL / SHM / journal)
+#    oraz pliki konfiguracyjne / stanu (json), gdyby trafiły do docroot.
+<FilesMatch "(?i)\.(db|sqlite|sqlite3|db-journal|db-wal|db-shm|sql|json)$">
     Require all denied
 </FilesMatch>
 
