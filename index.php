@@ -20,6 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $data   = trim((string) ($_POST['data'] ?? ''));
 
+    // Przekroczony limit post_max_size (np. zbyt duży załącznik) — PHP nie
+    // wypełnia wtedy $_POST/$_FILES. Zgłaszamy czytelny błąd zamiast CSRF.
+    if ($_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+        header('Location: index.php?zal=za-duzy');
+        exit;
+    }
+
     // Token CSRF wymagany przy każdej zmianie stanu.
     if (!csrf_check($_POST['csrf'] ?? null)) {
         $target = 'index.php' . (is_valid_date($data) ? '?data=' . urlencode($data) . '&blad_csrf=1' : '?blad_csrf=1');
@@ -63,14 +70,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'add_file' && is_valid_date($data)) {
+        $kod = zal_add($data, $_FILES['zal'] ?? null);
+        header('Location: index.php?data=' . urlencode($data) . '&zal=' . urlencode($kod));
+        exit;
+    }
+
+    if ($action === 'delete_file' && is_valid_date($data)) {
+        $plik_id = (int) ($_POST['id'] ?? 0);
+        $plik    = $plik_id > 0 ? zal_get($plik_id) : null;
+        // Usuwamy tylko plik należący do oglądanego dnia.
+        if ($plik !== null && (string) $plik['data'] === $data) {
+            zal_delete($plik_id);
+        }
+        header('Location: index.php?data=' . urlencode($data) . '&zal=usunieto');
+        exit;
+    }
+
     if ($action === 'delete_all') {
         delete_all_wpisy();
+        zal_delete_all();
         header('Location: index.php?usunieto=1');
         exit;
     }
 
     if (($action === 'save' || $action === 'delete') && is_valid_date($data)) {
         if ($action === 'delete') {
+            zal_delete_for_date($data);
             delete_wpis($data);
             $target = prev_date($data) ?? next_date($data);
             header('Location: index.php' . ($target ? '?data=' . urlencode($target) : ''));
@@ -226,11 +252,16 @@ $haslo_kod    = trim((string) ($_GET['haslo'] ?? ''));
 $konto_login  = (string) (auth_user()['login'] ?? '');
 $konto_email  = trim((string) (auth_user()['email'] ?? ''));
 $email_kod    = trim((string) ($_GET['email'] ?? ''));
+$zal_kod      = trim((string) ($_GET['zal'] ?? ''));
 
 // --- Statystyki do panelu bocznego (z już pobranych danych) -------------
 $dzien_min = $wpis !== null ? ($czas_wg_dnia[$data] ?? null) : null;
 $pierwszy  = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[0]['data']) : '—';
 $ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni - 1]['data']) : '—';
+
+// Załączniki oglądanego dnia oraz liczba plików wg dnia (lista + widok tygodnia).
+$zalaczniki = zal_list($data);
+$zal_counts = zal_counts();
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -292,6 +323,9 @@ $ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni -
                                     <?php $mm = $czas_wg_dnia[$d] ?? null; ?>
                                     <?php if ($mm !== null): ?>
                                         <span class="day-list-time"><?= e(format_duration($mm)) ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($zal_counts[$d])): ?>
+                                        <span class="day-list-files" title="<?= (int) $zal_counts[$d] ?> załączników">📎<?= (int) $zal_counts[$d] ?></span>
                                     <?php endif; ?>
                                 </a>
                             </li>
@@ -401,6 +435,22 @@ $ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni -
         <p class="alert alert-danger no-print">⚠ Pole e-mail było puste — zapisany adres pozostał bez zmian.</p>
     <?php endif; ?>
 
+    <?php if ($zal_kod === 'ok'): ?>
+        <p class="alert no-print">📎 Dodano plik do tego dnia.</p>
+    <?php elseif ($zal_kod === 'usunieto'): ?>
+        <p class="alert no-print">🗑 Usunięto plik.</p>
+    <?php elseif ($zal_kod === 'brak'): ?>
+        <p class="alert alert-danger no-print">⚠ Nie wybrano pliku.</p>
+    <?php elseif ($zal_kod === 'za-duzy'): ?>
+        <p class="alert alert-danger no-print">⚠ Plik jest za duży (maks. <?= e(format_bytes(zal_max_bytes())) ?>).</p>
+    <?php elseif ($zal_kod === 'typ'): ?>
+        <p class="alert alert-danger no-print">⚠ Niedozwolony typ pliku.</p>
+    <?php elseif ($zal_kod === 'blad-uploadu'): ?>
+        <p class="alert alert-danger no-print">⚠ Nie udało się wgrać pliku na serwer.</p>
+    <?php elseif ($zal_kod === 'blad-zapisu'): ?>
+        <p class="alert alert-danger no-print">⚠ Nie udało się zapisać pliku na serwerze.</p>
+    <?php endif; ?>
+
     <?php if ($tydzien): ?>
     <!-- Dokument tygodnia (widok do wydruku) -->
     <article class="sheet week-sheet">
@@ -461,6 +511,9 @@ $ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni -
                                 <span class="wk-daytext">
                                     <span class="wk-weekday"><?= e(format_weekday_short($d)) ?></span>
                                     <span class="wk-date"><?= e((new DateTime($d))->format('d.m.Y')) ?><?= $d === $dzis ? ' <span class="wk-today">dziś</span>' : '' ?></span>
+                                    <?php if (!empty($zal_counts[$d])): ?>
+                                        <span class="wk-files" title="Załączniki: <?= (int) $zal_counts[$d] ?>">📎 <?= (int) $zal_counts[$d] ?></span>
+                                    <?php endif; ?>
                                 </span>
                             </span>
                         </th>
@@ -561,13 +614,49 @@ $ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni -
                 <h2>Wykonane czynności</h2>
                 <p><?= nl2br(e($wpis['opis'])) ?: '<em>(brak opisu)</em>' ?></p>
             </section>
+        <?php else: ?>
+            <p class="empty">Brak wpisu na ten dzień. Uzupełnij formularz poniżej i zapisz.</p>
+        <?php endif; ?>
 
+        <?php if ($zalaczniki): ?>
+        <section class="zalaczniki">
+            <h2>Załączniki <span class="zal-count"><?= count($zalaczniki) ?></span></h2>
+            <ul class="zal-list">
+                <?php foreach ($zalaczniki as $z): $img = zal_is_inline_image((string) $z['typ']); ?>
+                    <li class="zal-item">
+                        <a class="zal-link" href="plik.php?id=<?= (int) $z['id'] ?>"
+                           target="_blank" rel="noopener" title="<?= $img ? 'Powiększ' : 'Otwórz lub pobierz' ?>">
+                            <?php if ($img): ?>
+                                <img class="zal-thumb" src="plik.php?id=<?= (int) $z['id'] ?>"
+                                     alt="<?= e($z['nazwa']) ?>" loading="lazy">
+                            <?php else: ?>
+                                <span class="zal-ico" aria-hidden="true">📄</span>
+                            <?php endif; ?>
+                        </a>
+                        <div class="zal-info">
+                            <a class="zal-name" href="plik.php?id=<?= (int) $z['id'] ?>"
+                               target="_blank" rel="noopener"><?= e($z['nazwa']) ?></a>
+                            <span class="zal-size"><?= e(format_bytes((int) $z['rozmiar'])) ?></span>
+                        </div>
+                        <form method="post" action="index.php" class="zal-del no-print"
+                              onsubmit="return confirm('Usunąć plik „<?= e($z['nazwa']) ?>”?');">
+                            <input type="hidden" name="action" value="delete_file">
+                            <input type="hidden" name="data" value="<?= e($data) ?>">
+                            <input type="hidden" name="id" value="<?= (int) $z['id'] ?>">
+                            <?= csrf_field() ?>
+                            <button type="submit" class="btn btn-danger btn-sm" title="Usuń plik">🗑</button>
+                        </form>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
+        <?php endif; ?>
+
+        <?php if ($wpis): ?>
             <div class="signature">
                 <span>Podpis opiekuna praktyk</span>
                 <span class="line"></span>
             </div>
-        <?php else: ?>
-            <p class="empty">Brak wpisu na ten dzień. Uzupełnij formularz poniżej i zapisz.</p>
         <?php endif; ?>
     </article>
     <?php endif; /* tryb „Dodaj" – ukrywamy pusty dokument */ ?>
@@ -627,12 +716,28 @@ $ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni -
 
         <?php if ($wpis): ?>
             <form id="delete-form" method="post" action="index.php"
-                  onsubmit="return confirm('Usunąć wpis z dnia <?= e($data) ?>?');">
+                  onsubmit="return confirm('Usunąć wpis z dnia <?= e($data) ?>?\nUsunięte zostaną też załączniki tego dnia.');">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="data" value="<?= e($data) ?>">
                 <?= csrf_field() ?>
             </form>
         <?php endif; ?>
+
+        <div class="zal-upload">
+            <h3 class="zal-upload-title">📎 Zdjęcie lub plik do tego dnia</h3>
+            <form method="post" action="index.php" enctype="multipart/form-data" class="zal-upload-form">
+                <input type="hidden" name="action" value="add_file">
+                <input type="hidden" name="data" value="<?= e($data) ?>">
+                <?= csrf_field() ?>
+                <input class="zal-file" type="file" name="zal" required
+                       aria-label="Wybierz zdjęcie lub plik">
+                <button type="submit" class="btn btn-save">⬆ Dodaj plik</button>
+            </form>
+            <p class="zal-hint">
+                Maksymalny rozmiar pliku: <b><?= e(format_bytes(zal_max_bytes())) ?></b>.
+                Zdjęcia pokazują się jako miniatury, pozostałe pliki można pobrać.
+            </p>
+        </div>
     </section>
     <?php endif; ?>
 
@@ -793,6 +898,8 @@ $ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni -
                 <h3 class="backup-title">⬇ Pobierz kopię</h3>
                 <p class="backup-text">
                     Plik <code>.db</code> zawiera wszystkie wpisy dziennika. Trzymaj go w bezpiecznym miejscu.
+                    Uwaga: kopia obejmuje wpisy i listę plików, ale <strong>nie zawiera samych załączników</strong>
+                    (zdjęć/plików) — te leżą osobno na serwerze.
                 </p>
                 <a class="btn btn-save" href="backup.php?action=download">💾 Pobierz kopię zapasową</a>
             </div>

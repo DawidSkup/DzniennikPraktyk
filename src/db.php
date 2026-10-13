@@ -154,6 +154,21 @@ function db(): PDO
     db_ensure_column($pdo, 'uzytkownicy', 'reset_proby', 'INTEGER NOT NULL DEFAULT 0');
     db_ensure_column($pdo, 'uzytkownicy', 'reset_wyslano', 'INTEGER NOT NULL DEFAULT 0');
 
+    // Załączniki do dni (zdjęcia / pliki). Same pliki leżą na dysku w katalogu
+    // danych (poza docroot) — tutaj trzymamy tylko metadane.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS zalaczniki (
+            id      INTEGER PRIMARY KEY AUTOINCREMENT,
+            data    TEXT NOT NULL,
+            nazwa   TEXT NOT NULL DEFAULT "",
+            plik    TEXT NOT NULL,
+            typ     TEXT NOT NULL DEFAULT "",
+            rozmiar INTEGER NOT NULL DEFAULT 0,
+            dodano  TEXT NOT NULL DEFAULT ""
+        )'
+    );
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_zalaczniki_data ON zalaczniki (data)');
+
     return $pdo;
 }
 

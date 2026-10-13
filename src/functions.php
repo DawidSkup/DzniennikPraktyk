@@ -319,3 +319,227 @@ function backup_error_message(string $code): string
 
     return $messages[$code] ?? 'Nieznany błąd kopii zapasowej (' . $code . ').';
 }
+
+/* ------------------------------------------------------------------ *
+ *  Załączniki (zdjęcia / pliki) przypisane do dnia
+ * ------------------------------------------------------------------ */
+
+/** Maksymalny rozmiar pojedynczego pliku (w bajtach). */
+function zal_max_bytes(): int
+{
+    return 10 * 1024 * 1024; // 10 MB
+}
+
+/** Katalog na pliki załączników (obok bazy, poza docroot). */
+function zal_dir(): string
+{
+    $dir = db_data_dir() . DIRECTORY_SEPARATOR . 'zalaczniki';
+    if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+        throw new RuntimeException('Nie mogę utworzyć katalogu na załączniki: ' . $dir);
+    }
+
+    return $dir;
+}
+
+/** Rozszerzenia, których nie przyjmujemy (skrypty / pliki wykonywalne). */
+function zal_zakazane_rozszerzenia(): array
+{
+    return [
+        'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'pht', 'phar',
+        'phps', 'cgi', 'fcgi', 'pl', 'py', 'rb', 'sh', 'bash', 'exe', 'bat',
+        'cmd', 'com', 'scr', 'jar', 'htaccess', 'htpasswd',
+    ];
+}
+
+/** Bezpieczne rozszerzenie pliku (tylko litery/cyfry, maks. 10 znaków). */
+function zal_rozszerzenie(string $nazwa): string
+{
+    $ext = strtolower((string) pathinfo($nazwa, PATHINFO_EXTENSION));
+    $ext = (string) preg_replace('/[^a-z0-9]/', '', $ext);
+    if (strlen($ext) > 10) {
+        $ext = substr($ext, 0, 10);
+    }
+
+    return $ext;
+}
+
+/** Lista załączników dla dnia (rosnąco po dacie dodania). */
+function zal_list(string $data): array
+{
+    $stmt = db()->prepare('SELECT * FROM zalaczniki WHERE data = :d ORDER BY id ASC');
+    $stmt->execute([':d' => $data]);
+
+    return $stmt->fetchAll();
+}
+
+/** Liczba załączników wg dnia: [data => liczba]. */
+function zal_counts(): array
+{
+    $out = [];
+    foreach (db()->query('SELECT data, COUNT(*) AS ile FROM zalaczniki GROUP BY data') as $r) {
+        $out[(string) $r['data']] = (int) $r['ile'];
+    }
+
+    return $out;
+}
+
+/** Pojedynczy załącznik po id lub null. */
+function zal_get(int $id): ?array
+{
+    $stmt = db()->prepare('SELECT * FROM zalaczniki WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+
+    return $row ?: null;
+}
+
+/** Czy typ pliku nadaje się do bezpiecznego wyświetlenia jako obraz. */
+function zal_is_inline_image(string $typ): bool
+{
+    return (bool) preg_match('#^image/(jpeg|png|gif|webp|bmp|avif)$#', strtolower($typ));
+}
+
+/** Czy typ pliku można pokazać w przeglądarce bez ryzyka (obraz lub PDF). */
+function zal_is_inline(string $typ): bool
+{
+    $typ = strtolower($typ);
+
+    return zal_is_inline_image($typ) || $typ === 'application/pdf';
+}
+
+/**
+ * Dodaje załącznik do dnia.
+ *
+ * @param array|null $file wpis z $_FILES
+ * @return string kod: 'ok' | 'brak' | 'za-duzy' | 'typ' | 'blad-uploadu' | 'blad-zapisu'
+ */
+function zal_add(string $data, ?array $file): string
+{
+    if (!is_array($file) || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return 'brak';
+    }
+
+    $err = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+    if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) {
+        return 'za-duzy';
+    }
+    if ($err !== UPLOAD_ERR_OK) {
+        return 'blad-uploadu';
+    }
+
+    $tmp = (string) ($file['tmp_name'] ?? '');
+    if ($tmp === '' || !is_uploaded_file($tmp)) {
+        return 'blad-uploadu';
+    }
+
+    $size = (int) ($file['size'] ?? 0);
+    if ($size <= 0 || $size > zal_max_bytes()) {
+        return 'za-duzy';
+    }
+
+    // Nazwa oryginalna — tylko do wyświetlenia i pobrania (nieużywana na dysku).
+    $oryginal = (string) ($file['name'] ?? 'plik');
+    $nazwa    = (string) preg_replace('/[\x00-\x1F\x7F]/', '', basename(str_replace('\\', '/', $oryginal)));
+    $nazwa    = trim($nazwa);
+    if ($nazwa === '' || $nazwa[0] === '.') {
+        return 'typ';
+    }
+    if (mb_strlen($nazwa) > 180) {
+        $nazwa = mb_substr($nazwa, 0, 180);
+    }
+
+    $ext = zal_rozszerzenie($nazwa);
+    if ($ext !== '' && in_array($ext, zal_zakazane_rozszerzenia(), true)) {
+        return 'typ';
+    }
+
+    // Typ MIME rozpoznany na podstawie zawartości pliku.
+    $typ = 'application/octet-stream';
+    if (function_exists('finfo_open')) {
+        $fi = finfo_open(FILEINFO_MIME_TYPE);
+        if ($fi !== false) {
+            $wykryty = finfo_file($fi, $tmp);
+            finfo_close($fi);
+            if (is_string($wykryty) && $wykryty !== '') {
+                $typ = $wykryty;
+            }
+        }
+    }
+
+    $baza    = date('Ymd_His') . '_' . bin2hex(random_bytes(6));
+    $naDysku = $ext !== '' ? $baza . '.' . $ext : $baza;
+    $cel     = zal_dir() . DIRECTORY_SEPARATOR . $naDysku;
+
+    if (!@move_uploaded_file($tmp, $cel)) {
+        return 'blad-zapisu';
+    }
+    @chmod($cel, 0644);
+
+    $stmt = db()->prepare(
+        'INSERT INTO zalaczniki (data, nazwa, plik, typ, rozmiar, dodano)
+         VALUES (:d, :n, :p, :t, :r, :c)'
+    );
+    $stmt->execute([
+        ':d' => $data,
+        ':n' => $nazwa,
+        ':p' => $naDysku,
+        ':t' => $typ,
+        ':r' => $size,
+        ':c' => date('Y-m-d H:i:s'),
+    ]);
+
+    return 'ok';
+}
+
+/** Usuwa pojedynczy załącznik (plik z dysku + wpis w bazie). */
+function zal_delete(int $id): bool
+{
+    $row = zal_get($id);
+    if ($row === null) {
+        return false;
+    }
+
+    $plik = zal_dir() . DIRECTORY_SEPARATOR . (string) $row['plik'];
+    if (is_file($plik)) {
+        @unlink($plik);
+    }
+
+    db()->prepare('DELETE FROM zalaczniki WHERE id = :id')->execute([':id' => $id]);
+
+    return true;
+}
+
+/** Usuwa wszystkie załączniki danego dnia (pliki + wpisy). */
+function zal_delete_for_date(string $data): void
+{
+    foreach (zal_list($data) as $row) {
+        zal_delete((int) $row['id']);
+    }
+}
+
+/** Usuwa wszystkie załączniki w dzienniku (pliki + wpisy). */
+function zal_delete_all(): void
+{
+    foreach (db()->query('SELECT id FROM zalaczniki') as $row) {
+        zal_delete((int) $row['id']);
+    }
+}
+
+/** Czytelny rozmiar pliku, np. „1,2 MB". */
+function format_bytes(int $bytes): string
+{
+    if ($bytes < 1024) {
+        return $bytes . ' B';
+    }
+    if ($bytes < 1024 * 1024) {
+        return number_format($bytes / 1024, 0, ',', ' ') . ' KB';
+    }
+
+    return number_format($bytes / (1024 * 1024), 1, ',', ' ') . ' MB';
+}
+
+/** Zaszyfrowana (URL) nazwa pliku do nagłówka Content-Disposition. */
+function zal_disposition_name(string $nazwa): string
+{
+    return rawurlencode($nazwa);
+}

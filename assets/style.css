@@ -1871,3 +1871,197 @@ body.auth-body::before {
 
     @page { margin: 18mm; }
 }
+
+/* --- Załączniki (zdjęcia / pliki) --- */
+.zalaczniki {
+    margin-top: 22px;
+    border-top: 1px dashed var(--line);
+    padding-top: 16px;
+}
+
+.zalaczniki h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: var(--primary-dark);
+    margin: 0 0 12px;
+}
+
+.zal-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--tint);
+    color: var(--primary-dark);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.zal-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.zal-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--tint);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    min-width: 0;
+}
+
+.zal-link {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--line);
+    text-decoration: none;
+}
+
+.zal-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.zal-ico { font-size: 26px; }
+
+.zal-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.zal-name {
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.zal-name:hover { color: var(--primary); text-decoration: underline; }
+
+.zal-size { font-size: 12px; color: var(--muted); }
+
+.zal-del { margin: 0; }
+
+.btn-sm {
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1;
+}
+
+/* --- Wgrywanie pliku (karta wpisu) --- */
+.zal-upload {
+    margin: 22px 26px 0;
+    padding: 16px 18px;
+    background: var(--tint);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-sm);
+}
+
+.zal-upload-title {
+    margin: 0 0 10px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--primary-dark);
+}
+
+.zal-upload-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.zal-file {
+    flex: 1 1 220px;
+    max-width: 100%;
+    font-size: 14px;
+    color: var(--ink);
+}
+
+.zal-upload-form .btn { flex: 0 0 auto; }
+
+.zal-hint {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+/* --- Znaczek z liczbą plików (lista dni / widok tygodnia) --- */
+.day-list-files {
+    flex: 0 0 auto;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    background: var(--tint);
+    border-radius: 999px;
+    padding: 1px 7px;
+}
+
+.wk-files {
+    display: inline-block;
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    background: var(--tint);
+    border-radius: 999px;
+    padding: 1px 7px;
+}
+
+/* Ciemny motyw */
+:root[data-theme="dark"] .zal-item,
+:root[data-theme="dark"] .zal-upload,
+:root[data-theme="dark"] .zal-count,
+:root[data-theme="dark"] .day-list-files,
+:root[data-theme="dark"] .wk-files {
+    background: #16202f;
+    border-color: var(--line);
+}
+:root[data-theme="dark"] .zal-link { background: #0f172a; }
+:root[data-theme="dark"] .zalaczniki h2,
+:root[data-theme="dark"] .zal-upload-title,
+:root[data-theme="dark"] .zal-count,
+:root[data-theme="dark"] .day-list-files,
+:root[data-theme="dark"] .wk-files { color: #a5b4fc; }
+
+/* Wydruk — załączniki jako czytelna lista, bez elementów interaktywnych */
+@media print {
+    .zalaczniki { border-top: 1px solid #000; }
+    .zalaczniki h2 { color: #000; }
+    .zal-count { background: none; color: #000; padding: 0; }
+    .zal-item { background: none; border: 0; padding: 0; }
+    .zal-link { border: 0; background: none; }
+    .zal-name { color: #000; }
+    .zal-thumb { max-width: 120px; }
+    .day-list-files,
+    .wk-files { background: none; color: #000; padding: 0; }
+}

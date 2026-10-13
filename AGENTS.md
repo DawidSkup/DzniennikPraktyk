@@ -20,7 +20,8 @@
 - Przełączanie widoku **dzień / tydzień** — widok tygodniowy pokazuje cały tydzień
   (poniedziałek–niedziela) w tabeli z podsumowaniem
 - Dodawanie, edycja i usuwanie wpisów
-- Kopia zapasowa: pobranie dziennika do pliku `.db` oraz przywrócenie z kopii
+- **Załączniki do dnia**: do każdego dnia można dodać zdjęcie lub plik (maks. 10 MB). Zdjęcia pokazują się jako miniatury, pozostałe pliki jako lista do otwarcia/pobrania; usuwanie pojedynczego pliku. Pliki leżą na dysku w katalogu danych (poza docroot) i są podawane przez `plik.php` wyłącznie po zalogowaniu
+- Kopia zapasowa: pobranie dziennika do pliku `.db` oraz przywrócenie z kopii (kopia obejmuje wpisy i listę plików, ale **nie zawiera samych załączników** — te leżą osobno na serwerze)
 - Strona „O mnie" z danymi autora (link na samym dole strony)
 
 ## Wydruk
