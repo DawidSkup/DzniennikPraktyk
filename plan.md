@@ -142,3 +142,15 @@
 - [x] Style jasne/ciemne + wydruk (lista plików); brak ostrzeżeń PHP
 - [x] Wygląd sekcji załączników dopasowany do reszty aplikacji (bloki `--tint`, obramowanie 1px, pole pliku z firmowym przyciskiem `::file-selector-button` jak w oknie kopii)
 - [x] Testy: upload PNG/PDF (poprawny MIME), odrzucenie `.php` i pliku 11 MB, podgląd i pobranie, brak dostępu bez logowania (302), 404 dla braku pliku, sprzątanie przy usuwaniu wpisu i całości
+
+## Etap 17 — Strona główna z podsumowaniem godzin
+
+- [x] Nowa strona główna `index.php`: podsumowanie godzin (łącznie, średnio dziennie, bieżący tydzień i miesiąc, pierwszy/ostatni wpis, liczba załączników)
+- [x] Duży przycisk „📅 Przejdź do kalendarza" oraz „➕ Dodaj wpis" (`kalendarz.php?dodaj=1`)
+- [x] Obecny widok dnia/tygodnia przeniesiony do `kalendarz.php` (wszystkie wewnętrzne linki i akcje formularzy zaktualizowane)
+- [x] Link „🏠 Start" w pasku akcji i stopce kalendarza; kalendarz i „O mnie" linkują do siebie nawzajem
+- [x] Przekierowania: po zalogowaniu/utworzeniu konta → `index.php` (strona główna); po przywróceniu kopii → `kalendarz.php`
+- [x] Stan pusty (brak wpisów) z zaproszeniem do dodania pierwszego wpisu
+- [x] Style jasne/ciemne + responsywność (`assets/style.css`); brak ostrzeżeń PHP
+- [x] Testy: render z wpisami (łącznie 20 h, tydzień, miesiąc), stan pusty, linki kalendarz↔start, brak starych odnośników `index.php?data=`
+

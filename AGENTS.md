@@ -12,6 +12,9 @@
 
 ## Funkcjonalność
 
+- **Strona główna** (`index.php`) z podsumowaniem godzin praktyk (łącznie, średnio
+  dziennie, bieżący tydzień i miesiąc) oraz przyciskiem przechodzącym do kalendarza
+- Kalendarz (`kalendarz.php`) — widok dnia i tygodnia z wpisami
 - Możliwość wpisywania **daty** oraz **co zrobiłem/am** danego dnia (opis czynności)
 - Każdy wpis zawiera dodatkowo **godziny pracy (od – do)**
 - Zakres dat **dowolny** — sam wpisuję daty, aplikacja pokazuje tylko wpisane dni
