@@ -1434,6 +1434,18 @@ body.auth-body::before {
     box-shadow: 0 6px 16px rgba(79, 70, 229, .25);
 }
 
+/* Przyciski konta dopasowane do cyjanowego akcentu sekcji „Konto" */
+#konto .btn-account {
+    border-color: #0891b2;
+    color: #0e7490;
+}
+#konto .btn-account:hover {
+    background: #0891b2;
+    border-color: #0891b2;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(8, 145, 178, .25);
+}
+
 .btn-logout {
     background: #fff;
     border-color: var(--danger);
@@ -1583,9 +1595,9 @@ body.auth-body::before {
     height: 44px;
     flex: 0 0 auto;
     font-size: 21px;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
     border-radius: 13px;
-    box-shadow: 0 8px 18px rgba(79, 70, 229, .22);
+    box-shadow: 0 8px 18px rgba(79, 70, 229, .25);
 }
 .settings-title {
     margin: 1px 0 3px;
@@ -1605,9 +1617,9 @@ body.auth-body::before {
     display: block;
     margin: 0;
     padding: 10px 14px;
-    border: 1px solid var(--line);
+    border: 1px solid #e2e7fb;
     border-radius: var(--radius-sm);
-    background: var(--card);
+    background: #f6f7ff;
     font-size: 13.5px;
     color: var(--muted);
 }
@@ -1625,6 +1637,34 @@ body.auth-body::before {
 
 /* Kolejne bloki ustawień (konto, kopia) — odstęp między nimi */
 .settings-block + .settings-block { margin-top: 22px; }
+
+/* Każda sekcja ustawień ma własny akcent kolorystyczny */
+
+/* Konto — niebiesko-cyjanowy */
+#konto {
+    background: #eef7fb;
+    border-color: #d3e9f3;
+}
+#konto .settings-ico {
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    box-shadow: 0 8px 18px rgba(8, 145, 178, .25);
+}
+#konto .settings-title { color: #0e7490; }
+
+/* Kopia zapasowa — zielony */
+#kopia {
+    background: #eefbf4;
+    border-color: #cfefdd;
+}
+#kopia .settings-ico {
+    background: linear-gradient(135deg, #059669, #14b8a6);
+    box-shadow: 0 8px 18px rgba(5, 150, 105, .25);
+}
+#kopia .settings-title { color: #047857; }
+
+/* W sekcji kopii: tytuł „Pobierz kopię" zielony (blok przywracania zostaje czerwony) */
+#kopia .backup-block:not(.backup-block-danger) { border-color: #cfefdd; }
+#kopia .backup-block:not(.backup-block-danger) .backup-title { color: #047857; }
 
 /* Formularz wymaganych godzin jako wyodrębniony panel w obrębie sekcji */
 .settings-block .progress-form {
@@ -1749,6 +1789,8 @@ body.auth-body::before {
 
 :root[data-theme="dark"] .btn-account { background: #1e293b; border-color: var(--primary); color: #a5b4fc; }
 :root[data-theme="dark"] .btn-account:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
+:root[data-theme="dark"] #konto .btn-account { border-color: #0891b2; color: #67e8f9; }
+:root[data-theme="dark"] #konto .btn-account:hover { background: #0891b2; border-color: #0891b2; color: #fff; }
 :root[data-theme="dark"] .btn-logout { background: #2a1220; border-color: var(--danger); color: #fda4af; }
 :root[data-theme="dark"] .btn-logout:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
@@ -1766,6 +1808,12 @@ body.auth-body::before {
 :root[data-theme="dark"] .settings-block { background: #16202f; }
 :root[data-theme="dark"] .settings-title,
 :root[data-theme="dark"] .settings-summary b { color: #a5b4fc; }
+:root[data-theme="dark"] #konto { background: #0f2530; border-color: #1e4d5e; }
+:root[data-theme="dark"] #kopia { background: #0e2a20; border-color: #1c5138; }
+:root[data-theme="dark"] #konto .settings-title { color: #67e8f9; }
+:root[data-theme="dark"] #kopia .settings-title { color: #6ee7b7; }
+:root[data-theme="dark"] #kopia .backup-block:not(.backup-block-danger) { border-color: #1c5138; }
+:root[data-theme="dark"] #kopia .backup-block:not(.backup-block-danger) .backup-title { color: #6ee7b7; }
 :root[data-theme="dark"] .settings-block .backup-block { background: #0f172a; }
 :root[data-theme="dark"] .settings-block .backup-block-danger { background: #241319; border-color: #7f1d1d; }
 :root[data-theme="dark"] .settings-desc code { background: rgba(255, 255, 255, .1); }
