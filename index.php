@@ -116,7 +116,11 @@ $theme_vars = sprintf(
                 <p class="brand-sub">Strona główna · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?> w dzienniku</p>
             </div>
         </div>
-        <div class="topbar-actions" role="toolbar" aria-label="Akcje">
+    </header>
+
+    <!-- Akcje: pasek chowający się w bok + przycisk „⋮" do przywołania -->
+    <div class="actions-dock no-print">
+        <div class="topbar-actions" id="actions-bar" role="toolbar" aria-label="Akcje">
             <div class="theme-switch no-print" role="group" aria-label="Motyw: jasny, ciemny lub automatyczny">
                 <button type="button" class="theme-btn" data-theme-mode="light" aria-pressed="false" title="Tryb jasny (dzień)">☀️</button>
                 <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
@@ -129,7 +133,10 @@ $theme_vars = sprintf(
             </form>
             <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
         </div>
-    </header>
+        <button type="button" class="actions-toggle" id="actions-toggle"
+                aria-controls="actions-bar" aria-expanded="true"
+                title="Pokaż lub ukryj pasek akcji" aria-label="Pokaż lub ukryj pasek akcji">⋮</button>
+    </div>
 
     <main class="main home-main">
 
