@@ -203,11 +203,16 @@ $theme_vars = sprintf(
             </header>
 
             <section class="settings-block">
-                <h2 class="settings-title">🎯 Wymagane godziny praktyk</h2>
-                <p class="settings-desc">
-                    Podaj łączną liczbę godzin, które musisz wypracować. Na stronie głównej
-                    pojawi się pasek postępu pokazujący, ile już wypracowano.
-                </p>
+                <div class="settings-head">
+                    <span class="settings-ico" aria-hidden="true">🎯</span>
+                    <div>
+                        <h2 class="settings-title">Wymagane godziny praktyk</h2>
+                        <p class="settings-desc">
+                            Podaj łączną liczbę godzin, które musisz wypracować. Na stronie głównej
+                            pojawi się pasek postępu pokazujący, ile już wypracowano.
+                        </p>
+                    </div>
+                </div>
 
                 <form method="post" action="ustawienia.php" class="progress-form">
                     <input type="hidden" name="action" value="save_wymagane_godziny">
@@ -233,11 +238,16 @@ $theme_vars = sprintf(
             </section>
 
             <section class="settings-block" id="konto">
-                <h2 class="settings-title">🔐 Konto</h2>
-                <p class="settings-desc">
-                    Zalogowany jako <b><?= e($konto_login) ?></b>. Tutaj zmienisz hasło do dziennika
-                    oraz adres e-mail używany do resetowania hasła.
-                </p>
+                <div class="settings-head">
+                    <span class="settings-ico" aria-hidden="true">🔐</span>
+                    <div>
+                        <h2 class="settings-title">Konto</h2>
+                        <p class="settings-desc">
+                            Zalogowany jako <b><?= e($konto_login) ?></b>. Tutaj zmienisz hasło do dziennika
+                            oraz adres e-mail używany do resetowania hasła.
+                        </p>
+                    </div>
+                </div>
 
                 <div class="account-actions">
                     <button type="button" class="btn btn-account" data-open-password
@@ -261,10 +271,15 @@ $theme_vars = sprintf(
             </section>
 
             <section class="settings-block" id="kopia">
-                <h2 class="settings-title">💾 Kopia zapasowa</h2>
-                <p class="settings-desc">
-                    Zapisz dziennik do pliku <code>.db</code> albo przywróć go z wcześniejszej kopii.
-                </p>
+                <div class="settings-head">
+                    <span class="settings-ico" aria-hidden="true">💾</span>
+                    <div>
+                        <h2 class="settings-title">Kopia zapasowa</h2>
+                        <p class="settings-desc">
+                            Zapisz dziennik do pliku <code>.db</code> albo przywróć go z wcześniejszej kopii.
+                        </p>
+                    </div>
+                </div>
 
                 <div class="backup-block">
                     <h3 class="backup-title">⬇ Pobierz kopię</h3>

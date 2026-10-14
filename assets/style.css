@@ -1558,49 +1558,98 @@ body.auth-body::before {
 .settings-main { max-width: 720px; margin: 0 auto; }
 
 .settings-block {
-    padding: 20px 22px 22px;
+    padding: 22px 24px 24px;
     background: var(--tint);
     border: 1px solid var(--line);
     border-radius: var(--radius);
 }
 
+/* Nagłówek sekcji: ikonka w kolorowym kafelku + tytuł i opis */
+.settings-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.settings-ico {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    font-size: 21px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-radius: 13px;
+    box-shadow: 0 8px 18px rgba(79, 70, 229, .22);
+}
 .settings-title {
-    margin: 0 0 8px;
-    font-size: 18px;
+    margin: 1px 0 3px;
+    font-size: 17px;
     font-weight: 800;
     color: var(--primary-dark);
 }
 
 .settings-desc {
-    margin: 0 0 16px;
-    font-size: 14px;
-    line-height: 1.6;
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.55;
     color: var(--muted);
 }
 
 .settings-summary {
+    display: block;
     margin: 0;
-    font-size: 14px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    font-size: 13.5px;
     color: var(--muted);
 }
 .settings-summary b {
     color: var(--primary-dark);
     font-variant-numeric: tabular-nums;
 }
-.settings-summary.is-done { color: var(--save); font-weight: 700; }
-.settings-summary.is-done b { color: var(--save); }
+.settings-summary.is-done {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: var(--save-dark);
+    font-weight: 700;
+}
+.settings-summary.is-done b { color: var(--save-dark); }
 
 /* Kolejne bloki ustawień (konto, kopia) — odstęp między nimi */
-.settings-block + .settings-block { margin-top: 20px; }
+.settings-block + .settings-block { margin-top: 22px; }
+
+/* Formularz wymaganych godzin jako wyodrębniony panel w obrębie sekcji */
+.settings-block .progress-form {
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+
+/* Konto: odstęp między przyciskami a formularzem e-mail */
+.settings-block .account-actions { margin-bottom: 14px; }
 
 /* Kopia zapasowa wewnątrz bloku ustawień: jaśniejsza karta na tle sekcji */
 .settings-block .backup-block { background: var(--card); }
+.settings-block .backup-block-danger { background: #fff5f5; border-color: #fca5a5; }
+.settings-block .backup-block:last-child { margin-bottom: 0; }
 .settings-block .backup-block code,
 .settings-desc code {
     padding: 1px 6px;
     border-radius: 6px;
     background: rgba(0, 0, 0, .06);
     font-size: 12.5px;
+}
+
+/* Ustawienia na wąskich ekranach — mniejszy oddech w sekcjach */
+@media (max-width: 620px) {
+    .settings-block { padding: 18px 16px 20px; }
+    .settings-head { gap: 12px; }
+    .settings-ico { width: 40px; height: 40px; font-size: 19px; }
 }
 
 /* --- Responsywność --- */
@@ -1712,7 +1761,16 @@ body.auth-body::before {
 :root[data-theme="dark"] .settings-title,
 :root[data-theme="dark"] .settings-summary b { color: #a5b4fc; }
 :root[data-theme="dark"] .settings-block .backup-block { background: #0f172a; }
+:root[data-theme="dark"] .settings-block .backup-block-danger { background: #241319; border-color: #7f1d1d; }
 :root[data-theme="dark"] .settings-desc code { background: rgba(255, 255, 255, .1); }
+:root[data-theme="dark"] .settings-summary { background: #0f172a; }
+:root[data-theme="dark"] .settings-summary.is-done {
+    background: #0e3326;
+    border-color: #14532d;
+    color: #6ee7b7;
+}
+:root[data-theme="dark"] .settings-summary.is-done b { color: #6ee7b7; }
+:root[data-theme="dark"] .settings-block .progress-form { background: #0f172a; }
 :root[data-theme="dark"] .btn-danger { background: #2a1220; border-color: var(--danger); color: #fda4af; }
 :root[data-theme="dark"] .btn-danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 

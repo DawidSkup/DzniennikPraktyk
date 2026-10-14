@@ -180,5 +180,6 @@
 - [x] Ustawienia: pasek akcji (zmiana motywu + „Start" + „📅 Kalendarz") chowa się w bok przy przewijaniu i wraca przyciskiem „⋮" — jak w kalendarzu (`.actions-dock`); tytuł przewija się ze stroną
 - [x] Strona główna: pasek akcji (motyw, „📅 Kalendarz", „🚪 Wyloguj", ⚙️) też w chowanym doku `.actions-dock` z przyciskiem „⋮"; tytuł przewija się ze stroną
 - [x] Strona główna: przycisk „Dodaj wpis" przenosi do kalendarza i od razu otwiera popup „Dodaj wpis" (`?dodaj=1` → `window.__dpDodajAutoOpen` w `assets/app.js`)
+- [x] Wygląd ustawień: nagłówki sekcji z ikonką w kolorowym kafelku (`.settings-head`/`.settings-ico`), podsumowanie godzin jako karta, panel formularza godzin, wyróżniona karta „Przywróć z kopii", responsywne odstępy (jasny/ciemny)
 - [x] Testy: `php -l` (ustawienia, kalendarz, backup), `node --check` (`app.js`) — poprawne
 
