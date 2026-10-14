@@ -143,20 +143,12 @@ $ilosc_dni    = count($wszystkie);
 $mapa_wpisow  = [];
 $czas_wg_dnia = [];
 $dates        = [];
-$total_min    = 0;
-$dni_z_czasem = 0;
 foreach ($wszystkie as $w) {
     $d                   = (string) $w['data'];
     $mapa_wpisow[$d]     = $w;
     $dates[]             = $d;
-    $min                 = minutes_between((string) $w['godzina_od'], (string) $w['godzina_do']);
-    $czas_wg_dnia[$d]    = $min;
-    if ($min !== null) {
-        $total_min += $min;
-        $dni_z_czasem++;
-    }
+    $czas_wg_dnia[$d]    = minutes_between((string) $w['godzina_od'], (string) $w['godzina_do']);
 }
-$srednia_min = $dni_z_czasem > 0 ? intdiv($total_min, $dni_z_czasem) : 0;
 
 // --- Bieżąca data widoku -------------------------------------------------
 $data = isset($_GET['data']) ? trim((string) $_GET['data']) : '';
@@ -269,11 +261,6 @@ $konto_login  = (string) (auth_user()['login'] ?? '');
 $konto_email  = trim((string) (auth_user()['email'] ?? ''));
 $email_kod    = trim((string) ($_GET['email'] ?? ''));
 $zal_kod      = trim((string) ($_GET['zal'] ?? ''));
-
-// --- Statystyki do panelu bocznego (z już pobranych danych) -------------
-$dzien_min = $wpis !== null ? ($czas_wg_dnia[$data] ?? null) : null;
-$pierwszy  = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[0]['data']) : '—';
-$ostatni   = $ilosc_dni > 0 ? format_date_short((string) $wszystkie[$ilosc_dni - 1]['data']) : '—';
 
 // Załączniki oglądanego dnia oraz liczba plików wg dnia (lista + widok tygodnia).
 $zalaczniki = zal_list($data);
@@ -758,33 +745,9 @@ $zal_counts = zal_counts();
     </section>
     <?php endif; ?>
 
-        <!-- Panel prawy: statystyki -->
+        <!-- Panel prawy: motyw i skróty (podsumowanie godzin jest na stronie głównej) -->
         <aside class="side no-print">
             <div class="side-stack">
-                <div class="panel">
-                    <h3>Podsumowanie</h3>
-                    <div class="stat"><span>Dni z wpisem</span><b><?= $ilosc_dni ?></b></div>
-                    <div class="stat"><span>Łącznie godzin</span><b><?= $total_min > 0 ? e(format_duration($total_min)) : '—' ?></b></div>
-                    <div class="stat"><span>Średnio / dzień</span><b><?= $dni_z_czasem > 0 ? e(format_duration($srednia_min)) : '—' ?></b></div>
-                    <div class="stat"><span>Od</span><b><?= $ilosc_dni > 0 ? e((new DateTime($wszystkie[0]['data']))->format('d.m.Y')) : '—' ?></b></div>
-                    <div class="stat"><span>Do</span><b><?= $ilosc_dni > 0 ? e((new DateTime($wszystkie[$ilosc_dni - 1]['data']))->format('d.m.Y')) : '—' ?></b></div>
-                </div>
-
-                <?php if ($tydzien): ?>
-                <div class="panel">
-                    <h3>Ten tydzień</h3>
-                    <div class="stat"><span>Dni z wpisem</span><b><?= $tydz_filled_robocze ?> / <?= $tydz_dni_roboczych ?></b></div>
-                    <div class="stat"><span>Łącznie godzin</span><b><?= $tydz_total > 0 ? e(format_duration($tydz_total)) : '—' ?></b></div>
-                    <div class="stat"><span>Tydzień</span><b>nr <?= e(week_number($data)) ?></b></div>
-                </div>
-                <?php else: ?>
-                <div class="panel">
-                    <h3>Ten dzień</h3>
-                    <div class="stat"><span>Godziny</span><b><?= $dzien_min !== null ? e(format_duration($dzien_min)) : '—' ?></b></div>
-                    <div class="stat"><span>Status</span><b><?= $wpis ? 'Uzupełniony' : 'Pusty' ?></b></div>
-                </div>
-                <?php endif; ?>
-
                 <div class="panel">
                     <h3>Motyw dnia</h3>
                     <div class="swatches">

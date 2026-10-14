@@ -13,7 +13,8 @@
 ## Funkcjonalność
 
 - **Strona główna** (`index.php`) z podsumowaniem godzin praktyk (łącznie, średnio
-  dziennie, bieżący tydzień i miesiąc) oraz przyciskiem przechodzącym do kalendarza
+  dziennie, bieżący tydzień i miesiąc) oraz przyciskiem przechodzącym do kalendarza.
+  Podsumowanie godzin znajduje się **tylko** na stronie głównej
 - Kalendarz (`kalendarz.php`) — widok dnia i tygodnia z wpisami
 - Możliwość wpisywania **daty** oraz **co zrobiłem/am** danego dnia (opis czynności)
 - Każdy wpis zawiera dodatkowo **godziny pracy (od – do)**

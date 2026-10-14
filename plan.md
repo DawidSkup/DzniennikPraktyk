@@ -153,4 +153,6 @@
 - [x] Stan pusty (brak wpisów) z zaproszeniem do dodania pierwszego wpisu
 - [x] Style jasne/ciemne + responsywność (`assets/style.css`); brak ostrzeżeń PHP
 - [x] Testy: render z wpisami (łącznie 20 h, tydzień, miesiąc), stan pusty, linki kalendarz↔start, brak starych odnośników `index.php?data=`
+- [x] Usunięte z kalendarza panele boczne „Podsumowanie" oraz „Ten tydzień / Ten dzień" — podsumowanie godzin widoczne już tylko na stronie głównej (zostają „Motyw dnia" i „Skróty")
+- [x] Sprzątanie po usunięciu: nieużywane zmienne (`$total_min`, `$dni_z_czasem`, `$srednia_min`, `$dzien_min`, `$pierwszy`, `$ostatni`) oraz martwe reguły CSS `.stat`
 
