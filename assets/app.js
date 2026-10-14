@@ -95,6 +95,12 @@
         });
     }
 
+    // Wejście z przycisku „Dodaj wpis" (np. ze strony głównej): po przejściu
+    // do kalendarza popup z dodawaniem wpisu otwiera się od razu.
+    if (window.__dpDodajAutoOpen && dodajModal) {
+        openDodajModal();
+    }
+
     // Popup „Zmień hasło".
     const passwordModal = document.getElementById('password-modal');
     const openPasswordBtn = document.querySelector('[data-open-password]');

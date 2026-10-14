@@ -773,6 +773,7 @@ $zal_counts = zal_counts();
     </div>
 
 </div>
+<?php if ($dodaj_flow): ?><script>window.__dpDodajAutoOpen = true;</script><?php endif; ?>
 <script src="assets/app.js?v=<?= @filemtime(__DIR__ . '/assets/app.js') ?: time() ?>"></script>
 </body>
 </html>

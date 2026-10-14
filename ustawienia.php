@@ -138,15 +138,23 @@ $theme_vars = sprintf(
                 <p class="brand-sub">Dziennik Praktyk</p>
             </div>
         </div>
-        <div class="topbar-actions">
+    </header>
+
+    <!-- Akcje: pasek chowający się w bok + przycisk „⋮" do przywołania -->
+    <div class="actions-dock no-print">
+        <div class="topbar-actions" id="actions-bar" role="toolbar" aria-label="Akcje">
             <div class="theme-switch no-print" role="group" aria-label="Motyw: jasny, ciemny lub automatyczny">
                 <button type="button" class="theme-btn" data-theme-mode="light" aria-pressed="false" title="Tryb jasny (dzień)">☀️</button>
                 <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
                 <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
             </div>
             <a class="btn btn-today" href="index.php" title="Wróć na stronę główną">🏠 Start</a>
+            <a class="btn btn-today" href="kalendarz.php" title="Przejdź do kalendarza">📅 Kalendarz</a>
         </div>
-    </header>
+        <button type="button" class="actions-toggle" id="actions-toggle"
+                aria-controls="actions-bar" aria-expanded="true"
+                title="Pokaż lub ukryj pasek akcji" aria-label="Pokaż lub ukryj pasek akcji">⋮</button>
+    </div>
 
     <main class="main settings-main">
 

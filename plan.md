@@ -177,5 +177,7 @@
 - [x] Usunięte z `kalendarz.php`: pasek konta, popup „Kopia zapasowa", popup „Zmień hasło", komunikaty hasła/e-maila/kopii oraz nieużywane zmienne
 - [x] Sprzątanie: martwy blok JS obsługi popupu kopii (`assets/app.js`), style `.btn-backup`, odstępy i kontrast sekcji ustawień (jasny/ciemny)
 - [x] Paski akcji: przycisk ustawień jako sama ikonka ⚙️ (bez napisu, z `aria-label`/tooltipem), dosunięty do prawej krawędzi
+- [x] Ustawienia: pasek akcji (zmiana motywu + „Start" + „📅 Kalendarz") chowa się w bok przy przewijaniu i wraca przyciskiem „⋮" — jak w kalendarzu (`.actions-dock`); tytuł przewija się ze stroną
+- [x] Strona główna: przycisk „Dodaj wpis" przenosi do kalendarza i od razu otwiera popup „Dodaj wpis" (`?dodaj=1` → `window.__dpDodajAutoOpen` w `assets/app.js`)
 - [x] Testy: `php -l` (ustawienia, kalendarz, backup), `node --check` (`app.js`) — poprawne
 
