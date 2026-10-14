@@ -6,9 +6,9 @@
 
 - Baza danych: **SQLite** (plik `.db`, bez dodatkowego serwera baz danych)
 - Technologie: **PHP + HTML + CSS + JS**
-- Logowanie: **jedno wspólne konto** (login + hasło) — jeden dziennik, dane dostępne po zalogowaniu
-- Bezpieczeństwo: hasła hashowane (`password_hash`), sesja po stronie serwera, ochrona CSRF na operacjach zapisu. Konto tworzone przy pierwszym uruchomieniu (kreator), hasło zmieniane w UI. Po **5 nieudanych próbach** logowanie blokowane na **10 sekund** (licznik po stronie serwera; pole hasła zablokowane z odliczaniem)
-- Reset hasła: link „Nie pamiętam hasła" na ekranie logowania. Kod 6-cyfrowy wysyłany **e-mailem** (SMTP), ważny 10 min, max 5 błędnych prób. Adres e-mail ustawia się w kreatorze konta oraz w sekcji „Konto" w aplikacji. Gdy podane dane nie pasują do konta, aplikacja nic nie wysyła i nie pokazuje komunikatu. Uwaga: przywrócenie kopii zapasowej cofa też adres e-mail (bo kopia zawiera całą bazę)
+- Logowanie: **wiele kont** (login + hasło) z rolami — **administrator** i **uczeń**. Każdy uczeń ma **własny dziennik** (widzi i edytuje tylko swoje wpisy). Administrator ma **panel admina** (`admin.php`): zakłada konta uczniów i administratorów oraz przegląda dzienniczki wszystkich uczniów (tylko podgląd)
+- Bezpieczeństwo: hasła hashowane (`password_hash`), sesja po stronie serwera, ochrona CSRF na operacjach zapisu. Pierwsze konto tworzone przy pierwszym uruchomieniu (kreator) zostaje **administratorem**. Hasło zmieniane w UI oraz przez admina w panelu. Po **5 nieudanych próbach** logowanie blokowane na **10 sekund** (licznik po stronie serwera; pole hasła zablokowane z odliczaniem)
+- Reset hasła: link „Nie pamiętam hasła" na ekranie logowania. Kod 6-cyfrowy wysyłany **e-mailem** (SMTP), ważny 10 min, max 5 błędnych prób. Adres e-mail ustawia się w kreatorze konta oraz w sekcji „Konto" w aplikacji. Kod dopasowuje konto po loginie **lub** e-mailu. Gdy podane dane nie pasują do żadnego konta, aplikacja nic nie wysyła i nie pokazuje komunikatu. Uwaga: przywrócenie kopii zapasowej cofa też adresy e-mail i konta (bo kopia zawiera całą bazę)
 
 ## Funkcjonalność
 
@@ -27,8 +27,9 @@
 - Przełączanie widoku **dzień / tydzień** — widok tygodniowy pokazuje cały tydzień
   (poniedziałek–niedziela) w tabeli z podsumowaniem
 - Dodawanie, edycja i usuwanie wpisów
-- **Załączniki do dnia**: do każdego dnia można dodać zdjęcie lub plik (maks. 10 MB). Zdjęcia pokazują się jako miniatury, pozostałe pliki jako lista do otwarcia/pobrania; usuwanie pojedynczego pliku. Pliki leżą na dysku w katalogu danych (poza docroot) i są podawane przez `plik.php` wyłącznie po zalogowaniu
-- Kopia zapasowa: pobranie dziennika do pliku `.db` oraz przywrócenie z kopii (kopia obejmuje wpisy i listę plików, ale **nie zawiera samych załączników** — te leżą osobno na serwerze)
+- **Załączniki do dnia**: do każdego dnia można dodać zdjęcie lub plik (maks. 10 MB). Zdjęcia pokazują się jako miniatury, pozostałe pliki jako lista do otwarcia/pobrania; usuwanie pojedynczego pliku. Pliki leżą na dysku w katalogu danych (poza docroot) i są podawane przez `plik.php` wyłącznie po zalogowaniu (uczeń widzi tylko własne pliki, administrator wszystkie)
+- **Panel administratora** (`admin.php`, tylko dla roli admin): zakładanie kont (uczeń/administrator), lista kont z liczbą wpisów i godzin, zmiana hasła, roli i nazwy, usuwanie konta wraz z jego dziennikiem, podgląd dzienniczka ucznia (tylko odczyt przez `index.php?uczen=ID` / `kalendarz.php?uczen=ID`). Nie można usunąć ani pozbawić rangi ostatniego administratora
+- Kopia zapasowa (tylko administrator): pobranie **całej bazy** do pliku `.db` oraz przywrócenie z kopii (kopia obejmuje wpisy, konta i listę plików, ale **nie zawiera samych załączników** — te leżą osobno na serwerze)
 - Strona „O mnie" z danymi autora (link na samym dole strony)
 
 ## Wydruk

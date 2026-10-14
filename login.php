@@ -108,7 +108,7 @@ $page_title = $setup ? 'Utwórz konto' : 'Zaloguj się';
             <div>
                 <h1 class="auth-title">Dziennik Praktyk</h1>
                 <p class="brand-sub"><?= $setup
-                    ? 'Utwórz konto, aby zacząć prowadzić dziennik.'
+                    ? 'Utwórz konto administratora — będzie zarządzać uczniami.'
                     : 'Zaloguj się, aby kontynuować.' ?></p>
             </div>
         </div>

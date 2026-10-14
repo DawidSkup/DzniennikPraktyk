@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: ustawienia.php?godziny=zle');
             exit;
         }
-        ustawienie_set('wymagane_godziny', (string) (int) $godz);
+        wymagane_godziny_set((int) auth_user()['id'], (int) $godz);
         header('Location: ustawienia.php?godziny=ok');
         exit;
     }
@@ -107,12 +107,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  *  Stan ustawień
  * ------------------------------------------------------------------ */
 
-$wymagane_godz = wymagane_godziny();
+$me = auth_user();
+$me_id = (int) ($me['id'] ?? 0);
+
+$wymagane_godz = wymagane_godziny($me_id);
 $wymagane_min  = $wymagane_godz * 60;
 
 // Ile godzin już wypracowano (suma z wpisów).
 $total_min = 0;
-foreach (all_wpisy() as $w) {
+foreach (all_wpisy($me_id) as $w) {
     $min = minutes_between((string) $w['godzina_od'], (string) $w['godzina_do']);
     if ($min !== null) {
         $total_min += $min;
@@ -129,6 +132,7 @@ $przywrocono = isset($_GET['przywrocono']);
 $blad_kopii  = trim((string) ($_GET['blad'] ?? ''));
 $konto_login = (string) (auth_user()['login'] ?? '');
 $konto_email = trim((string) (auth_user()['email'] ?? ''));
+$konto_rola  = auth_is_admin() ? 'Administrator' : 'Uczeń';
 
 $theme = day_theme(date('Y-m-d'));
 $theme_vars = sprintf(
@@ -173,6 +177,9 @@ $theme_vars = sprintf(
                 <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
                 <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
             </div>
+            <?php if (auth_is_admin()): ?>
+                <a class="btn btn-admin" href="admin.php" title="Panel administratora">👑 Panel admina</a>
+            <?php endif; ?>
             <a class="btn btn-today" href="index.php" title="Wróć na stronę główną">🏠 Start</a>
             <a class="btn btn-today" href="kalendarz.php" title="Przejdź do kalendarza">📅 Kalendarz</a>
         </div>
@@ -280,8 +287,9 @@ $theme_vars = sprintf(
                     <div>
                         <h2 class="settings-title">Konto</h2>
                         <p class="settings-desc">
-                            Zalogowany jako <b><?= e($konto_login) ?></b>. Tutaj zmienisz nazwę konta, hasło do dziennika
-                            oraz adres e-mail używany do resetowania hasła.
+                            Zalogowany jako <b><?= e($konto_login) ?></b>
+                            <span class="role-badge role-<?= auth_is_admin() ? 'admin' : 'uczen' ?>"><?= e($konto_rola) ?></span>.
+                            Tutaj zmienisz nazwę konta, hasło do dziennika oraz adres e-mail używany do resetowania hasła.
                         </p>
                     </div>
                 </div>
@@ -316,6 +324,7 @@ $theme_vars = sprintf(
                 </div>
             </section>
 
+            <?php if (auth_is_admin()): ?>
             <section class="settings-block" id="kopia">
                 <div class="settings-head">
                     <span class="settings-ico" aria-hidden="true">💾</span>
@@ -353,6 +362,7 @@ $theme_vars = sprintf(
                     </form>
                 </div>
             </section>
+            <?php endif; /* kopia zapasowa — tylko administrator */ ?>
         </article>
 
         <nav class="pagefoot no-print" aria-label="Informacje">

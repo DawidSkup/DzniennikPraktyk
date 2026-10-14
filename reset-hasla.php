@@ -29,8 +29,6 @@ if (auth_is_logged_in()) {
 $krok   = (($_GET['krok'] ?? '') === '2') ? 2 : 1;
 $error  = '';
 $info   = '';
-$konto  = auth_account();
-$email  = trim((string) ($konto['email'] ?? ''));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $akcja = (string) ($_POST['action'] ?? '');
@@ -40,33 +38,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($akcja === 'wyslij') {
         // --- Krok 1: wysłanie kodu ---
         $podany = trim((string) ($_POST['podany'] ?? ''));
-        $login  = (string) ($konto['login'] ?? '');
-        $pasuje = $podany !== '' && (
-            $podany === $login
-            || ($email !== '' && strcasecmp($podany, $email) === 0)
-        );
+        $u      = user_by_login_or_email($podany);
 
-        if (!$pasuje) {
-            // Dane nie pasują do konta — nic nie wysyłamy i nie zdradzamy,
-            // czy konto istnieje (brak komunikatu).
+        if ($u === null) {
+            // Dane nie pasują do żadnego konta — nic nie wysyłamy i nie
+            // zdradzamy, czy konto istnieje (brak komunikatu).
             $krok = 1;
-        } elseif ($email === '') {
+        } elseif (trim((string) ($u['email'] ?? '')) === '') {
             $error = 'To konto nie ma ustawionego adresu e-mail. Zaloguj się i ustaw go w sekcji „Konto”, aby móc resetować hasło.';
         } elseif (!poczta_skonfigurowana()) {
             $error = 'Wysyłka poczty nie jest skonfigurowana. Uzupełnij plik poczta.json w katalogu danych (szczegóły w AGENTS.md).';
-        } elseif (auth_reset_wait() > 0) {
-            $error = 'Kod został już wysłany. Spróbuj ponownie za ' . auth_reset_wait() . ' s.';
-        } elseif (($kod = auth_reset_start()) === null) {
+        } elseif (auth_reset_wait_for((int) $u['id']) > 0) {
+            $error = 'Kod został już wysłany. Spróbuj ponownie za ' . auth_reset_wait_for((int) $u['id']) . ' s.';
+        } elseif (($kod = auth_reset_start_for((int) $u['id'])) === null) {
             $error = 'Nie udało się wygenerować kodu. Spróbuj ponownie.';
         } else {
+            $mail = trim((string) $u['email']);
             $tresc = "Dziennik Praktyk — reset hasła\n\n"
                 . "Kod do zmiany hasła: " . $kod . "\n\n"
                 . "Kod jest ważny " . (int) (auth_reset_ttl() / 60) . " minut.\n"
                 . "Jeśli to nie Ty prosiłeś o reset — zignoruj tę wiadomość.\n";
 
-            if (wyslij_mail($email, 'Dziennik Praktyk — kod resetu hasła', $tresc)) {
+            if (wyslij_mail($mail, 'Dziennik Praktyk — kod resetu hasła', $tresc)) {
                 $krok = 2;
-                $info = 'Kod został wysłany na adres: ' . $email;
+                $info = 'Kod został wysłany na adres: ' . $mail;
             } else {
                 $error = 'Nie udało się wysłać e-maila. Sprawdź konfigurację poczty (plik poczta.json w katalogu danych).';
             }

@@ -14,11 +14,18 @@ require_once __DIR__ . '/src/auth.php';
 // Wymagane zalogowanie (brak konta → kreator, brak sesji → logowanie).
 auth_require_login();
 
+// Kontekst: własny dziennik albo podgląd dziennika ucznia (administrator).
+$ctx        = auth_view_context();
+$view_user  = $ctx['user'] ?? null;
+$readonly   = (bool) $ctx['readonly'];
+$view_id    = (int) ($view_user['id'] ?? 0);
+$view_name  = $view_user !== null ? user_label($view_user) : '';
+
 /* ------------------------------------------------------------------ *
  *  Podsumowanie — liczone z jednego zapytania do bazy
  * ------------------------------------------------------------------ */
 
-$wszystkie    = all_wpisy();          // posortowane rosnąco po dacie
+$wszystkie    = all_wpisy($view_id);   // posortowane rosnąco po dacie
 $ilosc_dni    = count($wszystkie);
 $mapa_min     = [];                   // data => minuty (null, gdy brak godzin)
 $total_min    = 0;
@@ -73,11 +80,11 @@ for ($d = $mies_start; $d <= $mies_end; $d = date_shift($d, 1)) {
     }
 }
 
-$zal_total = array_sum(zal_counts());
+$zal_total = array_sum(zal_counts($view_id));
 $witaj     = isset($_GET['witaj']);
 
 // Pasek postępu: ile godzin już wypracowano z wymaganej liczby godzin.
-$wymagane_godz = wymagane_godziny();
+$wymagane_godz = wymagane_godziny($view_id);
 $wymagane_min  = $wymagane_godz * 60;
 $procent       = $wymagane_min > 0 ? (int) round($total_min / $wymagane_min * 100) : 0;
 $procent_bar   = max(0, min(100, $procent));
@@ -113,7 +120,13 @@ $theme_vars = sprintf(
             <span class="brand-icon">📘</span>
             <div>
                 <h1 class="brand-title">Dziennik Praktyk</h1>
-                <p class="brand-sub">Strona główna · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?> w dzienniku</p>
+                <p class="brand-sub">
+                    <?php if ($readonly): ?>
+                        Podgląd dziennika · <?= e($view_name) ?> · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?>
+                    <?php else: ?>
+                        Strona główna · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?> w dzienniku
+                    <?php endif; ?>
+                </p>
             </div>
         </div>
     </header>
@@ -126,12 +139,19 @@ $theme_vars = sprintf(
                 <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
                 <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
             </div>
-            <a class="btn btn-today" href="kalendarz.php" title="Przejdź do kalendarza">📅 Kalendarz</a>
-            <form method="post" action="logout.php" class="logout-form">
-                <?= csrf_field() ?>
-                <button type="submit" class="btn btn-logout" title="Wyloguj się">🚪 Wyloguj</button>
-            </form>
-            <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
+            <?php if (auth_is_admin()): ?>
+                <a class="btn btn-admin" href="admin.php" title="Panel administratora">👑 Panel admina</a>
+            <?php endif; ?>
+            <a class="btn btn-today" href="kalendarz.php<?= $readonly ? '?uczen=' . $view_id : '' ?>" title="Przejdź do kalendarza">📅 Kalendarz</a>
+            <?php if ($readonly): ?>
+                <a class="btn" href="index.php" title="Wróć do swojego dziennika">↩ Mój dziennik</a>
+            <?php else: ?>
+                <form method="post" action="logout.php" class="logout-form">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="btn btn-logout" title="Wyloguj się">🚪 Wyloguj</button>
+                </form>
+                <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
+            <?php endif; ?>
         </div>
         <button type="button" class="actions-toggle" id="actions-toggle"
                 aria-controls="actions-bar" aria-expanded="true"
@@ -140,6 +160,10 @@ $theme_vars = sprintf(
 
     <main class="main home-main">
 
+        <?php if ($readonly): ?>
+            <p class="alert alert-info no-print">👀 Podglądasz dziennik ucznia: <b><?= e($view_name) ?></b>. Tryb tylko do odczytu.</p>
+        <?php endif; ?>
+
         <?php if ($witaj): ?>
             <p class="alert no-print">👋 Konto utworzone. Miłej pracy z dziennikiem!</p>
         <?php endif; ?>
@@ -147,7 +171,7 @@ $theme_vars = sprintf(
         <article class="sheet home-sheet">
             <header class="sheet-head">
                 <div>
-                    <p class="sheet-kicker">Dziennik Praktyk</p>
+                    <p class="sheet-kicker">Dziennik Praktyk<?= $readonly ? ' · ' . e($view_name) : '' ?></p>
                     <p class="sheet-date">Podsumowanie godzin</p>
                 </div>
                 <?php if ($ilosc_dni > 0): ?>
@@ -179,17 +203,25 @@ $theme_vars = sprintf(
                     </div>
                 </section>
             <?php else: ?>
-                <p class="progress-empty">
-                    🎯 Ustaw liczbę godzin wymaganych do zaliczenia praktyk w
-                    <a href="ustawienia.php">⚙️ Ustawieniach</a>, aby zobaczyć pasek postępu.
-                </p>
+                <?php if ($readonly): ?>
+                    <p class="progress-empty">🎯 Uczeń nie ustawił jeszcze wymaganej liczby godzin praktyk.</p>
+                <?php else: ?>
+                    <p class="progress-empty">
+                        🎯 Ustaw liczbę godzin wymaganych do zaliczenia praktyk w
+                        <a href="ustawienia.php">⚙️ Ustawieniach</a>, aby zobaczyć pasek postępu.
+                    </p>
+                <?php endif; ?>
             <?php endif; ?>
 
             <?php if ($ilosc_dni === 0): ?>
-                <p class="empty">Nie masz jeszcze żadnych wpisów. Zacznij od dodania pierwszego dnia praktyk.</p>
+                <p class="empty"><?= $readonly
+                    ? 'Ten uczeń nie ma jeszcze żadnych wpisów.'
+                    : 'Nie masz jeszcze żadnych wpisów. Zacznij od dodania pierwszego dnia praktyk.' ?></p>
                 <div class="home-actions">
-                    <a class="btn btn-today home-big" href="kalendarz.php?dodaj=1">➕ Dodaj pierwszy wpis</a>
-                    <a class="btn" href="kalendarz.php">📅 Kalendarz</a>
+                    <?php if (!$readonly): ?>
+                        <a class="btn btn-today home-big" href="kalendarz.php?dodaj=1">➕ Dodaj pierwszy wpis</a>
+                    <?php endif; ?>
+                    <a class="btn" href="kalendarz.php<?= $readonly ? '?uczen=' . $view_id : '' ?>">📅 Kalendarz</a>
                 </div>
             <?php else: ?>
                 <div class="home-hero">
@@ -236,16 +268,20 @@ $theme_vars = sprintf(
                 </div>
 
                 <div class="home-actions">
-                    <a class="btn btn-today home-big" href="kalendarz.php">📅 Przejdź do kalendarza</a>
-                    <a class="btn btn-save" href="kalendarz.php?dodaj=1">➕ Dodaj wpis</a>
+                    <a class="btn btn-today home-big" href="kalendarz.php<?= $readonly ? '?uczen=' . $view_id : '' ?>">📅 Przejdź do kalendarza</a>
+                    <?php if (!$readonly): ?>
+                        <a class="btn btn-save" href="kalendarz.php?dodaj=1">➕ Dodaj wpis</a>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </article>
 
         <nav class="pagefoot no-print" aria-label="Informacje">
-            <a href="index.php" aria-current="page">🏠 Start</a>
-            <a href="kalendarz.php">📅 Kalendarz</a>
-            <a href="ustawienia.php">⚙️ Ustawienia</a>
+            <a href="index.php<?= $readonly ? '?uczen=' . $view_id : '' ?>" aria-current="page">🏠 Start</a>
+            <a href="kalendarz.php<?= $readonly ? '?uczen=' . $view_id : '' ?>">📅 Kalendarz</a>
+            <?php if (!$readonly): ?>
+                <a href="ustawienia.php">⚙️ Ustawienia</a>
+            <?php endif; ?>
             <a href="o-mnie.php">ℹ️ O mnie</a>
         </nav>
 

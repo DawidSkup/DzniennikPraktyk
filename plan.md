@@ -185,3 +185,23 @@
 - [x] Kolory w ustawieniach: każda sekcja ma własny akcent (godziny — indygo/fiolet, konto — niebiesko-cyjanowy, kopia — zielony); kolorowe kafelki ikon, tła i tytuły sekcji, cyjanowe przyciski konta, zielony tytuł „Pobierz kopię"; warianty ciemne
 - [x] Testy: `php -l` (ustawienia, kalendarz, backup), `node --check` (`app.js`) — poprawne
 
+## Etap 20 — Wiele kont: administratorzy i uczniowie (branch `multi`)
+
+- [x] Baza: tabela `uzytkownicy` rozszerzona o `rola` (`admin`/`uczen`), `imie_nazwisko`, `wymagane_godziny`; tabele `wpisy` i `zalaczniki` o `user_id` (unikalność `data` w obrębie konta)
+- [x] Automatyczna migracja starej (jednokontowej) bazy: pierwsze konto → administrator, istniejące wpisy/załączniki i globalne „wymagane godziny" przypisane do niego
+- [x] `src/functions.php`: wszystkie operacje CRUD na wpisach i załącznikach oraz wymagane godziny działają w kontekście konta (`user_id`)
+- [x] `src/auth.php`: logowanie wielokontowe, role (`auth_is_admin`), funkcje zarządzania kontami (`user_get`, `user_create`, `user_delete`, `user_set_password/role/name`, `users_all`)
+- [x] Reset hasła: wybór konta po loginie **lub** e-mailu (`user_by_login_or_email`), kod wiązany z kontem w sesji
+- [x] Kontekst widoku (`auth_view_context()`): administrator może podejrzeć dziennik ucznia przez `?uczen=ID` (tylko odczyt); uczeń widzi wyłącznie własny dziennik
+- [x] Nowy panel administratora `admin.php`: dodawanie kont (uczeń/administrator), lista kont ze statystykami, zmiana hasła/roli/nazwy, usuwanie konta z dziennikiem, podgląd dzienniczków
+- [x] Ochrona: nie można usunąć ani pozbawić rangi ostatniego administratora; uczeń nie wejdzie do panelu (przekierowanie)
+- [x] `plik.php`: uczeń pobiera tylko własne pliki, administrator wszystkie
+- [x] Kopia zapasowa tylko dla administratora (`backup.php` → `auth_require_admin()`); sekcja „Kopia" ukryta u uczniów
+- [x] Ustawienia: wymagane godziny per konto, znaczek roli, przycisk „Panel admina"; `auth_user()` cache'owany po `uid` (poprawne po przełączeniu konta)
+- [x] Wygląd: przycisk „👑 Panel admina", znaczek roli (`role-badge`), baner podglądu (`alert-info`), styl panelu (`admin-*`), warianty ciemne i responsywne
+- [x] `AGENTS.md` zaktualizowane do modelu wielokontowego
+- [x] Testy CLI: świeża baza (role, logowanie, rozdzielenie dzienników, godziny per konto, ochrona ostatniego admina, reset hasła, usuwanie konta) — OK
+- [x] Testy CLI: migracja starej bazy (admin, przypisanie wpisów/załączników/godzin, nadpisanie wpisu) — OK
+- [x] Testy HTTP: kreator admina, panel, dodanie ucznia, podgląd (readonly), brak kopii u ucznia, brak dostępu do panelu, auto-otwarcie popupu — 21/21 OK
+- [x] Testy: brak ostrzeżeń/notice PHP na wszystkich stronach; `php -l` wszystkich plików — poprawnie
+

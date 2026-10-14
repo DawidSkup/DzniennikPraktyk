@@ -1,10 +1,13 @@
 <?php
 /**
- * Dziennik Praktyk — uwierzytelnianie (jedno wspólne konto) i ochrona CSRF.
+ * Dziennik Praktyk — uwierzytelnianie (wiele kont, role) i ochrona CSRF.
  *
- * Konto trzymamy w tabeli `uzytkownicy` (login + hash hasła). Hasła nigdy nie
- * zapisujemy jawnie — używamy password_hash()/password_verify().
+ * Konta trzymamy w tabeli `uzytkownicy` (login + hash hasła + rola).
+ * Hasła nigdy nie zapisujemy jawnie — używamy password_hash()/password_verify().
  * Sesja oparta o pliki PHP, ciasteczko HttpOnly + SameSite=Lax.
+ *
+ * Role: 'admin' (administrator) i 'uczen' (uczeń). Administratorzy mają panel
+ * (`admin.php`) do zakładania kont i mogą przeglądać dzienniczki uczniów.
  */
 
 declare(strict_types=1);
@@ -32,43 +35,99 @@ function auth_session_start(): void
     session_start();
 }
 
-/** Zwraca konto (pierwszy, jedyny wiersz) lub null, gdy jeszcze nie istnieje. */
-function auth_account(): ?array
+/* ------------------------------------------------------------------ *
+ *  Konta (użytkownicy) i role
+ * ------------------------------------------------------------------ */
+
+/** Pojedyncze konto po id lub null. */
+function user_get(int $id): ?array
 {
-    $row = db()->query('SELECT * FROM uzytkownicy ORDER BY id ASC LIMIT 1')->fetch();
+    $stmt = db()->prepare('SELECT * FROM uzytkownicy WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
 
     return $row ?: null;
+}
+
+/** Konto po loginie lub null. */
+function user_by_login(string $login): ?array
+{
+    $stmt = db()->prepare('SELECT * FROM uzytkownicy WHERE login = :l');
+    $stmt->execute([':l' => trim($login)]);
+    $row = $stmt->fetch();
+
+    return $row ?: null;
+}
+
+/** Konto po loginie albo adresie e-mail (do resetu hasła) lub null. */
+function user_by_login_or_email(string $wartosc): ?array
+{
+    $wartosc = trim($wartosc);
+    if ($wartosc === '') {
+        return null;
+    }
+
+    $stmt = db()->prepare('SELECT * FROM uzytkownicy WHERE login = :w OR email = :w LIMIT 1');
+    $stmt->execute([':w' => $wartosc]);
+    $row = $stmt->fetch();
+
+    return $row ?: null;
+}
+
+/** Wszystkie konta: uczniowie najpierw alfabetycznie, potem administratorzy. */
+function users_all(): array
+{
+    return db()->query(
+        "SELECT * FROM uzytkownicy
+          ORDER BY CASE rola WHEN 'uczen' THEN 0 ELSE 1 END,
+                   COALESCE(NULLIF(imie_nazwisko, ''), login) COLLATE NOCASE ASC"
+    )->fetchAll();
+}
+
+/** Liczba kont. */
+function users_count(): int
+{
+    return (int) db()->query('SELECT COUNT(*) FROM uzytkownicy')->fetchColumn();
+}
+
+/** Czytelna nazwa użytkownika (imię i nazwisko, a gdy brak — login). */
+function user_label(array $user): string
+{
+    $imie = trim((string) ($user['imie_nazwisko'] ?? ''));
+
+    return $imie !== '' ? $imie : (string) ($user['login'] ?? '');
 }
 
 /** Czy konto zostało już utworzone (kreator pierwszego uruchomienia). */
 function auth_has_account(): bool
 {
-    return auth_account() !== null;
+    return users_count() > 0;
 }
 
 /** Zalogowany użytkownik (na podstawie sesji) lub null. */
 function auth_user(): ?array
 {
-    static $user = false;
-
-    if ($user !== false) {
-        return $user;
-    }
-
     auth_session_start();
+
+    // Cache w obrębie żądania, ale kluczowany po id z sesji — dzięki temu
+    // zmiana użytkownika (logowanie/wylogowanie) zawsze daje świeże dane.
+    static $cache_id   = null;
+    static $cache_user = null;
+
     $uid = $_SESSION['uid'] ?? null;
     if ($uid === null || !ctype_digit((string) $uid)) {
-        $user = null;
-
-        return $user;
+        return null;
     }
 
-    $stmt = db()->prepare('SELECT * FROM uzytkownicy WHERE id = :id');
-    $stmt->execute([':id' => (int) $uid]);
-    $row  = $stmt->fetch();
-    $user = $row ?: null;
+    $uid = (int) $uid;
+    if ($cache_id === $uid) {
+        return $cache_user;
+    }
 
-    return $user;
+    $cache_id   = $uid;
+    $cache_user = user_get($uid);
+
+    return $cache_user;
 }
 
 /** Czy użytkownik jest zalogowany. */
@@ -77,7 +136,19 @@ function auth_is_logged_in(): bool
     return auth_user() !== null;
 }
 
-/** Tworzy konto (tylko gdy żadne jeszcze nie istnieje). */
+/** Rola zalogowanego użytkownika ('admin' | 'uczen' | '' gdy niezalogowany). */
+function auth_role(): string
+{
+    return (string) (auth_user()['rola'] ?? '');
+}
+
+/** Czy zalogowany użytkownik jest administratorem. */
+function auth_is_admin(): bool
+{
+    return auth_role() === 'admin';
+}
+
+/** Tworzy pierwsze konto (administratora). Tylko gdy żadne jeszcze nie istnieje. */
 function auth_create_account(string $login, string $haslo, string $email = ''): bool
 {
     if (auth_has_account()) {
@@ -85,14 +156,128 @@ function auth_create_account(string $login, string $haslo, string $email = ''): 
     }
 
     $stmt = db()->prepare(
-        'INSERT INTO uzytkownicy (login, haslo_hash, email, created_at) VALUES (:l, :h, :e, :c)'
+        'INSERT INTO uzytkownicy (login, haslo_hash, email, rola, imie_nazwisko, created_at)
+         VALUES (:l, :h, :e, "admin", :n, :c)'
+    );
+    $stmt->execute([
+        ':l' => trim($login),
+        ':h' => password_hash($haslo, PASSWORD_DEFAULT),
+        ':e' => trim($email),
+        ':n' => trim($login),
+        ':c' => date('Y-m-d H:i:s'),
+    ]);
+
+    return true;
+}
+
+/**
+ * Zakłada konto (panel administratora).
+ * Zwraca kod: 'ok' | 'login' | 'krotki' | 'haslo' | 'email' | 'rola' | 'zajety'.
+ */
+function user_create(string $login, string $haslo, string $rola, string $imie, string $email): string
+{
+    $login = trim($login);
+    $imie  = trim($imie);
+    $email = trim($email);
+
+    if ($login === '') {
+        return 'login';
+    }
+    if (strlen($login) < 3) {
+        return 'krotki';
+    }
+    if (!in_array($rola, ['admin', 'uczen'], true)) {
+        return 'rola';
+    }
+    if (strlen($haslo) < 6) {
+        return 'haslo';
+    }
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return 'email';
+    }
+    if (user_by_login($login) !== null) {
+        return 'zajety';
+    }
+
+    $stmt = db()->prepare(
+        'INSERT INTO uzytkownicy (login, haslo_hash, email, rola, imie_nazwisko, created_at)
+         VALUES (:l, :h, :e, :r, :n, :c)'
     );
     $stmt->execute([
         ':l' => $login,
         ':h' => password_hash($haslo, PASSWORD_DEFAULT),
-        ':e' => trim($email),
+        ':e' => $email,
+        ':r' => $rola,
+        ':n' => $imie,
         ':c' => date('Y-m-d H:i:s'),
     ]);
+
+    return 'ok';
+}
+
+/** Ustawia nowe hasło wskazanego konta (panel administratora). */
+function user_set_password(int $id, string $haslo): bool
+{
+    if (strlen($haslo) < 6 || user_get($id) === null) {
+        return false;
+    }
+
+    $stmt = db()->prepare('UPDATE uzytkownicy SET haslo_hash = :h WHERE id = :id');
+    $stmt->execute([':h' => password_hash($haslo, PASSWORD_DEFAULT), ':id' => $id]);
+
+    return true;
+}
+
+/** Ustawia rolę konta. */
+function user_set_role(int $id, string $rola): bool
+{
+    if (!in_array($rola, ['admin', 'uczen'], true)) {
+        return false;
+    }
+
+    $stmt = db()->prepare('UPDATE uzytkownicy SET rola = :r WHERE id = :id');
+    $stmt->execute([':r' => $rola, ':id' => $id]);
+
+    return true;
+}
+
+/** Ustawia imię i nazwisko (etykietę) konta. */
+function user_set_name(int $id, string $imie): bool
+{
+    if (user_get($id) === null) {
+        return false;
+    }
+
+    $stmt = db()->prepare('UPDATE uzytkownicy SET imie_nazwisko = :n WHERE id = :id');
+    $stmt->execute([':n' => trim($imie), ':id' => $id]);
+
+    return true;
+}
+
+/**
+ * Usuwa konto wraz z jego dziennikiem (wpisy + metadane załączników).
+ * Nie pozwala usunąć ostatniego administratora.
+ */
+function user_delete(int $id): bool
+{
+    $user = user_get($id);
+    if ($user === null) {
+        return false;
+    }
+
+    // Zabezpieczenie: nie usuwamy ostatniego administratora.
+    if (($user['rola'] ?? '') === 'admin') {
+        $adminow = (int) db()->query("SELECT COUNT(*) FROM uzytkownicy WHERE rola = 'admin'")->fetchColumn();
+        if ($adminow <= 1) {
+            return false;
+        }
+    }
+
+    // Usuń pliki i metadane załączników tego konta.
+    zal_delete_all($id);
+
+    db()->prepare('DELETE FROM wpisy WHERE user_id = :u')->execute([':u' => $id]);
+    db()->prepare('DELETE FROM uzytkownicy WHERE id = :id')->execute([':id' => $id]);
 
     return true;
 }
@@ -100,13 +285,12 @@ function auth_create_account(string $login, string $haslo, string $email = ''): 
 /** Weryfikuje dane logowania i zakłada sesję. */
 function auth_login(string $login, string $haslo): bool
 {
-    $acc = auth_account();
+    $acc = user_by_login($login);
     if ($acc === null) {
         return false;
     }
 
-    if (!hash_equals((string) $acc['login'], $login)
-        || !password_verify($haslo, (string) $acc['haslo_hash'])) {
+    if (!password_verify($haslo, (string) $acc['haslo_hash'])) {
         return false;
     }
 
@@ -139,35 +323,27 @@ function auth_logout(): void
     session_destroy();
 }
 
-/** Zmienia hasło — wymaga podania obecnego hasła. */
+/** Zmienia hasło zalogowanego użytkownika — wymaga podania obecnego hasła. */
 function auth_change_password(string $obecne, string $nowe): bool
 {
-    $acc = auth_account();
+    $acc = auth_user();
     if ($acc === null || !password_verify($obecne, (string) $acc['haslo_hash'])) {
         return false;
     }
 
-    $stmt = db()->prepare('UPDATE uzytkownicy SET haslo_hash = :h WHERE id = :id');
-    $stmt->execute([
-        ':h'  => password_hash($nowe, PASSWORD_DEFAULT),
-        ':id' => (int) $acc['id'],
-    ]);
-
-    return true;
+    return user_set_password((int) $acc['id'], $nowe);
 }
 
-/** Adres e-mail przypisany do konta (do resetu hasła) lub pusty tekst. */
+/** Adres e-mail zalogowanego użytkownika (do resetu hasła) lub pusty tekst. */
 function auth_email(): string
 {
-    $acc = auth_account();
-
-    return $acc ? trim((string) ($acc['email'] ?? '')) : '';
+    return trim((string) (auth_user()['email'] ?? ''));
 }
 
-/** Ustawia/zmienia adres e-mail konta. */
+/** Ustawia/zmienia adres e-mail zalogowanego użytkownika. */
 function auth_set_email(string $email): bool
 {
-    $acc = auth_account();
+    $acc = auth_user();
     if ($acc === null) {
         return false;
     }
@@ -179,8 +355,8 @@ function auth_set_email(string $email): bool
 }
 
 /**
- * Zmienia nazwę konta (login). Wymaga co najmniej 3 znaków.
- * Zwraca true, gdy udało się zapisać (login jest unikalny w bazie).
+ * Zmienia nazwę konta (login) zalogowanego użytkownika.
+ * Wymaga co najmniej 3 znaków. Zwraca true, gdy udało się zapisać.
  */
 function auth_set_login(string $login): bool
 {
@@ -189,7 +365,7 @@ function auth_set_login(string $login): bool
         return false;
     }
 
-    $acc = auth_account();
+    $acc = auth_user();
     if ($acc === null) {
         return false;
     }
@@ -203,6 +379,60 @@ function auth_set_login(string $login): bool
     }
 
     return true;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Kontekst widoku: własny dziennik albo podgląd dziennika ucznia
+ * ------------------------------------------------------------------ */
+
+/**
+ * Ustala, czyj dziennik oglądamy.
+ *
+ * Administrator może podejrzeć dziennik ucznia przez `?uczen=ID` (tylko
+ * do odczytu). W pozostałych przypadkach oglądamy własny dziennik.
+ *
+ * @return array{viewer:?array, user:?array, readonly:bool}
+ */
+function auth_view_context(): array
+{
+    $viewer = auth_user();
+    $ctx    = ['viewer' => $viewer, 'user' => $viewer, 'readonly' => false];
+
+    if ($viewer !== null && ($viewer['rola'] ?? '') === 'admin' && isset($_GET['uczen'])) {
+        $uczen = user_get((int) $_GET['uczen']);
+        if ($uczen !== null && ($uczen['rola'] ?? '') === 'uczen') {
+            $ctx['user']     = $uczen;
+            $ctx['readonly'] = true;
+        }
+    }
+
+    return $ctx;
+}
+
+/** Pilnuje dostępu: brak konta → kreator, brak sesji → ekran logowania. */
+function auth_require_login(): void
+{
+    auth_session_start();
+
+    if (!auth_has_account()) {
+        header('Location: login.php?setup=1');
+        exit;
+    }
+    if (!auth_is_logged_in()) {
+        header('Location: login.php');
+        exit;
+    }
+}
+
+/** Pilnuje dostępu administratora — pozostałych odsyła na stronę główną. */
+function auth_require_admin(): void
+{
+    auth_require_login();
+
+    if (!auth_is_admin()) {
+        header('Location: index.php');
+        exit;
+    }
 }
 
 /* ------------------------------------------------------------------ *
@@ -227,31 +457,50 @@ function auth_reset_odstep(): int
     return 30;
 }
 
-/** Ile sekund pozostało do możliwości ponownego wysłania kodu (0 = można). */
-function auth_reset_wait(): int
+/** Ile sekund pozostało do ponownej wysyłki kodu dla konta (0 = można). */
+function auth_reset_wait_for(int $user_id): int
 {
-    $acc = auth_account();
-    if ($acc === null) {
+    $u = user_get($user_id);
+    if ($u === null) {
         return 0;
     }
 
-    $pozostalo = (int) ($acc['reset_wyslano'] ?? 0) + auth_reset_odstep() - time();
+    $pozostalo = (int) ($u['reset_wyslano'] ?? 0) + auth_reset_odstep() - time();
 
     return $pozostalo > 0 ? $pozostalo : 0;
 }
 
-/**
- * Rozpoczyna reset: generuje 6-cyfrowy kod i zapisuje jego hash.
- * Zwraca kod (jawny — tylko do wysłania mailem) albo null, gdy nie można
- * (brak konta, brak e-maila albo zbyt szybka ponowna próba).
- */
-function auth_reset_start(): ?string
+/** Konto, dla którego trwa reset w tej sesji (lub null). */
+function auth_reset_target(): ?array
 {
-    $acc = auth_account();
-    if ($acc === null || trim((string) ($acc['email'] ?? '')) === '') {
+    auth_session_start();
+    $uid = $_SESSION['reset_uid'] ?? null;
+    if ($uid === null || !ctype_digit((string) $uid)) {
         return null;
     }
-    if (auth_reset_wait() > 0) {
+
+    return user_get((int) $uid);
+}
+
+/** Ile sekund pozostało do ponownej wysyłki kodu (sesja bieżącego resetu). */
+function auth_reset_wait(): int
+{
+    $u = auth_reset_target();
+
+    return $u !== null ? auth_reset_wait_for((int) $u['id']) : 0;
+}
+
+/**
+ * Rozpoczyna reset dla wskazanego konta: generuje 6-cyfrowy kod i zapisuje hash.
+ * Zwraca kod (jawny — tylko do wysłania mailem) albo null, gdy nie można.
+ */
+function auth_reset_start_for(int $user_id): ?string
+{
+    $u = user_get($user_id);
+    if ($u === null || trim((string) ($u['email'] ?? '')) === '') {
+        return null;
+    }
+    if (auth_reset_wait_for($user_id) > 0) {
         return null;
     }
 
@@ -265,19 +514,22 @@ function auth_reset_start(): ?string
         ':h'  => password_hash($kod, PASSWORD_DEFAULT),
         ':w'  => time() + auth_reset_ttl(),
         ':t'  => time(),
-        ':id' => (int) $acc['id'],
+        ':id' => $user_id,
     ]);
+
+    auth_session_start();
+    $_SESSION['reset_uid'] = $user_id;
 
     return $kod;
 }
 
 /**
- * Weryfikuje kod i ustawia nowe hasło.
+ * Weryfikuje kod i ustawia nowe hasło dla konta z sesji resetu.
  * Zwraca status: 'ok' | 'zly' | 'wygasl' | 'brak' | 'proby'.
  */
 function auth_reset_confirm(string $kod, string $nowe): string
 {
-    $acc = auth_account();
+    $acc = auth_reset_target();
     if ($acc === null) {
         return 'brak';
     }
@@ -310,6 +562,9 @@ function auth_reset_confirm(string $kod, string $nowe): string
         ':h'  => password_hash($nowe, PASSWORD_DEFAULT),
         ':id' => (int) $acc['id'],
     ]);
+
+    auth_session_start();
+    unset($_SESSION['reset_uid']);
 
     return 'ok';
 }
@@ -385,7 +640,7 @@ function auth_login_lock_remaining(): int
 /** Liczba pozostałych prób przed blokadą. */
 function auth_login_attempts_left(): int
 {
-    $stan   = auth_throttle_state();
+    $stan    = auth_throttle_state();
     $zostalo = auth_max_attempts() - $stan['proby'];
 
     return $zostalo > 0 ? $zostalo : 0;
@@ -414,21 +669,6 @@ function auth_login_register_failure(): int
 function auth_login_reset(): void
 {
     auth_throttle_save(['proby' => 0, 'blokada_do' => 0]);
-}
-
-/** Pilnuje dostępu: brak konta → kreator, brak sesji → ekran logowania. */
-function auth_require_login(): void
-{
-    auth_session_start();
-
-    if (!auth_has_account()) {
-        header('Location: login.php?setup=1');
-        exit;
-    }
-    if (!auth_is_logged_in()) {
-        header('Location: login.php');
-        exit;
-    }
 }
 
 /* ------------------------------------------------------------------ *

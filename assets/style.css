@@ -2492,3 +2492,186 @@ body.auth-body::before {
     background: #0f172a;
     color: #e2e8f0;
 }
+
+/* ================================================================== *
+ *  Tryb „wiele kont": role, panel administratora, podgląd ucznia
+ * ================================================================== */
+
+/* Znaczek roli konta (Administrator / Uczeń) */
+.role-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    margin-left: 4px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    vertical-align: middle;
+}
+.role-admin { background: #fef3c7; color: #92400e; }
+.role-uczen { background: #e0e7ff; color: #3730a3; }
+
+/* Przycisk „Panel admina" — ciepły, złoty akcent */
+.btn-admin {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+.btn-admin:hover {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, .35);
+}
+
+/* Informacyjny komunikat (np. baner podglądu ucznia) */
+.alert-info {
+    background: linear-gradient(90deg, #e0f2fe, #ede9fe);
+    border-left-color: #6366f1;
+    color: #3730a3;
+}
+
+/* --- Panel administratora --- */
+.admin-main { max-width: 980px; }
+
+/* Formularz zakładania konta — siatka pól */
+.admin-create {
+    padding: 16px 18px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+.admin-create-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    margin-bottom: 16px;
+}
+.admin-create-wide { grid-column: 1 / -1; }
+
+.admin-create .field { display: flex; flex-direction: column; gap: 5px; }
+.admin-create label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+}
+.admin-create input,
+.admin-create select,
+.admin-inline input,
+.admin-inline select {
+    padding: 9px 12px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+}
+.admin-create input:focus,
+.admin-create select:focus,
+.admin-inline input:focus,
+.admin-inline select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .18);
+}
+
+/* Lista kont */
+.admin-users { display: flex; flex-direction: column; gap: 12px; }
+
+.admin-user {
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+.admin-user.is-me { border-color: #f59e0b; box-shadow: inset 0 0 0 1px #fde68a; }
+
+.admin-user-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 12px;
+}
+.admin-user-id {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+}
+.admin-user-name { font-size: 15px; font-weight: 800; color: var(--primary-dark); }
+.admin-you {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 11px;
+    font-weight: 800;
+}
+.admin-user-login {
+    font-size: 12.5px;
+    color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.admin-user-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.admin-user-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+}
+.admin-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    flex-wrap: wrap;
+}
+.admin-inline input,
+.admin-inline select { padding: 7px 10px; font-size: 13.5px; }
+.admin-inline input[type="text"],
+.admin-inline input[type="password"] { min-width: 150px; }
+
+@media (max-width: 620px) {
+    .admin-create-grid { grid-template-columns: 1fr; }
+    .admin-user-actions { flex-direction: column; align-items: stretch; }
+    .admin-inline { width: 100%; }
+    .admin-inline input,
+    .admin-inline select { flex: 1 1 auto; }
+}
+
+/* Tryb ciemny — znaczek roli, przycisk admina, panel, baner podglądu */
+:root[data-theme="dark"] .role-admin { background: #3a2c07; color: #fcd34d; }
+:root[data-theme="dark"] .role-uczen { background: #232a52; color: #c7d2fe; }
+:root[data-theme="dark"] .btn-admin { background: #2a2210; border-color: #d97706; color: #fcd34d; }
+:root[data-theme="dark"] .btn-admin:hover { background: #d97706; border-color: #d97706; color: #fff; }
+:root[data-theme="dark"] .alert-info {
+    background: #16203a;
+    border-left-color: #6366f1;
+    color: #c7d2fe;
+}
+:root[data-theme="dark"] .admin-user { background: #16202f; }
+:root[data-theme="dark"] .admin-user-name { color: #a5b4fc; }
+:root[data-theme="dark"] .admin-you { background: #3a2c07; color: #fcd34d; }
+:root[data-theme="dark"] .admin-create input,
+:root[data-theme="dark"] .admin-create select,
+:root[data-theme="dark"] .admin-inline input,
+:root[data-theme="dark"] .admin-inline select {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+:root[data-theme="dark"] .admin-create { background: #16202f; }

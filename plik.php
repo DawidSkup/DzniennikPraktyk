@@ -25,6 +25,15 @@ if ($row === null) {
     exit;
 }
 
+// Dostęp: administrator widzi wszystkie pliki, uczeń tylko własne.
+$me = auth_user();
+if (!auth_is_admin() && (int) ($row['user_id'] ?? 0) !== (int) ($me['id'] ?? 0)) {
+    http_response_code(404);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Nie znaleziono pliku.';
+    exit;
+}
+
 // Ochrona przed wyjściem poza katalog załączników (nazwa pochodzi z bazy).
 $plik = basename((string) $row['plik']);
 $cel  = zal_dir() . DIRECTORY_SEPARATOR . $plik;
