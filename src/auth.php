@@ -178,6 +178,33 @@ function auth_set_email(string $email): bool
     return true;
 }
 
+/**
+ * Zmienia nazwę konta (login). Wymaga co najmniej 3 znaków.
+ * Zwraca true, gdy udało się zapisać (login jest unikalny w bazie).
+ */
+function auth_set_login(string $login): bool
+{
+    $login = trim($login);
+    if (strlen($login) < 3) {
+        return false;
+    }
+
+    $acc = auth_account();
+    if ($acc === null) {
+        return false;
+    }
+
+    try {
+        $stmt = db()->prepare('UPDATE uzytkownicy SET login = :l WHERE id = :id');
+        $stmt->execute([':l' => $login, ':id' => (int) $acc['id']]);
+    } catch (PDOException $e) {
+        // Np. naruszenie unikalności loginu — nie zmieniamy konta.
+        return false;
+    }
+
+    return true;
+}
+
 /* ------------------------------------------------------------------ *
  *  Reset hasła — kod wysyłany e-mailem
  * ------------------------------------------------------------------ */

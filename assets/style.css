@@ -1381,24 +1381,28 @@ body.auth-body::before {
 
 .account-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
-/* E-mail konta (do resetu hasła) — pełna szerokość pod paskiem konta */
-.account-email {
-    flex: 1 1 100%;
+/* Nazwa konta i e-mail (do resetu hasła) — pod przyciskami, oddzielone linią */
+.account-fields {
+    margin-top: 14px;
     padding-top: 14px;
     border-top: 1px dashed var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
-.email-form {
+.account-form {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 10px;
 }
-.email-form label {
+.account-form label {
     font-weight: 600;
     font-size: 13.5px;
     color: var(--primary-dark);
 }
-.email-form input[type="email"] {
+.account-form input[type="email"],
+.account-form input[type="text"] {
     flex: 1 1 240px;
     min-width: 0;
     padding: 9px 12px;
@@ -1409,7 +1413,8 @@ body.auth-body::before {
     font-family: inherit;
     color: var(--ink);
 }
-.email-form input[type="email"]:focus {
+.account-form input[type="email"]:focus,
+.account-form input[type="text"]:focus {
     outline: none;
     border-color: #6366f1;
     box-shadow: 0 0 0 4px rgba(99, 102, 241, .18);
@@ -1748,7 +1753,8 @@ body.auth-body::before {
 :root[data-theme="dark"] .btn-logout:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
 :root[data-theme="dark"] .auth-form input { background: #0f172a; border-color: #334155; color: var(--ink); }
-:root[data-theme="dark"] .email-form input[type="email"] { background: #0f172a; border-color: #334155; color: var(--ink); }
+:root[data-theme="dark"] .account-form input[type="email"],
+:root[data-theme="dark"] .account-form input[type="text"] { background: #0f172a; border-color: #334155; color: var(--ink); }
 :root[data-theme="dark"] .account-bar { background: rgba(15, 23, 42, .82); }
 :root[data-theme="dark"] .account-text strong { color: #a5b4fc; }
 

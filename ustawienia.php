@@ -24,9 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
 
     if (!csrf_check($_POST['csrf'] ?? null)) {
-        $kod   = $action === 'save_email'
-            ? 'email=csrf'
-            : ($action === 'change_password' ? 'haslo=csrf' : 'godziny=csrf');
+        if ($action === 'save_email') {
+            $kod = 'email=csrf';
+        } elseif ($action === 'save_login') {
+            $kod = 'login=csrf';
+        } elseif ($action === 'change_password') {
+            $kod = 'haslo=csrf';
+        } else {
+            $kod = 'godziny=csrf';
+        }
         header('Location: ustawienia.php?' . $kod);
         exit;
     }
@@ -58,6 +64,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         header('Location: ustawienia.php?haslo=' . urlencode($haslo_kod));
+        exit;
+    }
+
+    if ($action === 'save_login') {
+        $login_nowy = trim((string) ($_POST['login'] ?? ''));
+        if ($login_nowy === '') {
+            header('Location: ustawienia.php?login=pusty');
+            exit;
+        }
+        if (strlen($login_nowy) < 3) {
+            header('Location: ustawienia.php?login=krotki');
+            exit;
+        }
+        if (!auth_set_login($login_nowy)) {
+            header('Location: ustawienia.php?login=zly');
+            exit;
+        }
+        header('Location: ustawienia.php?login=ok');
         exit;
     }
 
@@ -100,6 +124,7 @@ $gotowe      = $wymagane_min > 0 && $total_min >= $wymagane_min;
 $godziny_kod = isset($_GET['godziny']) ? (string) $_GET['godziny'] : null;
 $haslo_kod   = trim((string) ($_GET['haslo'] ?? ''));
 $email_kod   = trim((string) ($_GET['email'] ?? ''));
+$login_kod   = trim((string) ($_GET['login'] ?? ''));
 $przywrocono = isset($_GET['przywrocono']);
 $blad_kopii  = trim((string) ($_GET['blad'] ?? ''));
 $konto_login = (string) (auth_user()['login'] ?? '');
@@ -188,6 +213,18 @@ $theme_vars = sprintf(
             <p class="alert alert-danger no-print">⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.</p>
         <?php endif; ?>
 
+        <?php if ($login_kod === 'ok'): ?>
+            <p class="alert no-print">✔ Nazwa konta została zmieniona. Od teraz logujesz się jako <b><?= e($konto_login) ?></b>.</p>
+        <?php elseif ($login_kod === 'pusty'): ?>
+            <p class="alert alert-danger no-print">⚠ Podaj nazwę konta.</p>
+        <?php elseif ($login_kod === 'krotki'): ?>
+            <p class="alert alert-danger no-print">⚠ Nazwa konta musi mieć co najmniej 3 znaki.</p>
+        <?php elseif ($login_kod === 'zly'): ?>
+            <p class="alert alert-danger no-print">⚠ Nie udało się zmienić nazwy konta — wybierz inną nazwę.</p>
+        <?php elseif ($login_kod === 'csrf'): ?>
+            <p class="alert alert-danger no-print">⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.</p>
+        <?php endif; ?>
+
         <?php if ($przywrocono): ?>
             <p class="alert no-print">✔ Dziennik przywrócony z kopii zapasowej. Kopia poprzedniego stanu została zapisana na serwerze.</p>
         <?php elseif ($blad_kopii !== ''): ?>
@@ -243,7 +280,7 @@ $theme_vars = sprintf(
                     <div>
                         <h2 class="settings-title">Konto</h2>
                         <p class="settings-desc">
-                            Zalogowany jako <b><?= e($konto_login) ?></b>. Tutaj zmienisz hasło do dziennika
+                            Zalogowany jako <b><?= e($konto_login) ?></b>. Tutaj zmienisz nazwę konta, hasło do dziennika
                             oraz adres e-mail używany do resetowania hasła.
                         </p>
                     </div>
@@ -258,8 +295,17 @@ $theme_vars = sprintf(
                     </form>
                 </div>
 
-                <div class="account-email">
-                    <form method="post" action="ustawienia.php" class="email-form">
+                <div class="account-fields">
+                    <form method="post" action="ustawienia.php" class="account-form">
+                        <input type="hidden" name="action" value="save_login">
+                        <?= csrf_field() ?>
+                        <label for="acc-login">👤 Nazwa konta (login)</label>
+                        <input id="acc-login" type="text" name="login" value="<?= e($konto_login) ?>"
+                               minlength="3" maxlength="64" autocomplete="username" required>
+                        <button type="submit" class="btn btn-account" title="Zapisz nazwę konta">💾 Zapisz</button>
+                    </form>
+
+                    <form method="post" action="ustawienia.php" class="account-form">
                         <input type="hidden" name="action" value="save_email">
                         <?= csrf_field() ?>
                         <label for="acc-email">📧 E-mail do resetu hasła</label>
