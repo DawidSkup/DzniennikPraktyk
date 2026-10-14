@@ -156,3 +156,26 @@
 - [x] Usunięte z kalendarza panele boczne „Podsumowanie" oraz „Ten tydzień / Ten dzień" — podsumowanie godzin widoczne już tylko na stronie głównej (zostają „Motyw dnia" i „Skróty")
 - [x] Sprzątanie po usunięciu: nieużywane zmienne (`$total_min`, `$dni_z_czasem`, `$srednia_min`, `$dzien_min`, `$pierwszy`, `$ostatni`) oraz martwe reguły CSS `.stat`
 
+## Etap 18 — Pasek postępu godzin praktyk na stronie głównej
+
+- [x] Baza: tabela `ustawienia` (`klucz`, `wartosc`) — auto-tworzona w `src/db.php`
+- [x] Funkcje `ustawienie()`, `ustawienie_set()` i `wymagane_godziny()` w `src/functions.php`
+- [x] Pasek postępu na `index.php`: procent, „wypracowano z X h", „zostało Y"
+- [x] Liczba wymaganych godzin edytowalna w aplikacji (pole w formularzu na stronie głównej), zapis z ochroną CSRF (POST/Redirect/GET)
+- [x] Gdy nie ustawiono liczby godzin — zachęta do jej ustawienia zamiast paska; po wypracowaniu 100% pasek i komunikat w kolorze „sukcesu"
+- [x] Komunikaty zapisu (`godziny=ok` / `zle` / `csrf`) oraz walidacja wartości (liczba całkowita 1–100000)
+- [x] Style jasne/ciemne + responsywność (`assets/style.css`); brak ostrzeżeń PHP
+- [x] Testy: helpery i logika progresu (0%/70%/100%), pełny zapis przez HTTP (302 → `?godziny=ok`), błędna wartość (`?godziny=zle`), błędny CSRF (`?godziny=csrf`)
+
+## Etap 19 — Konto i kopia zapasowa w ustawieniach
+
+- [x] Sekcja „🔐 Konto" przeniesiona do `ustawienia.php`: zmiana hasła (popup), e-mail do resetu hasła, wylogowanie
+- [x] Sekcja „💾 Kopia zapasowa" przeniesiona do `ustawienia.php`: pobranie kopii i przywrócenie z pliku (formularz bezpośrednio na stronie)
+- [x] Obsługa akcji `change_password` i `save_email` przeniesiona z `kalendarz.php` do `ustawienia.php` (kody `?haslo=`, `?email=`)
+- [x] `backup.php` po przywróceniu przekierowuje na `ustawienia.php` (`?przywrocono=1` / `?blad=`)
+- [x] Usunięty przycisk „💾 Kopia" z paska akcji w kalendarzu — kopia dostępna już tylko w ustawieniach
+- [x] Usunięte z `kalendarz.php`: pasek konta, popup „Kopia zapasowa", popup „Zmień hasło", komunikaty hasła/e-maila/kopii oraz nieużywane zmienne
+- [x] Sprzątanie: martwy blok JS obsługi popupu kopii (`assets/app.js`), style `.btn-backup`, odstępy i kontrast sekcji ustawień (jasny/ciemny)
+- [x] Paski akcji: przycisk ustawień jako sama ikonka ⚙️ (bez napisu, z `aria-label`/tooltipem), dosunięty do prawej krawędzi
+- [x] Testy: `php -l` (ustawienia, kalendarz, backup), `node --check` (`app.js`) — poprawne
+

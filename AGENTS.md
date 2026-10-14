@@ -15,6 +15,9 @@
 - **Strona główna** (`index.php`) z podsumowaniem godzin praktyk (łącznie, średnio
   dziennie, bieżący tydzień i miesiąc) oraz przyciskiem przechodzącym do kalendarza.
   Podsumowanie godzin znajduje się **tylko** na stronie głównej
+- **Pasek postępu praktyk** na stronie głównej: pokazuje, ile godzin już wypracowano
+  z wymaganej liczby godzin (procent oraz „zostało N h"). Wymaganą liczbę godzin
+  wpisuje się bezpośrednio na stronie głównej (edytowalna w aplikacji)
 - Kalendarz (`kalendarz.php`) — widok dnia i tygodnia z wpisami
 - Możliwość wpisywania **daty** oraz **co zrobiłem/am** danego dnia (opis czynności)
 - Każdy wpis zawiera dodatkowo **godziny pracy (od – do)**

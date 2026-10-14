@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $err = backup_restore();
     }
 
-    header('Location: kalendarz.php?' . ($err === '' ? 'przywrocono=1' : 'blad=' . urlencode($err)));
+    header('Location: ustawienia.php?' . ($err === '' ? 'przywrocono=1' : 'blad=' . urlencode($err)));
     exit;
 }
 

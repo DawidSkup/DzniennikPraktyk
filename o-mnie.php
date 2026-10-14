@@ -133,6 +133,7 @@ $theme_vars = sprintf(
         <nav class="pagefoot" aria-label="Informacje">
             <a href="index.php">🏠 Start</a>
             <a href="kalendarz.php">← Kalendarz</a>
+            <a href="ustawienia.php">⚙️ Ustawienia</a>
             <a href="o-mnie.php" aria-current="page">O mnie</a>
         </nav>
     </main>

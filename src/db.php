@@ -169,6 +169,15 @@ function db(): PDO
     );
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_zalaczniki_data ON zalaczniki (data)');
 
+    // Ustawienia aplikacji (klucz => wartość). Trzymamy tu m.in. wymaganą
+    // liczbę godzin praktyk używaną przez pasek postępu na stronie głównej.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS ustawienia (
+            klucz   TEXT PRIMARY KEY,
+            wartosc TEXT NOT NULL DEFAULT ""
+        )'
+    );
+
     return $pdo;
 }
 

@@ -36,42 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if ($action === 'change_password') {
-        $obecne = (string) ($_POST['obecne_haslo'] ?? '');
-        $nowe   = (string) ($_POST['nowe_haslo'] ?? '');
-        $powt   = (string) ($_POST['nowe_haslo2'] ?? '');
-
-        if (strlen($nowe) < 6) {
-            $haslo_kod = 'krotkie';
-        } elseif ($nowe !== $powt) {
-            $haslo_kod = 'niezgodne';
-        } elseif (!auth_change_password($obecne, $nowe)) {
-            $haslo_kod = 'zle';
-        } else {
-            $haslo_kod = 'ok';
-        }
-
-        header('Location: kalendarz.php?haslo=' . urlencode($haslo_kod));
-        exit;
-    }
-
-    if ($action === 'save_email') {
-        $mail = trim((string) ($_POST['email'] ?? ''));
-        if ($mail === '') {
-            // Puste pole NIE czyści zapisanego adresu (ochrona przed przypadkiem
-            // i przed starą, otwartą stroną z pustym polem).
-            header('Location: kalendarz.php?email=pusty');
-            exit;
-        }
-        if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
-            header('Location: kalendarz.php?email=zly');
-            exit;
-        }
-        auth_set_email($mail);
-        header('Location: kalendarz.php?email=ok');
-        exit;
-    }
-
     if ($action === 'add_file' && is_valid_date($data)) {
         $kod = zal_add($data, $_FILES['zal'] ?? null);
         header('Location: kalendarz.php?data=' . urlencode($data) . '&zal=' . urlencode($kod));
@@ -252,14 +216,7 @@ $theme_vars = sprintf(
 
 $zapisano     = isset($_GET['zapisano']);
 $usunieto     = isset($_GET['usunieto']);
-$przywrocono  = isset($_GET['przywrocono']);
-$blad_kopii   = trim((string) ($_GET['blad'] ?? ''));
-$witaj        = isset($_GET['witaj']);
 $blad_csrf    = isset($_GET['blad_csrf']);
-$haslo_kod    = trim((string) ($_GET['haslo'] ?? ''));
-$konto_login  = (string) (auth_user()['login'] ?? '');
-$konto_email  = trim((string) (auth_user()['email'] ?? ''));
-$email_kod    = trim((string) ($_GET['email'] ?? ''));
 $zal_kod      = trim((string) ($_GET['zal'] ?? ''));
 
 // Załączniki oglądanego dnia oraz liczba plików wg dnia (lista + widok tygodnia).
@@ -302,9 +259,8 @@ $zal_counts = zal_counts();
             <a class="btn btn-today" href="kalendarz.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
             <button type="button" class="btn btn-save" data-open-dodaj
                     title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</button>
-            <button type="button" class="btn btn-backup" data-open-backup
-                    title="Kopia zapasowa — pobierz lub przywróć dziennik">💾 Kopia</button>
             <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
+            <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
         </div>
         <button type="button" class="actions-toggle" id="actions-toggle"
                 aria-controls="actions-bar" aria-expanded="true"
@@ -405,38 +361,8 @@ $zal_counts = zal_counts();
         <p class="alert alert-danger no-print">🧹 Usunięto wszystkie wpisy z dziennika.</p>
     <?php endif; ?>
 
-    <?php if ($przywrocono): ?>
-        <p class="alert no-print">✔ Dziennik przywrócony z kopii zapasowej. Kopia poprzedniego stanu została zapisana na serwerze.</p>
-    <?php endif; ?>
-
-    <?php if ($blad_kopii !== ''): ?>
-        <p class="alert alert-danger no-print">⚠ <?= e(backup_error_message($blad_kopii)) ?></p>
-    <?php endif; ?>
-
-    <?php if ($witaj): ?>
-        <p class="alert no-print">👋 Konto utworzone. Miłej pracy z dziennikiem!</p>
-    <?php endif; ?>
-
     <?php if ($blad_csrf): ?>
         <p class="alert alert-danger no-print">⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.</p>
-    <?php endif; ?>
-
-    <?php if ($haslo_kod === 'ok'): ?>
-        <p class="alert no-print">✔ Hasło zostało zmienione.</p>
-    <?php elseif ($haslo_kod === 'krotkie'): ?>
-        <p class="alert alert-danger no-print">⚠ Nowe hasło musi mieć co najmniej 6 znaków.</p>
-    <?php elseif ($haslo_kod === 'niezgodne'): ?>
-        <p class="alert alert-danger no-print">⚠ Nowe hasła nie są identyczne.</p>
-    <?php elseif ($haslo_kod === 'zle'): ?>
-        <p class="alert alert-danger no-print">⚠ Obecne hasło jest nieprawidłowe.</p>
-    <?php endif; ?>
-
-    <?php if ($email_kod === 'ok'): ?>
-        <p class="alert no-print">✔ Adres e-mail konta został zapisany.</p>
-    <?php elseif ($email_kod === 'zly'): ?>
-        <p class="alert alert-danger no-print">⚠ Podaj poprawny adres e-mail.</p>
-    <?php elseif ($email_kod === 'pusty'): ?>
-        <p class="alert alert-danger no-print">⚠ Pole e-mail było puste — zapisany adres pozostał bez zmian.</p>
     <?php endif; ?>
 
     <?php if ($zal_kod === 'ok'): ?>
@@ -790,36 +716,10 @@ $zal_counts = zal_counts();
         </section>
     <?php endif; ?>
 
-    <!-- Konto: na samym dole strony -->
-    <section class="account-bar no-print">
-        <div class="account-text">
-            <strong>🔐 Konto</strong>
-            <span>Zalogowany jako <b><?= e($konto_login) ?></b></span>
-        </div>
-        <div class="account-actions">
-            <button type="button" class="btn btn-account" data-open-password
-                    title="Zmień hasło do dziennika">🔑 Zmień hasło</button>
-            <form method="post" action="logout.php" class="logout-form">
-                <?= csrf_field() ?>
-                <button type="submit" class="btn btn-logout" title="Wyloguj się">🚪 Wyloguj</button>
-            </form>
-        </div>
-
-        <div class="account-email">
-            <form method="post" action="kalendarz.php" class="email-form">
-                <input type="hidden" name="action" value="save_email">
-                <?= csrf_field() ?>
-                <label for="acc-email">📧 E-mail do resetu hasła</label>
-                <input id="acc-email" type="email" name="email" value="<?= e($konto_email) ?>"
-                       placeholder="np. jan.kowalski@example.com" autocomplete="email" required>
-                <button type="submit" class="btn btn-account" title="Zapisz adres e-mail">💾 Zapisz</button>
-            </form>
-        </div>
-    </section>
-
     <!-- Linki informacyjne na samym dole -->
     <nav class="pagefoot no-print" aria-label="Informacje">
         <a href="index.php">🏠 Start</a>
+        <a href="ustawienia.php">⚙️ Ustawienia</a>
         <a href="o-mnie.php">ℹ️ O mnie</a>
     </nav>
 
@@ -867,84 +767,6 @@ $zal_counts = zal_counts();
                 <div class="modal-actions">
                     <button type="submit" class="btn btn-save">💾 Zapisz wpis</button>
                     <button type="button" class="btn" data-close-modal>Anuluj</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Popup „Kopia zapasowa" -->
-    <div class="modal no-print" id="backup-modal" hidden>
-        <div class="modal-backdrop" data-close-backup></div>
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="backup-modal-title">
-            <header class="modal-head">
-                <span class="modal-icon">💾</span>
-                <div>
-                    <h2 id="backup-modal-title" class="modal-title">Kopia zapasowa</h2>
-                    <p class="modal-hint">Zapisz dziennik do pliku albo przywróć go z wcześniejszej kopii.</p>
-                </div>
-            </header>
-
-            <div class="backup-block">
-                <h3 class="backup-title">⬇ Pobierz kopię</h3>
-                <p class="backup-text">
-                    Plik <code>.db</code> zawiera wszystkie wpisy dziennika. Trzymaj go w bezpiecznym miejscu.
-                    Uwaga: kopia obejmuje wpisy i listę plików, ale <strong>nie zawiera samych załączników</strong>
-                    (zdjęć/plików) — te leżą osobno na serwerze.
-                </p>
-                <a class="btn btn-save" href="backup.php?action=download">💾 Pobierz kopię zapasową</a>
-            </div>
-
-            <div class="backup-block backup-block-danger">
-                <h3 class="backup-title">⬆ Przywróć z kopii</h3>
-                <p class="backup-text">
-                    Uwaga: przywrócenie <strong>nadpisze</strong> obecne wpisy zawartością pliku.
-                    Przed przywróceniem zapisujemy kopię obecnego stanu na serwerze.
-                </p>
-                <form method="post" action="backup.php" enctype="multipart/form-data" class="backup-form"
-                      onsubmit="return confirm('Przywrócić dziennik z wybranego pliku?\nObecne wpisy zostaną nadpisane.');">
-                    <input type="hidden" name="action" value="restore">
-                    <?= csrf_field() ?>
-                    <input class="backup-file" type="file" name="kopia" required
-                           accept=".db,.sqlite,.sqlite3,application/octet-stream,application/x-sqlite3">
-                    <button type="submit" class="btn btn-danger">⬆ Przywróć dziennik</button>
-                </form>
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" class="btn" data-close-backup>Zamknij</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Popup „Zmień hasło" -->
-    <div class="modal no-print" id="password-modal" hidden>
-        <div class="modal-backdrop" data-close-password></div>
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
-            <header class="modal-head">
-                <span class="modal-icon">🔑</span>
-                <div>
-                    <h2 id="password-modal-title" class="modal-title">Zmień hasło</h2>
-                    <p class="modal-hint">Konto: <?= e($konto_login) ?>. Do zmiany hasła podaj obecne hasło.</p>
-                </div>
-            </header>
-            <form method="post" action="kalendarz.php" class="modal-form">
-                <input type="hidden" name="action" value="change_password">
-                <?= csrf_field() ?>
-                <div class="field">
-                    <label for="p-obecne">Obecne hasło</label>
-                    <input id="p-obecne" type="password" name="obecne_haslo" autocomplete="current-password" required>
-                </div>
-                <div class="field">
-                    <label for="p-nowe">Nowe hasło</label>
-                    <input id="p-nowe" type="password" name="nowe_haslo" autocomplete="new-password" minlength="6" required>
-                </div>
-                <div class="field">
-                    <label for="p-nowe2">Powtórz nowe hasło</label>
-                    <input id="p-nowe2" type="password" name="nowe_haslo2" autocomplete="new-password" minlength="6" required>
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn btn-save">💾 Zmień hasło</button>
-                    <button type="button" class="btn" data-close-password>Anuluj</button>
                 </div>
             </form>
         </div>

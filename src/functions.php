@@ -543,3 +543,33 @@ function zal_disposition_name(string $nazwa): string
 {
     return rawurlencode($nazwa);
 }
+
+/* ------------------------------------------------------------------ *
+ *  Ustawienia aplikacji (klucz => wartość)
+ * ------------------------------------------------------------------ */
+
+/** Pobiera wartość ustawienia lub $domyslna, gdy nie zapisano. */
+function ustawienie(string $klucz, string $domyslna = ''): string
+{
+    $stmt = db()->prepare('SELECT wartosc FROM ustawienia WHERE klucz = :k');
+    $stmt->execute([':k' => $klucz]);
+    $row = $stmt->fetchColumn();
+
+    return $row !== false ? (string) $row : $domyslna;
+}
+
+/** Zapisuje (nadpisuje) wartość ustawienia. */
+function ustawienie_set(string $klucz, string $wartosc): void
+{
+    $stmt = db()->prepare(
+        'INSERT INTO ustawienia (klucz, wartosc) VALUES (:k, :w)
+         ON CONFLICT(klucz) DO UPDATE SET wartosc = excluded.wartosc'
+    );
+    $stmt->execute([':k' => $klucz, ':w' => $wartosc]);
+}
+
+/** Liczba godzin praktyk do wypracowania (0 = jeszcze nie ustawiono). */
+function wymagane_godziny(): int
+{
+    return max(0, (int) ustawienie('wymagane_godziny', '0'));
+}

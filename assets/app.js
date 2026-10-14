@@ -95,38 +95,6 @@
         });
     }
 
-    // Popup „Kopia zapasowa".
-    const backupModal = document.getElementById('backup-modal');
-    const openBackupBtn = document.querySelector('[data-open-backup]');
-
-    function openBackupModal() {
-        if (!backupModal) return;
-        backupModal.hidden = false;
-        document.body.classList.add('modal-open');
-        const first = backupModal.querySelector('a, input, button');
-        if (first) first.focus();
-    }
-
-    function closeBackupModal() {
-        if (!backupModal) return;
-        backupModal.hidden = true;
-        document.body.classList.remove('modal-open');
-    }
-
-    if (openBackupBtn) {
-        openBackupBtn.addEventListener('click', openBackupModal);
-    }
-    if (backupModal) {
-        backupModal.querySelectorAll('[data-close-backup]').forEach(function (el) {
-            el.addEventListener('click', closeBackupModal);
-        });
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape' && !backupModal.hidden) {
-                closeBackupModal();
-            }
-        });
-    }
-
     // Popup „Zmień hasło".
     const passwordModal = document.getElementById('password-modal');
     const openPasswordBtn = document.querySelector('[data-open-password]');
@@ -159,8 +127,8 @@
         });
     }
 
-    // Pasek akcji (Dzisiaj / Dodaj / Kopia / Drukuj): zsuwa się w bok przy
-    // przewijaniu w dół, wraca przy przewijaniu w górę (i zawsze u góry strony).
+    // Pasek akcji (Dzisiaj / Dodaj / Drukuj): zsuwa się w bok przy przewijaniu
+    // w dół, wraca przy przewijaniu w górę (i zawsze u góry strony).
     // Przycisk „⋮" przywołuje go / chowa ręcznie.
     const actionBar = document.querySelector('.topbar-actions');
     const actionsToggle = document.querySelector('.actions-toggle');

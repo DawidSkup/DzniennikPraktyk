@@ -76,6 +76,13 @@ for ($d = $mies_start; $d <= $mies_end; $d = date_shift($d, 1)) {
 $zal_total = array_sum(zal_counts());
 $witaj     = isset($_GET['witaj']);
 
+// Pasek postępu: ile godzin już wypracowano z wymaganej liczby godzin.
+$wymagane_godz = wymagane_godziny();
+$wymagane_min  = $wymagane_godz * 60;
+$procent       = $wymagane_min > 0 ? (int) round($total_min / $wymagane_min * 100) : 0;
+$procent_bar   = max(0, min(100, $procent));
+$zostalo_min   = max(0, $wymagane_min - $total_min);
+
 $theme = day_theme($dzis);
 $theme_vars = sprintf(
     '--primary:%s;--primary-dark:%s;--accent:%s;--accent-dark:%s;--tint:%s;--tint2:%s;--font:%s;',
@@ -120,6 +127,7 @@ $theme_vars = sprintf(
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn-logout" title="Wyloguj się">🚪 Wyloguj</button>
             </form>
+            <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
         </div>
     </header>
 
@@ -141,6 +149,34 @@ $theme_vars = sprintf(
                     <span class="status-pill is-empty">Brak wpisów</span>
                 <?php endif; ?>
             </header>
+
+            <?php if ($wymagane_godz > 0): ?>
+                <section class="progress" aria-label="Postęp praktyk">
+                    <div class="progress-head">
+                        <span class="progress-title">🎯 Postęp praktyk</span>
+                        <span class="progress-pct<?= $procent >= 100 ? ' is-done' : '' ?>"><?= $procent ?>%</span>
+                    </div>
+                    <div class="progress-track" role="progressbar"
+                         aria-valuemin="0" aria-valuemax="<?= $wymagane_godz ?>"
+                         aria-valuenow="<?= min($wymagane_godz, (int) round($total_min / 60)) ?>"
+                         aria-label="Wypracowane godziny z <?= $wymagane_godz ?>">
+                        <div class="progress-fill<?= $procent >= 100 ? ' is-done' : '' ?>" style="width: <?= $procent_bar ?>%"></div>
+                    </div>
+                    <div class="progress-foot">
+                        <span><b><?= e(format_duration_compact($total_min)) ?></b> z <?= $wymagane_godz ?> h</span>
+                        <?php if ($zostalo_min > 0): ?>
+                            <span>Zostało <b><?= e(format_duration_compact($zostalo_min)) ?></b></span>
+                        <?php else: ?>
+                            <span class="progress-done">✔ Wypracowano wymagane godziny!</span>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            <?php else: ?>
+                <p class="progress-empty">
+                    🎯 Ustaw liczbę godzin wymaganych do zaliczenia praktyk w
+                    <a href="ustawienia.php">⚙️ Ustawieniach</a>, aby zobaczyć pasek postępu.
+                </p>
+            <?php endif; ?>
 
             <?php if ($ilosc_dni === 0): ?>
                 <p class="empty">Nie masz jeszcze żadnych wpisów. Zacznij od dodania pierwszego dnia praktyk.</p>
@@ -202,6 +238,7 @@ $theme_vars = sprintf(
         <nav class="pagefoot no-print" aria-label="Informacje">
             <a href="index.php" aria-current="page">🏠 Start</a>
             <a href="kalendarz.php">📅 Kalendarz</a>
+            <a href="ustawienia.php">⚙️ Ustawienia</a>
             <a href="o-mnie.php">ℹ️ O mnie</a>
         </nav>
 
