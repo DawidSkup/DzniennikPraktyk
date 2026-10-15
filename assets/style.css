@@ -2725,6 +2725,75 @@ body.auth-body::before {
 #ptab-edycja:checked ~ .panel-tabpanel[data-ptab="edycja"],
 #ptab-nowe:checked ~ .panel-tabpanel[data-ptab="nowe"] { display: block; }
 
+/* Okienko „Nowe konto" jako popup: panel staje się nakładką na cały ekran,
+   tło przyciemnione, formularz wyśrodkowany jako karta. */
+#ptab-nowe:checked ~ .panel-tabpanel[data-ptab="nowe"] {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    padding: 24px 16px;
+    overflow-y: auto;
+}
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: rgba(15, 23, 42, .55);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+}
+.modal-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    background: var(--card);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, .45);
+    animation: modal-in .16s ease-out;
+}
+.modal-card.settings-block { padding: 22px 24px 24px; }
+@keyframes modal-in {
+    from { opacity: 0; transform: translateY(10px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+}
+@media print {
+    .modal-backdrop { display: none; }
+    .modal-card { max-height: none; box-shadow: none; }
+}
+body:has(#ptab-nowe:checked) { overflow: hidden; }
+.modal-close {
+    margin-left: auto;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 2px solid var(--line);
+    border-radius: 50%;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s, transform .12s;
+}
+.modal-close:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+    transform: scale(1.05);
+}
+:root[data-theme="dark"] .modal-close { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+:root[data-theme="dark"] .modal-close:hover { background: #e11d48; border-color: #e11d48; color: #fff; }
+:root[data-theme="dark"] .modal-backdrop { background: rgba(2, 6, 23, .7); }
+
 .admin-empty { margin: 0; padding: 10px 2px; color: var(--muted); font-size: 13.5px; }
 
 /* Wyszukiwanie uczniów po imieniu i nazwisku */

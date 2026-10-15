@@ -265,17 +265,19 @@ $theme_vars = sprintf(
                 </div>
 
                 <div class="panel-tabpanel" data-ptab="nowe">
-                <!-- Zakładanie nowego konta -->
-                <section class="settings-block" id="nowe-konto">
+                <!-- Zakładanie nowego konta — okienko popup (kliknięcie tła zamyka) -->
+                <label class="modal-backdrop" for="ptab-edycja" title="Zamknij" aria-hidden="true"></label>
+                <section class="settings-block modal-card" id="nowe-konto" role="dialog" aria-modal="true" aria-labelledby="nowe-konto-tytul">
                 <div class="settings-head">
                     <span class="settings-ico" aria-hidden="true">➕</span>
                     <div>
-                        <h2 class="settings-title">Nowe konto</h2>
+                        <h2 class="settings-title" id="nowe-konto-tytul">Nowe konto</h2>
                         <p class="settings-desc">
                             Dodaj konto ucznia albo administratora. Dla ucznia podaj klasę.
                             Uczeń ma własny dziennik; administrator widzi dzienniczki wszystkich uczniów i zarządza kontami.
                         </p>
                     </div>
+                    <button type="button" class="modal-close" id="modal-close" title="Zamknij okno" aria-label="Zamknij okno">✕</button>
                 </div>
 
                 <form method="post" action="admin.php" class="admin-create" autocomplete="off">
@@ -651,20 +653,61 @@ $theme_vars = sprintf(
 })();
 
 (function () {
-    // Przycisk „Nowe konto" w pasku akcji: przełącza na zakładkę tworzenia konta
-    // i przenosi kursor do pola loginu (zapis wyboru robi istniejący nasłuch zakładki).
-    var btn = document.getElementById('btn-new-account');
-    if (!btn) { return; }
-    btn.addEventListener('click', function () {
-        var tab = document.getElementById('ptab-nowe');
-        if (tab) {
-            tab.checked = true;
-            tab.dispatchEvent(new Event('change'));
-        }
+    // Okienko „Nowe konto" (popup): otwieranie przyciskiem w pasku akcji ORAZ zakładką,
+    // zamykanie przyciskiem ✕ i klawiszem Esc, kursor wskakuje w pole loginu.
+    var tabNowe   = document.getElementById('ptab-nowe');
+    var tabEdycja = document.getElementById('ptab-edycja');
+    if (!tabNowe || !tabEdycja) { return; }
+
+    function skupLogin() {
         var pole = document.getElementById('nu-login');
-        if (pole) {
-            pole.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            try { pole.focus({ preventScroll: true }); } catch (e) { pole.focus(); }
+        if (!pole) { return; }
+        try { pole.focus({ preventScroll: true }); } catch (e) { pole.focus(); }
+    }
+    function otworz() {
+        tabNowe.checked = true;
+        tabNowe.dispatchEvent(new Event('change'));
+        skupLogin();
+    }
+    function zamknij() {
+        tabEdycja.checked = true;
+        tabEdycja.dispatchEvent(new Event('change'));
+        var btn = document.getElementById('btn-new-account');
+        if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) { btn.focus(); } }
+    }
+
+    var btn = document.getElementById('btn-new-account');
+    if (btn) { btn.addEventListener('click', otworz); }
+
+    var close = document.getElementById('modal-close');
+    if (close) { close.addEventListener('click', zamknij); }
+
+    tabNowe.addEventListener('change', function () {
+        if (tabNowe.checked) { skupLogin(); }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (tabNowe.checked && (e.key === 'Escape' || e.key === 'Esc')) {
+            zamknij();
+        }
+    });
+
+    // Prosta pułapka fokusu w okienku (spójna z aria-modal="true").
+    var karta = document.getElementById('nowe-konto');
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Tab' || !tabNowe.checked || !karta) { return; }
+        var f = karta.querySelectorAll(
+            'a[href], button:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+        );
+        if (!f.length) { return; }
+        var first = f[0];
+        var last  = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
         }
     });
 })();
