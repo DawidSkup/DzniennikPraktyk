@@ -225,4 +225,6 @@
 - [x] Testy HTTP: akordeon klas (details/summary, data-class, domyślnie otwarte, brak przycisków zbiorczych przy 1 klasie, przyciski + liczniki + tooltip przy 2 klasach) — 14/14 OK
 - [x] Panel admina: **pasek postępu praktyk w karcie każdego ucznia** (procent, „X h z N h", „Zostało …", zielony przy 100%); wymagane godziny pobierane per uczeń (`wymagane_godziny($uid)`), godziny z `$stat`; przy braku wymaganych godzin — informacja zamiast paska; pasek tylko dla uczniów (nie dla adminów)
 - [x] Testy HTTP: pasek ucznia z wymaganymi godzinami (40%, „4 h z 10 h", „Zostało 6 h", aria-max), brak paska + komunikat gdy godzin nie ustawiono, dokładnie 1 pasek i 1 karta bez godzin, admin bez paska — 12/12 OK
+- [x] Panel admina: **ustawianie wymaganych godzin praktyk uczniowi** — akcja `set_wymagane` (tylko uczniowie; admin odrzucony), walidacja 1–100000, puste/0 czyści wymaganie, komunikat ok/błąd; pole w karcie z aktualną wartością
+- [x] Testy HTTP: zapis 10 h i 20 h (ok=godziny, pole z wartością, pasek postępu), wyczyszczenie 0 (brak paska, puste pole), odrzucenie `abc`/`-5`, odrzucenie dla administratora, komunikaty ok/błąd, formularz tylko u uczniów — 18/18 OK
 

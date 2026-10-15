@@ -90,6 +90,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'set_wymagane') {
+        $id = (int) ($_POST['id'] ?? 0);
+        $u  = user_get($id);
+        // Wymagane godziny ustawiamy tylko uczniom (administrator nie ma dziennika).
+        if ($u === null || ($u['rola'] ?? '') === 'admin') {
+            header('Location: admin.php?err=godziny');
+            exit;
+        }
+        $godz = trim((string) ($_POST['wymagane_godziny'] ?? ''));
+        // Puste pole lub 0 = wyczyść wymaganie.
+        if ($godz === '' || $godz === '0') {
+            wymagane_godziny_set($id, 0);
+            header('Location: admin.php?ok=godziny');
+            exit;
+        }
+        if (!ctype_digit($godz) || (int) $godz < 1 || (int) $godz > 100000) {
+            header('Location: admin.php?err=godziny');
+            exit;
+        }
+        wymagane_godziny_set($id, (int) $godz);
+        header('Location: admin.php?ok=godziny');
+        exit;
+    }
+
     header('Location: admin.php');
     exit;
 }
@@ -130,6 +154,7 @@ $ok_msg = [
     'haslo'   => '✔ Hasło konta zostało zmienione.',
     'rola'    => '✔ Rola konta została zmieniona.',
     'nazwa'   => '✔ Nazwa konta została zapisana.',
+    'godziny' => '✔ Wymagane godziny praktyk zostały zapisane.',
 ][$ok_kod] ?? '';
 
 $err_msg = [
@@ -147,6 +172,7 @@ $err_msg = [
     'dodano-rola'    => '⚠ Wybierz poprawną rolę.',
     'dodano-klasa'   => '⚠ Podaj klasę ucznia.',
     'dodano-zajety'  => '⚠ Konto o tej nazwie już istnieje.',
+    'godziny'        => '⚠ Podaj poprawną liczbę godzin (1–100000) albo zostaw puste, aby wyczyścić.',
 ][$err_kod] ?? '';
 
 $theme      = day_theme(date('Y-m-d'));
@@ -283,7 +309,8 @@ $theme_vars = sprintf(
                         <h2 class="settings-title">Konta</h2>
                         <p class="settings-desc">
                             Uczniowie i administratorzy w osobnych zakładkach. Otwieraj i edytuj dzienniczki
-                            (przycisk „Otwórz"), zmieniaj hasło, rolę, nazwę i klasę albo usuwaj konta.
+                            (przycisk „Otwórz"), ustawiaj uczniom wymagane godziny praktyk, zmieniaj hasło,
+                            rolę, nazwę i klasę albo usuwaj konta.
                         </p>
                     </div>
                 </div>
@@ -388,6 +415,20 @@ $theme_vars = sprintf(
                                 </select>
                                 <button type="submit" class="btn btn-sm">🎭 Zmień rolę</button>
                             </form>
+
+                            <?php if ($rola === 'uczen'): ?>
+                                <!-- Wymagane godziny praktyk -->
+                                <form method="post" action="admin.php" class="admin-inline">
+                                    <input type="hidden" name="action" value="set_wymagane">
+                                    <input type="hidden" name="id" value="<?= $uid ?>">
+                                    <?= csrf_field() ?>
+                                    <input type="number" name="wymagane_godziny" min="1" max="100000" step="1"
+                                           value="<?= $wym_u > 0 ? $wym_u : '' ?>"
+                                           placeholder="Wymagane godziny"
+                                           aria-label="Wymagane godziny praktyk dla <?= e((string) $u['login']) ?>">
+                                    <button type="submit" class="btn btn-sm">🎯 Zapisz godziny</button>
+                                </form>
+                            <?php endif; ?>
 
                             <!-- Zmiana nazwy i klasy -->
                             <form method="post" action="admin.php" class="admin-inline">

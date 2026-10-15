@@ -2812,6 +2812,7 @@ body.auth-body::before {
 .admin-inline select { padding: 7px 10px; font-size: 13.5px; }
 .admin-inline input[type="text"],
 .admin-inline input[type="password"] { min-width: 150px; }
+.admin-inline input[type="number"] { min-width: 120px; }
 
 @media (max-width: 620px) {
     .admin-create-grid { grid-template-columns: 1fr; }
