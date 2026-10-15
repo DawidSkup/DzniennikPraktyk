@@ -479,10 +479,13 @@ $theme_vars = sprintf(
                                     <span class="admin-user-login" title="Login">👤 <?= e((string) $u['login']) ?></span>
                                 </div>
                             </div>
-                            <div class="admin-user-stats">
-                                <span title="Liczba dni z wpisem">📄 <?= $dni ?> <?= $dni === 1 ? 'wpis' : 'wpisów' ?></span>
-                                <span title="Łączny czas praktyk">⏱ <?= e(format_duration_compact($min)) ?></span>
-                            </div>
+                            <?php // Administrator nie ma własnego dziennika, więc nie pokazujemy mu wpisów ani godzin. ?>
+                            <?php if ($rola === 'uczen'): ?>
+                                <div class="admin-user-stats">
+                                    <span title="Liczba dni z wpisem">📄 <?= $dni ?> <?= $dni === 1 ? 'wpis' : 'wpisów' ?></span>
+                                    <span title="Łączny czas praktyk">⏱ <?= e(format_duration_compact($min)) ?></span>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <?php
