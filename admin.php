@@ -35,6 +35,21 @@ $cudzy_admin = static function (int $id) use ($me): bool {
     return $u !== null && (($u['rola'] ?? '') === 'admin');
 };
 
+/**
+ * Czy podane konto ma rangę administratora?
+ *
+ * Rangi administratora nie zmieniamy (ani własnej, ani cudzej) i takich kont
+ * nie usuwamy — konto administratora jest trwałe.
+ */
+$konto_admina = static function (int $id): bool {
+    if ($id <= 0) {
+        return false;
+    }
+    $u = user_get($id);
+
+    return $u !== null && (($u['rola'] ?? '') === 'admin');
+};
+
 /* ------------------------------------------------------------------ *
  *  Akcje (POST/Redirect/GET)
  * ------------------------------------------------------------------ */
@@ -62,8 +77,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete_user') {
         $id = (int) ($_POST['id'] ?? 0);
-        if ($id === (int) $me['id']) {
-            header('Location: admin.php?err=usun-siebie');
+        // Kont administratorów nie usuwamy — ani cudzych (także ostatniego), ani własnego.
+        if ($konto_admina($id)) {
+            header('Location: admin.php?err=admin-nieusuwalny');
             exit;
         }
         $ok = user_delete($id);
@@ -84,16 +100,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'set_role') {
-        $id   = (int) ($_POST['id'] ?? 0);
-        $rola = (string) ($_POST['rola'] ?? '');
-        // Nie pozwalamy odebrać rangi ostatniemu administratorowi.
-        $u = user_get($id);
-        if ($u !== null && ($u['rola'] ?? '') === 'admin' && $rola === 'uczen') {
-            $adminow = (int) db()->query("SELECT COUNT(*) FROM uzytkownicy WHERE rola = 'admin'")->fetchColumn();
-            if ($adminow <= 1) {
-                header('Location: admin.php?err=ostatni-admin');
-                exit;
-            }
+        $id    = (int) ($_POST['id'] ?? 0);
+        $rola  = (string) ($_POST['rola'] ?? '');
+        // Rangi administratora nie zmieniamy — ani sobie, ani innemu administratorowi.
+        if ($konto_admina($id)) {
+            header('Location: admin.php?err=rola-admin');
+            exit;
         }
         $ok = user_set_role($id, $rola);
         header('Location: admin.php?' . ($ok ? 'ok=rola' : 'err=rola'));
@@ -262,9 +274,9 @@ if ($ok_kod === 'usun-klase') {
 
 $err_msg = [
     'csrf'           => '⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.',
-    'usun-siebie'    => '⚠ Nie możesz usunąć własnego konta.',
     'usun-ostatni'   => '⚠ Nie można usunąć ostatniego administratora.',
-    'ostatni-admin'  => '⚠ Nie można odebrać rangi ostatniemu administratorowi.',
+    'admin-nieusuwalny' => '⚠ Konta administratora nie można usunąć.',
+    'rola-admin'     => '⚠ Rangi administratora nie można zmienić — ani własnej, ani innemu administratorowi.',
     'admin-chroniony' => '⚠ Innemu administratorowi nie można zmienić hasła, imienia i nazwiska ani loginu — te dane zmienia tylko właściciel konta.',
     'login'          => '⚠ Podaj login (nazwę konta) — co najmniej 3 znaki.',
     'login-zajety'   => '⚠ Konto o takim loginie już istnieje.',
@@ -580,12 +592,19 @@ $theme_vars = sprintf(
                                 <summary class="btn btn-sm btn-manage">⚙️ Zarządzaj kontem</summary>
                                 <div class="manage-body">
                                     <div class="manage-grid">
-                                        <?php if ($cudzy_konto): ?>
+                                        <?php if ($rola === 'admin'): ?>
                                             <p class="manage-note">
-                                                🔒 Innemu administratorowi nie zmieniasz imienia i nazwiska ani hasła,
-                                                ani loginu — te dane ustawia wyłącznie właściciel konta.
+                                                <?php if ($cudzy_konto): ?>
+                                                    🔒 Cudzego konta administratora nie zmieniasz — imienia i nazwiska,
+                                                    hasła, loginu ani rangi — i nie możesz go usunąć.
+                                                    Te dane ustawia wyłącznie właściciel konta.
+                                                <?php else: ?>
+                                                    🔒 To Twoje konto: nie możesz zmienić własnej rangi ani usunąć
+                                                    swojego konta.
+                                                <?php endif; ?>
                                             </p>
                                         <?php endif; ?>
+                                        <?php if ($rola === 'uczen'): ?>
                                         <!-- Zmiana roli -->
                                         <form method="post" action="admin.php" class="manage-item">
                                             <input type="hidden" name="action" value="set_role">
@@ -600,6 +619,7 @@ $theme_vars = sprintf(
                                                 <button type="submit" class="btn btn-sm">Zmień rolę</button>
                                             </div>
                                         </form>
+                                        <?php endif; ?>
 
                                         <?php if ($rola === 'uczen'): ?>
                                             <!-- Wymagane godziny praktyk -->
@@ -673,7 +693,8 @@ $theme_vars = sprintf(
                                         <?php endif; ?>
                                     </div>
 
-                                    <!-- Usunięcie konta -->
+                                    <!-- Usunięcie konta (konta administratorów są trwałe) -->
+                                    <?php if ($rola === 'uczen'): ?>
                                     <form method="post" action="admin.php" class="manage-danger"
                                           onsubmit="return confirm('Usunąć konto „<?= e((string) $u['login']) ?>”?\nZostanie usunięty także jego dziennik wraz z załącznikami.<?= $dni > 0 ? '\n\nUwaga: konto ma ' . $dni . ' wpis(ów)!' : '' ?>');">
                                         <input type="hidden" name="action" value="delete_user">
@@ -681,6 +702,7 @@ $theme_vars = sprintf(
                                         <?= csrf_field() ?>
                                         <button type="submit" class="btn btn-danger btn-sm" title="Usuń konto">🗑 Usuń konto</button>
                                     </form>
+                                    <?php endif; ?>
                                 </div>
                             </details>
                         </div>
