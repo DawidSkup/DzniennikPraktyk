@@ -124,6 +124,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $users = users_all();
 
+// Fraza wyszukiwania uczniów (po imieniu i nazwisku, dodatkowo login i klasa).
+$q = trim((string) ($_GET['q'] ?? ''));
+
 // Statystyki per konto: liczba dni z wpisem i suma minut.
 $stat = [];
 foreach (db()->query('SELECT user_id, godzina_od, godzina_do FROM wpisy') as $r) {
@@ -197,7 +200,7 @@ $theme_vars = sprintf(
     <link rel="stylesheet" href="assets/style.css?v=<?= @filemtime(__DIR__ . '/assets/style.css') ?: time() ?>">
     <script src="assets/theme.js?v=<?= @filemtime(__DIR__ . '/assets/theme.js') ?: time() ?>"></script>
 </head>
-<body style="<?= e($theme_vars) ?>"<?= $ok_kod === 'dodano' ? ' data-panel-tab="ptab-edycja"' : '' ?>>
+<body style="<?= e($theme_vars) ?>"<?= $ok_kod === 'dodano' ? ' data-panel-tab="ptab-edycja"' : '' ?><?= $q !== '' ? ' data-admin-tab="tab-uczniowie"' : '' ?>>
 <div class="app">
 
     <header class="topbar no-print">
@@ -342,6 +345,19 @@ $theme_vars = sprintf(
                     $users,
                     static fn(array $u): bool => ($u['rola'] ?? '') === 'admin'
                 ));
+
+                // Wyszukiwanie uczniów po imieniu i nazwisku (także login i klasa).
+                if ($q !== '') {
+                    $uczniowie = array_values(array_filter(
+                        $uczniowie,
+                        static function (array $u) use ($q): bool {
+                            $hay = ($u['imie_nazwisko'] ?? '') . ' '
+                                 . ($u['login'] ?? '') . ' '
+                                 . user_klasa($u);
+                            return mb_stripos($hay, $q) !== false;
+                        }
+                    ));
+                }
 
                 // Grupowanie uczniów według klasy („Bez klasy" na końcu).
                 $klasy = [];
@@ -506,9 +522,33 @@ $theme_vars = sprintf(
                     </div>
 
                     <div class="admin-tabpanel" data-tab="uczniowie">
+                        <form method="get" action="admin.php" class="admin-search" role="search">
+                            <span class="admin-search-ico" aria-hidden="true">🔎</span>
+                            <input type="search" name="q" value="<?= e($q) ?>"
+                                   placeholder="Szukaj ucznia po imieniu i nazwisku…"
+                                   aria-label="Szukaj ucznia po imieniu i nazwisku" autocomplete="off">
+                            <button type="submit" class="btn btn-sm">Szukaj</button>
+                            <?php if ($q !== ''): ?>
+                                <a class="btn btn-sm" href="admin.php">✕ Wyczyść</a>
+                            <?php endif; ?>
+                        </form>
                         <?php if ($uczniowie === []): ?>
-                            <p class="admin-empty">Brak kont uczniów. Dodaj pierwsze konto w zakładce „➕ Nowe konto".</p>
+                            <p class="admin-empty">
+                                <?php if ($q !== ''): ?>
+                                    Brak uczniów pasujących do „<?= e($q) ?>".
+                                    <a href="admin.php">Wyczyść wyszukiwanie</a>.
+                                <?php else: ?>
+                                    Brak kont uczniów. Dodaj pierwsze konto w zakładce „➕ Nowe konto".
+                                <?php endif; ?>
+                            </p>
                         <?php else: ?>
+                            <?php if ($q !== ''): ?>
+                                <p class="admin-search-info">
+                                    Znaleziono <b><?= count($uczniowie) ?></b>
+                                    <?= count($uczniowie) === 1 ? 'ucznia' : 'uczniów' ?>
+                                    dla „<b><?= e($q) ?></b>".
+                                </p>
+                            <?php endif; ?>
                             <?php if (count($klasy) > 1): ?>
                                 <div class="admin-accordion-tools no-print">
                                     <button type="button" class="btn btn-sm" data-class-toggle="collapse">▾ Zwiń wszystkie</button>
@@ -575,8 +615,10 @@ $theme_vars = sprintf(
     var key    = 'dp-admin-tab';
     var inputs = document.querySelectorAll('.admin-tab-input');
     if (!inputs.length) { return; }
+    var wymusz = document.body.dataset.adminTab || '';
+    if (wymusz) { try { localStorage.setItem(key, wymusz); } catch (e) {} }
     try {
-        var zapisana = localStorage.getItem(key);
+        var zapisana = wymusz || localStorage.getItem(key);
         var el = zapisana ? document.getElementById(zapisana) : null;
         if (el) { el.checked = true; }
     } catch (e) {}
