@@ -154,7 +154,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $users = users_all();
 
 // Fraza wyszukiwania uczniów (po imieniu i nazwisku, dodatkowo login i klasa).
-$q = trim((string) ($_GET['q'] ?? ''));
+$q = is_string($_GET['q'] ?? null) ? trim($_GET['q']) : '';
+
+// Fraza wyszukiwania administratorów (po imieniu i nazwisku oraz loginie).
+$qa = is_string($_GET['qa'] ?? null) ? trim($_GET['qa']) : '';
 
 // Statystyki per konto: liczba dni z wpisem i suma minut.
 $stat = [];
@@ -179,6 +182,9 @@ foreach ($users as $u) {
 
 $ok_kod   = trim((string) ($_GET['ok'] ?? ''));
 $err_kod  = trim((string) ($_GET['err'] ?? ''));
+
+// Zakładka kont wymuszona przez wyszukiwanie (albo po zmianie klasy).
+$tab_wymuszony = ($q !== '' || $ok_kod === 'klasa') ? 'tab-uczniowie' : ($qa !== '' ? 'tab-admini' : '');
 
 $ok_msg = [
     'dodano'  => '✔ Konto zostało utworzone.',
@@ -252,7 +258,7 @@ $theme_vars = sprintf(
     <link rel="stylesheet" href="assets/style.css?v=<?= @filemtime(__DIR__ . '/assets/style.css') ?: time() ?>">
     <script src="assets/theme.js?v=<?= @filemtime(__DIR__ . '/assets/theme.js') ?: time() ?>"></script>
 </head>
-<body style="<?= e($theme_vars) ?>"<?= $ok_kod === 'dodano' ? ' data-panel-tab="ptab-edycja"' : '' ?><?= ($q !== '' || $ok_kod === 'klasa') ? ' data-admin-tab="tab-uczniowie"' : '' ?>>
+<body style="<?= e($theme_vars) ?>"<?= $ok_kod === 'dodano' ? ' data-panel-tab="ptab-edycja"' : '' ?><?= $tab_wymuszony !== '' ? ' data-admin-tab="' . $tab_wymuszony . '"' : '' ?>>
 <div class="app">
 
     <header class="topbar no-print">
@@ -411,6 +417,17 @@ $theme_vars = sprintf(
                                  . ($u['login'] ?? '') . ' '
                                  . user_klasa($u);
                             return mb_stripos($hay, $q) !== false;
+                        }
+                    ));
+                }
+
+                // Wyszukiwanie administratorów po imieniu i nazwisku (także login).
+                if ($qa !== '') {
+                    $admini = array_values(array_filter(
+                        $admini,
+                        static function (array $u) use ($qa): bool {
+                            $hay = ($u['imie_nazwisko'] ?? '') . ' ' . ($u['login'] ?? '');
+                            return mb_stripos($hay, $qa) !== false;
                         }
                     ));
                 }
@@ -734,13 +751,37 @@ $theme_vars = sprintf(
                     </div>
 
                     <div class="admin-tabpanel" data-tab="admini">
-                        <div class="admin-users">
-                            <?php if ($admini === []): ?>
-                                <p class="admin-empty">Brak kont administratorów.</p>
-                            <?php else: ?>
-                                <?php foreach ($admini as $u) { $karta($u); } ?>
+                        <form method="get" action="admin.php" class="admin-search" role="search">
+                            <span class="admin-search-ico" aria-hidden="true">🔎</span>
+                            <input type="search" name="qa" value="<?= e($qa) ?>"
+                                   placeholder="Szukaj administratora po imieniu i nazwisku…"
+                                   aria-label="Szukaj administratora po imieniu i nazwisku" autocomplete="off">
+                            <button type="submit" class="btn btn-sm">Szukaj</button>
+                            <?php if ($qa !== ''): ?>
+                                <a class="btn btn-sm" href="admin.php">✕ Wyczyść</a>
                             <?php endif; ?>
-                        </div>
+                        </form>
+                        <?php if ($admini === []): ?>
+                            <p class="admin-empty">
+                                <?php if ($qa !== ''): ?>
+                                    Brak administratorów pasujących do „<?= e($qa) ?>".
+                                    <a href="admin.php">Wyczyść wyszukiwanie</a>.
+                                <?php else: ?>
+                                    Brak kont administratorów.
+                                <?php endif; ?>
+                            </p>
+                        <?php else: ?>
+                            <?php if ($qa !== ''): ?>
+                                <p class="admin-search-info">
+                                    Znaleziono <b><?= count($admini) ?></b>
+                                    <?= count($admini) === 1 ? 'administratora' : 'administratorów' ?>
+                                    dla „<b><?= e($qa) ?></b>".
+                                </p>
+                            <?php endif; ?>
+                            <div class="admin-users">
+                                <?php foreach ($admini as $u) { $karta($u); } ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </section>
