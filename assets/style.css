@@ -2608,7 +2608,10 @@ body.auth-body::before {
     border: 2px solid transparent;
     transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
-.admin-tab:hover { border-color: var(--primary); }
+.admin-tabbar label[for="tab-uczniowie"] { background: #eef2ff; color: #4338ca; }
+.admin-tabbar label[for="tab-admini"]   { background: #fffbeb; color: #b45309; }
+.admin-tabbar label[for="tab-uczniowie"]:hover { border-color: #4f46e5; }
+.admin-tabbar label[for="tab-admini"]:hover   { border-color: #d97706; }
 .admin-tab-count {
     padding: 1px 8px;
     border-radius: 999px;
@@ -2620,11 +2623,15 @@ body.auth-body::before {
 }
 .admin-tabpanel { display: none; }
 
-#tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"],
-#tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] {
-    background: var(--primary);
+#tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"] {
+    background: linear-gradient(135deg, #4f46e5, #0891b2);
     color: #fff;
-    border-color: var(--primary);
+    border-color: #4f46e5;
+}
+#tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] {
+    background: linear-gradient(135deg, #d97706, #e11d48);
+    color: #fff;
+    border-color: #d97706;
 }
 #tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"] .admin-tab-count,
 #tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] .admin-tab-count {
@@ -2641,7 +2648,7 @@ body.auth-body::before {
 
 .admin-empty { margin: 0; padding: 10px 2px; color: var(--muted); font-size: 13.5px; }
 
-/* Grupy uczniów według klasy (rozwijany pasek) */
+/* Grupy uczniów według klasy (rozwijany pasek) — każda klasa w innym kolorze */
 .admin-accordion-tools {
     display: flex;
     flex-wrap: wrap;
@@ -2649,12 +2656,22 @@ body.auth-body::before {
     margin-bottom: 12px;
 }
 .admin-class-group {
+    --cls: #4f46e5;
+    --cls-tint: #eef2ff;
+    --cls-ink: #4338ca;
     margin-bottom: 12px;
     background: var(--card);
     border: 1px solid var(--line);
+    border-left: 4px solid var(--cls);
     border-radius: var(--radius-sm);
     overflow: hidden;
 }
+.admin-class-group:nth-of-type(6n+1) { --cls: #4f46e5; --cls-tint: #eef2ff; --cls-ink: #4338ca; }
+.admin-class-group:nth-of-type(6n+2) { --cls: #0891b2; --cls-tint: #ecfeff; --cls-ink: #0e7490; }
+.admin-class-group:nth-of-type(6n+3) { --cls: #059669; --cls-tint: #ecfdf5; --cls-ink: #047857; }
+.admin-class-group:nth-of-type(6n+4) { --cls: #d97706; --cls-tint: #fffbeb; --cls-ink: #b45309; }
+.admin-class-group:nth-of-type(6n+5) { --cls: #e11d48; --cls-tint: #fff1f2; --cls-ink: #be123c; }
+.admin-class-group:nth-of-type(6n+6) { --cls: #7c3aed; --cls-tint: #f5f3ff; --cls-ink: #6d28d9; }
 .admin-class-group:last-child { margin-bottom: 0; }
 
 .admin-class-head {
@@ -2665,17 +2682,17 @@ body.auth-body::before {
     cursor: pointer;
     user-select: none;
     list-style: none;
-    background: var(--tint);
+    background: linear-gradient(90deg, var(--cls-tint), var(--card));
 }
 .admin-class-head::-webkit-details-marker { display: none; }
-.admin-class-head:hover { background: var(--tint2); }
-.admin-class-head:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.admin-class-head:hover { background: var(--cls-tint); }
+.admin-class-head:focus-visible { outline: 2px solid var(--cls); outline-offset: -2px; }
 
 .admin-class-chevron {
     flex: 0 0 auto;
     font-size: 12px;
     line-height: 1;
-    color: var(--primary-dark);
+    color: var(--cls-ink);
     transition: transform .15s ease;
 }
 .admin-class-group[open] .admin-class-chevron { transform: rotate(90deg); }
@@ -2685,7 +2702,7 @@ body.auth-body::before {
     min-width: 0;
     font-size: 15px;
     font-weight: 800;
-    color: var(--primary-dark);
+    color: var(--cls-ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2694,8 +2711,8 @@ body.auth-body::before {
     flex: 0 0 auto;
     padding: 1px 8px;
     border-radius: 999px;
-    background: #fff;
-    color: var(--primary-dark);
+    background: var(--cls);
+    color: #fff;
     font-size: 11.5px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
@@ -2796,6 +2813,18 @@ body.auth-body::before {
 }
 :root[data-theme="dark"] .admin-user { background: #16202f; }
 :root[data-theme="dark"] .admin-user-name { color: #a5b4fc; }
+:root[data-theme="dark"] .admin-tabbar label[for="tab-uczniowie"] { background: #1e1b4b; color: #c7d2fe; }
+:root[data-theme="dark"] .admin-tabbar label[for="tab-admini"] { background: #3a2c07; color: #fcd34d; }
+:root[data-theme="dark"] .admin-tab-count { background: rgba(255, 255, 255, .15); color: inherit; }
+:root[data-theme="dark"] #tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"],
+:root[data-theme="dark"] #tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] { color: #fff; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+1) { --cls: #818cf8; --cls-tint: #1e1b4b; --cls-ink: #c7d2fe; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+2) { --cls: #22d3ee; --cls-tint: #0c3441; --cls-ink: #a5f3fc; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+3) { --cls: #34d399; --cls-tint: #0e3326; --cls-ink: #6ee7b7; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+4) { --cls: #fbbf24; --cls-tint: #3a2c07; --cls-ink: #fcd34d; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+5) { --cls: #fb7185; --cls-tint: #3a1220; --cls-ink: #fda4af; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+6) { --cls: #a78bfa; --cls-tint: #2e1065; --cls-ink: #ddd6fe; }
+:root[data-theme="dark"] .admin-class-count { color: #0f172a; }
 :root[data-theme="dark"] .admin-you { background: #3a2c07; color: #fcd34d; }
 :root[data-theme="dark"] .admin-create input,
 :root[data-theme="dark"] .admin-create select,
