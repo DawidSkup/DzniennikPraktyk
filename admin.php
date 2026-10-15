@@ -221,6 +221,8 @@ $theme_vars = sprintf(
                 <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
                 <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
             </div>
+            <button type="button" class="btn btn-new" id="btn-new-account"
+                    title="Załóż nowe konto" aria-label="Nowe konto">➕ Nowe konto</button>
             <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia" aria-label="Ustawienia">⚙️</a>
             <form method="post" action="logout.php" class="logout-form">
                 <?= csrf_field() ?>
@@ -645,6 +647,25 @@ $theme_vars = sprintf(
         inp.addEventListener('change', function () {
             try { localStorage.setItem(key, inp.id); } catch (e) {}
         });
+    });
+})();
+
+(function () {
+    // Przycisk „Nowe konto" w pasku akcji: przełącza na zakładkę tworzenia konta
+    // i przenosi kursor do pola loginu (zapis wyboru robi istniejący nasłuch zakładki).
+    var btn = document.getElementById('btn-new-account');
+    if (!btn) { return; }
+    btn.addEventListener('click', function () {
+        var tab = document.getElementById('ptab-nowe');
+        if (tab) {
+            tab.checked = true;
+            tab.dispatchEvent(new Event('change'));
+        }
+        var pole = document.getElementById('nu-login');
+        if (pole) {
+            pole.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            try { pole.focus({ preventScroll: true }); } catch (e) { pole.focus(); }
+        }
     });
 })();
 

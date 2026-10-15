@@ -460,6 +460,17 @@ body::before {
     box-shadow: 0 6px 16px rgba(30, 41, 59, .25);
 }
 
+/* Przycisk „Nowe konto" w pasku akcji (prawy górny róg) */
+.btn-new {
+    background: linear-gradient(135deg, #059669, #0891b2);
+    border-color: #059669;
+    color: #fff;
+}
+.btn-new:hover {
+    border-color: #047857;
+    box-shadow: 0 6px 16px rgba(5, 150, 105, .35);
+}
+
 .btn-save {
     background: linear-gradient(135deg, var(--save), #10b981);
     border-color: var(--save);
