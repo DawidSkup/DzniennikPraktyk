@@ -2641,31 +2641,66 @@ body.auth-body::before {
 
 .admin-empty { margin: 0; padding: 10px 2px; color: var(--muted); font-size: 13.5px; }
 
-/* Grupy uczniów według klasy */
-.admin-class-group { margin-bottom: 20px; }
+/* Grupy uczniów według klasy (rozwijany pasek) */
+.admin-accordion-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.admin-class-group {
+    margin-bottom: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
 .admin-class-group:last-child { margin-bottom: 0; }
+
 .admin-class-head {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 0 0 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px dashed var(--line);
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    background: var(--tint);
 }
+.admin-class-head::-webkit-details-marker { display: none; }
+.admin-class-head:hover { background: var(--tint2); }
+.admin-class-head:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
+.admin-class-chevron {
+    flex: 0 0 auto;
+    font-size: 12px;
+    line-height: 1;
+    color: var(--primary-dark);
+    transition: transform .15s ease;
+}
+.admin-class-group[open] .admin-class-chevron { transform: rotate(90deg); }
+
 .admin-class-name {
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: 15px;
     font-weight: 800;
     color: var(--primary-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .admin-class-count {
+    flex: 0 0 auto;
     padding: 1px 8px;
     border-radius: 999px;
-    background: var(--tint);
+    background: #fff;
     color: var(--primary-dark);
     font-size: 11.5px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
+.admin-class-group .admin-users { padding: 14px; }
 
 .admin-user {
     padding: 14px 16px;

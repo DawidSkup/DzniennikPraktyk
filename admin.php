@@ -418,16 +418,23 @@ $theme_vars = sprintf(
                         <?php if ($uczniowie === []): ?>
                             <p class="admin-empty">Brak kont uczniów. Dodaj pierwsze konto w formularzu powyżej.</p>
                         <?php else: ?>
+                            <?php if (count($klasy) > 1): ?>
+                                <div class="admin-accordion-tools no-print">
+                                    <button type="button" class="btn btn-sm" data-class-toggle="collapse">▾ Zwiń wszystkie</button>
+                                    <button type="button" class="btn btn-sm" data-class-toggle="expand">▸ Rozwiń wszystkie</button>
+                                </div>
+                            <?php endif; ?>
                             <?php foreach ($klasy as $nazwa => $lista): ?>
-                                <section class="admin-class-group">
-                                    <h3 class="admin-class-head">
-                                        <span class="admin-class-name">🎓 <?= e($nazwa) ?></span>
+                                <details class="admin-class-group" data-class="<?= e($nazwa) ?>" open>
+                                    <summary class="admin-class-head">
+                                        <span class="admin-class-chevron" aria-hidden="true">▸</span>
+                                        <span class="admin-class-name" title="🎓 <?= e($nazwa) ?>">🎓 <?= e($nazwa) ?></span>
                                         <span class="admin-class-count"><?= count($lista) ?> <?= count($lista) === 1 ? 'uczeń' : 'uczniów' ?></span>
-                                    </h3>
+                                    </summary>
                                     <div class="admin-users">
                                         <?php foreach ($lista as $u) { $karta($u); } ?>
                                     </div>
-                                </section>
+                                </details>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
@@ -483,6 +490,36 @@ $theme_vars = sprintf(
     inputs.forEach(function (inp) {
         inp.addEventListener('change', function () {
             try { localStorage.setItem(key, inp.id); } catch (e) {}
+        });
+    });
+})();
+
+(function () {
+    // Klasy jako rozwijane paski: pamiętamy zwinięte klasy + przyciski Zwiń/Rozwiń wszystkie.
+    var grupy = document.querySelectorAll('.admin-class-group');
+    if (!grupy.length) { return; }
+    var key = 'dp-admin-collapsed';
+
+    function zapisz() {
+        var zwiete = [];
+        grupy.forEach(function (g) { if (!g.open) { zwiete.push(g.dataset.class); } });
+        try { localStorage.setItem(key, JSON.stringify(zwiete)); } catch (e) {}
+    }
+
+    try {
+        var zwiete = JSON.parse(localStorage.getItem(key) || '[]');
+        grupy.forEach(function (g) {
+            if (zwiete.indexOf(g.dataset.class) !== -1) { g.open = false; }
+        });
+    } catch (e) {}
+
+    grupy.forEach(function (g) { g.addEventListener('toggle', zapisz); });
+
+    document.querySelectorAll('[data-class-toggle]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var otworz = btn.getAttribute('data-class-toggle') === 'expand';
+            grupy.forEach(function (g) { g.open = otworz; });
+            zapisz();
         });
     });
 })();

@@ -221,4 +221,6 @@
 - [x] Testy HTTP: zakładki obecne, uczniowie w panelu uczniów, admini w panelu adminów (bez przeciekania), liczniki 2/2, domyślnie zaznaczeni uczniowie — 13/13 OK
 - [x] Panel admina: w zakładce „Uczniowie" konta **pogrupowane według klasy** (nagłówek klasy + licznik; „Bez klasy" na końcu; sortowanie naturalne, np. 1A → 2B → 10A); uczniowie z tej samej klasy razem
 - [x] Testy HTTP: grupy klas obecne, poprawna kolejność naturalna, uczniowie w swoich grupach, liczniki grup, „Bez klasy" dla konta bez klasy — 21/21 OK
+- [x] Panel admina: każda klasa jako **rozwijany pasek** (`<details>`/`<summary>`); strzałka obracana przy rozwinięciu, nazwa w jednej linii (długa skracana z „…" + pełna w `title`), przyciski „Zwiń wszystkie"/„Rozwiń wszystkie" przy ≥2 klasach, stan zwinięcia zapamiętywany (`localStorage.dp-admin-collapsed`)
+- [x] Testy HTTP: akordeon klas (details/summary, data-class, domyślnie otwarte, brak przycisków zbiorczych przy 1 klasie, przyciski + liczniki + tooltip przy 2 klasach) — 14/14 OK
 
