@@ -3126,6 +3126,18 @@ body:has(.class-mgr-input:checked) { overflow: hidden; }
     color: var(--muted);
 }
 .manage-hint { font-size: 11.5px; color: var(--muted); }
+/* Konto innego administratora: hasła i imienia zmienić nie można */
+.manage-note {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 9px 12px;
+    border: 1px dashed #f59e0b;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, .12);
+    color: #92400e;
+    font-size: 12.5px;
+    line-height: 1.45;
+}
 .manage-danger {
     display: flex;
     justify-content: flex-end;
@@ -3169,6 +3181,7 @@ body:has(.class-mgr-input:checked) { overflow: hidden; }
 :root[data-theme="dark"] .admin-user-manage[open] > summary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
 :root[data-theme="dark"] .manage-body { background: #0f172a; border-color: #334155; }
 :root[data-theme="dark"] .manage-danger { border-top-color: #334155; }
+:root[data-theme="dark"] .manage-note { background: rgba(245, 158, 11, .16); border-color: #b45309; color: #fcd34d; }
 :root[data-theme="dark"] .admin-tabbar label[for="tab-uczniowie"] { background: #1e1b4b; color: #c7d2fe; }
 :root[data-theme="dark"] .admin-tabbar label[for="tab-admini"] { background: #3a2c07; color: #fcd34d; }
 :root[data-theme="dark"] .panel-tabbar { border-bottom-color: var(--line); }

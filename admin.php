@@ -20,6 +20,21 @@ auth_require_admin();
 
 $me = auth_user();
 
+/**
+ * Czy podane konto to INNY administrator (nie ja)?
+ *
+ * Hasła i imienia/nazwiska innego administratora nie zmieniamy — te dane
+ * może zmienić wyłącznie właściciel konta (albo sam administrator na sobie).
+ */
+$cudzy_admin = static function (int $id) use ($me): bool {
+    if ($id <= 0 || $id === (int) ($me['id'] ?? 0)) {
+        return false;
+    }
+    $u = user_get($id);
+
+    return $u !== null && (($u['rola'] ?? '') === 'admin');
+};
+
 /* ------------------------------------------------------------------ *
  *  Akcje (POST/Redirect/GET)
  * ------------------------------------------------------------------ */
@@ -59,6 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'reset_password') {
         $id    = (int) ($_POST['id'] ?? 0);
         $haslo = (string) ($_POST['haslo'] ?? '');
+        if ($cudzy_admin($id)) {
+            header('Location: admin.php?err=admin-chroniony');
+            exit;
+        }
         $ok    = user_set_password($id, $haslo);
         header('Location: admin.php?' . ($ok ? 'ok=haslo' : 'err=haslo-krotkie'));
         exit;
@@ -83,6 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'set_name') {
         $id    = (int) ($_POST['id'] ?? 0);
+        if ($cudzy_admin($id)) {
+            header('Location: admin.php?err=admin-chroniony');
+            exit;
+        }
         $imie  = (string) ($_POST['imie_nazwisko'] ?? '');
         $klasa = (string) ($_POST['klasa'] ?? '');
         $ok    = user_set_name($id, $imie, $klasa);
@@ -221,6 +244,7 @@ $err_msg = [
     'usun-siebie'    => '⚠ Nie możesz usunąć własnego konta.',
     'usun-ostatni'   => '⚠ Nie można usunąć ostatniego administratora.',
     'ostatni-admin'  => '⚠ Nie można odebrać rangi ostatniemu administratorowi.',
+    'admin-chroniony' => '⚠ Innemu administratorowi nie można zmienić hasła ani imienia i nazwiska — te dane zmienia tylko właściciel konta.',
     'haslo-krotkie'  => '⚠ Hasło musi mieć co najmniej 6 znaków.',
     'rola'           => '⚠ Nie udało się zmienić roli.',
     'blad'           => '⚠ Nie udało się zapisać zmian.',
@@ -453,6 +477,8 @@ $theme_vars = sprintf(
                     $dni    = (int) ($stat[$uid]['dni'] ?? 0);
                     $min    = (int) ($stat[$uid]['min'] ?? 0);
                     $jestem = $uid === (int) $me['id'];
+                    // Inny administrator: nie zmieniamy mu hasła ani imienia/nazwiska.
+                    $cudzy_konto = $rola === 'admin' && !$jestem;
                     $nazwa    = trim((string) ($u['imie_nazwisko'] ?? ''));
                     $inicjaly = '';
                     foreach (preg_split('/\s+/u', $nazwa, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $cz) {
@@ -531,6 +557,12 @@ $theme_vars = sprintf(
                                 <summary class="btn btn-sm btn-manage">⚙️ Zarządzaj kontem</summary>
                                 <div class="manage-body">
                                     <div class="manage-grid">
+                                        <?php if ($cudzy_konto): ?>
+                                            <p class="manage-note">
+                                                🔒 Innemu administratorowi nie zmieniasz imienia i nazwiska ani hasła —
+                                                te dane ustawia wyłącznie właściciel konta.
+                                            </p>
+                                        <?php endif; ?>
                                         <!-- Zmiana roli -->
                                         <form method="post" action="admin.php" class="manage-item">
                                             <input type="hidden" name="action" value="set_role">
@@ -565,6 +597,7 @@ $theme_vars = sprintf(
                                         <?php endif; ?>
 
                                         <!-- Zmiana nazwy i klasy -->
+                                        <?php if (!$cudzy_konto): ?>
                                         <form method="post" action="admin.php" class="manage-item">
                                             <input type="hidden" name="action" value="set_name">
                                             <input type="hidden" name="id" value="<?= $uid ?>">
@@ -598,6 +631,7 @@ $theme_vars = sprintf(
                                                 <button type="submit" class="btn btn-sm">Ustaw hasło</button>
                                             </div>
                                         </form>
+                                        <?php endif; ?>
                                     </div>
 
                                     <!-- Usunięcie konta -->
