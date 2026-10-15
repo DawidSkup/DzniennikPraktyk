@@ -2897,7 +2897,34 @@ body:has(#ptab-nowe:checked) { overflow: hidden; }
     font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
-.admin-class-group .admin-users { padding: 14px; }
+.admin-class-group .admin-class-body { padding: 14px; }
+
+/* Pasek „Zmień klasę całej grupie" wewnątrz grupy uczniów */
+.admin-class-rename {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    background: var(--cls-tint);
+    border: 1px dashed var(--cls);
+    border-radius: var(--radius-sm);
+}
+.admin-class-rename .manage-label { color: var(--cls-ink); }
+.admin-class-rename .admin-inline input[type="text"] {
+    min-width: 160px;
+    border-color: var(--cls);
+}
+.admin-class-rename .admin-inline input[type="text"]:focus {
+    outline: 2px solid var(--cls);
+    outline-offset: 1px;
+}
+.admin-class-rename .admin-inline .btn {
+    background: var(--cls);
+    border-color: var(--cls);
+    color: #fff;
+}
+.admin-class-rename .admin-inline .btn:hover { filter: brightness(1.08); }
 
 .admin-user {
     padding: 14px 16px;

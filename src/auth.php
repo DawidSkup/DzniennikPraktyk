@@ -282,6 +282,42 @@ function user_set_name(int $id, string $imie, ?string $klasa = null): bool
 }
 
 /**
+ * Masowa zmiana klasy: wszystkim uczniom starej klasy ustawia nową nazwę klasy.
+ * Pusta nowa klasa przenosi uczniów do grupy „Bez klasy".
+ *
+ * @return int liczba uczniów w grupie (0 gdy nie ma takiej grupy albo nazwa za długa)
+ */
+function user_set_klasa_bulk(string $from, string $to): int
+{
+    $from = trim($from);
+    $to   = trim($to);
+
+    // Ta sama granica co pole w panelu (maxlength="40").
+    if (mb_strlen($to) > 40) {
+        return 0;
+    }
+
+    // Ilu uczniów należy teraz do wskazanej klasy? (0 = grupa nie istnieje)
+    $stmt = db()->prepare(
+        "SELECT COUNT(*) FROM uzytkownicy WHERE rola = 'uczen' AND COALESCE(klasa, '') = :stara"
+    );
+    $stmt->execute([':stara' => $from]);
+    $ile = (int) $stmt->fetchColumn();
+
+    if ($ile === 0) {
+        return 0;
+    }
+
+    $stmt = db()->prepare(
+        "UPDATE uzytkownicy SET klasa = :nowa
+          WHERE rola = 'uczen' AND COALESCE(klasa, '') = :stara"
+    );
+    $stmt->execute([':nowa' => $to, ':stara' => $from]);
+
+    return $ile;
+}
+
+/**
  * Usuwa konto wraz z jego dziennikiem (wpisy + metadane załączników).
  * Nie pozwala usunąć ostatniego administratora.
  */

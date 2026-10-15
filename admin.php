@@ -90,6 +90,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'set_klasa') {
+        $from = (string) ($_POST['from'] ?? '');
+        $to   = (string) ($_POST['klasa'] ?? '');
+        // Ta sama granica co pole w panelu (maxlength="40").
+        if (mb_strlen(trim($to)) > 40) {
+            header('Location: admin.php?err=klasa');
+            exit;
+        }
+        $ile = user_set_klasa_bulk($from, $to);
+        if ($ile === 0) {
+            header('Location: admin.php?err=klasa-pusto');
+            exit;
+        }
+        header('Location: admin.php?ok=klasa&ile=' . $ile);
+        exit;
+    }
+
     if ($action === 'set_wymagane') {
         $id = (int) ($_POST['id'] ?? 0);
         $u  = user_get($id);
@@ -158,7 +175,17 @@ $ok_msg = [
     'rola'    => '✔ Rola konta została zmieniona.',
     'nazwa'   => '✔ Nazwa konta została zapisana.',
     'godziny' => '✔ Wymagane godziny praktyk zostały zapisane.',
+    'klasa'   => '✔ Klasa uczniów została zmieniona.',
 ][$ok_kod] ?? '';
+
+// Masowa zmiana klasy: pokazujemy, ilu uczniów objęła (poprawna odmiana „konto").
+if ($ok_kod === 'klasa') {
+    $ile   = (int) ($_GET['ile'] ?? 0);
+    $forma = $ile === 1
+        ? 'konto'
+        : (($ile % 10 >= 2 && $ile % 10 <= 4 && ($ile % 100 < 12 || $ile % 100 > 14)) ? 'konta' : 'kont');
+    $ok_msg = '✔ Zmieniono klasę (' . $ile . ' ' . $forma . ').';
+}
 
 $err_msg = [
     'csrf'           => '⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.',
@@ -176,6 +203,8 @@ $err_msg = [
     'dodano-klasa'   => '⚠ Podaj klasę ucznia.',
     'dodano-zajety'  => '⚠ Konto o tej nazwie już istnieje.',
     'godziny'        => '⚠ Podaj poprawną liczbę godzin (1–100000) albo zostaw puste, aby wyczyścić.',
+    'klasa'          => '⚠ Nazwa klasy może mieć maksymalnie 40 znaków.',
+    'klasa-pusto'    => '⚠ Nie znaleziono uczniów w tej klasie (odśwież stronę i spróbuj ponownie).',
 ][$err_kod] ?? '';
 
 $theme      = day_theme(date('Y-m-d'));
@@ -200,7 +229,7 @@ $theme_vars = sprintf(
     <link rel="stylesheet" href="assets/style.css?v=<?= @filemtime(__DIR__ . '/assets/style.css') ?: time() ?>">
     <script src="assets/theme.js?v=<?= @filemtime(__DIR__ . '/assets/theme.js') ?: time() ?>"></script>
 </head>
-<body style="<?= e($theme_vars) ?>"<?= $ok_kod === 'dodano' ? ' data-panel-tab="ptab-edycja"' : '' ?><?= $q !== '' ? ' data-admin-tab="tab-uczniowie"' : '' ?>>
+<body style="<?= e($theme_vars) ?>"<?= $ok_kod === 'dodano' ? ' data-panel-tab="ptab-edycja"' : '' ?><?= ($q !== '' || $ok_kod === 'klasa') ? ' data-admin-tab="tab-uczniowie"' : '' ?>>
 <div class="app">
 
     <header class="topbar no-print">
@@ -593,15 +622,36 @@ $theme_vars = sprintf(
                                     <button type="button" class="btn btn-sm" data-class-toggle="expand">▸ Rozwiń wszystkie</button>
                                 </div>
                             <?php endif; ?>
-                            <?php foreach ($klasy as $nazwa => $lista): ?>
+                            <?php $idx = 0; foreach ($klasy as $nazwa => $lista): $idx++; ?>
+                                <?php $stara = $nazwa === 'Bez klasy' ? '' : $nazwa; ?>
                                 <details class="admin-class-group" data-class="<?= e($nazwa) ?>" open>
                                     <summary class="admin-class-head">
                                         <span class="admin-class-chevron" aria-hidden="true">▸</span>
                                         <span class="admin-class-name" title="🎓 <?= e($nazwa) ?>">🎓 <?= e($nazwa) ?></span>
                                         <span class="admin-class-count"><?= count($lista) ?> <?= count($lista) === 1 ? 'uczeń' : 'uczniów' ?></span>
                                     </summary>
-                                    <div class="admin-users">
-                                        <?php foreach ($lista as $u) { $karta($u); } ?>
+                                    <div class="admin-class-body">
+                                        <?php // Masowa zmiana klasy całej grupy (np. 2A -> 3A); przy szukaniu ukryta. ?>
+                                        <?php if ($q === ''): ?>
+                                            <form method="post" action="admin.php" class="admin-class-rename no-print"
+                                                  onsubmit="return confirm('Zmienić klasę wszystkim uczniom w tej grupie?');">
+                                                <input type="hidden" name="action" value="set_klasa">
+                                                <input type="hidden" name="from" value="<?= e($stara) ?>">
+                                                <?= csrf_field() ?>
+                                                <span class="manage-label">✏️ Zmień klasę całej grupie (<?= count($lista) ?> <?= count($lista) === 1 ? 'uczeń' : 'uczniów' ?>)</span>
+                                                <div class="admin-inline">
+                                                    <input type="text" id="klasa-grupa-<?= $idx ?>" name="klasa" maxlength="40"
+                                                           value="<?= e($stara) ?>"
+                                                           placeholder="np. 3A"
+                                                           aria-label="Nowa nazwa klasy dla grupy <?= e($nazwa) ?>">
+                                                    <button type="submit" class="btn btn-sm">✏️ Zmień klasę</button>
+                                                </div>
+                                                <span class="manage-hint">Puste pole przenosi uczniów do grupy „Bez klasy".</span>
+                                            </form>
+                                        <?php endif; ?>
+                                        <div class="admin-users">
+                                            <?php foreach ($lista as $u) { $karta($u); } ?>
+                                        </div>
                                     </div>
                                 </details>
                             <?php endforeach; ?>
