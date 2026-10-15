@@ -261,6 +261,34 @@ function user_set_role(int $id, string $rola): bool
     return true;
 }
 
+/** Etykieta „konto o takiej nazwie już istnieje" dla panelu administratora. */
+function user_login_exists(string $login, int $pomin = 0): bool
+{
+    $istnieje = user_by_login($login);
+
+    return $istnieje !== null && (int) $istnieje['id'] !== $pomin;
+}
+
+/**
+ * Ustawia login (nazwę konta) wskazanego użytkownika.
+ * Zwraca false, gdy login jest za krótki albo zajęty.
+ */
+function user_set_login(int $id, string $login): bool
+{
+    $login = trim($login);
+    if (strlen($login) < 3 || user_get($id) === null) {
+        return false;
+    }
+    if (user_login_exists($login, $id)) {
+        return false;
+    }
+
+    $stmt = db()->prepare('UPDATE uzytkownicy SET login = :l WHERE id = :id');
+    $stmt->execute([':l' => $login, ':id' => $id]);
+
+    return true;
+}
+
 /** Ustawia imię i nazwisko (etykietę) konta oraz opcjonalnie klasę. */
 function user_set_name(int $id, string $imie, ?string $klasa = null): bool
 {

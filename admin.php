@@ -113,6 +113,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'set_login') {
+        $id    = (int) ($_POST['id'] ?? 0);
+        $login = trim((string) ($_POST['login'] ?? ''));
+        if ($cudzy_admin($id)) {
+            header('Location: admin.php?err=admin-chroniony');
+            exit;
+        }
+        if (strlen($login) < 3) {
+            header('Location: admin.php?err=login');
+            exit;
+        }
+        if (user_login_exists($login, $id)) {
+            header('Location: admin.php?err=login-zajety');
+            exit;
+        }
+        $ok = user_set_login($id, $login);
+        header('Location: admin.php?' . ($ok ? 'ok=login' : 'err=login'));
+        exit;
+    }
+
     if ($action === 'set_klasa') {
         $from = (string) ($_POST['from'] ?? '');
         $to   = (string) ($_POST['klasa'] ?? '');
@@ -215,6 +235,7 @@ $ok_msg = [
     'haslo'   => '✔ Hasło konta zostało zmienione.',
     'rola'    => '✔ Rola konta została zmieniona.',
     'nazwa'   => '✔ Nazwa konta została zapisana.',
+    'login'   => '✔ Login konta został zmieniony.',
     'godziny' => '✔ Wymagane godziny praktyk zostały zapisane.',
     'klasa'   => '✔ Klasa uczniów została zmieniona.',
     'usun-klase' => '✔ Cała klasa została usunięta.',
@@ -244,7 +265,9 @@ $err_msg = [
     'usun-siebie'    => '⚠ Nie możesz usunąć własnego konta.',
     'usun-ostatni'   => '⚠ Nie można usunąć ostatniego administratora.',
     'ostatni-admin'  => '⚠ Nie można odebrać rangi ostatniemu administratorowi.',
-    'admin-chroniony' => '⚠ Innemu administratorowi nie można zmienić hasła ani imienia i nazwiska — te dane zmienia tylko właściciel konta.',
+    'admin-chroniony' => '⚠ Innemu administratorowi nie można zmienić hasła, imienia i nazwiska ani loginu — te dane zmienia tylko właściciel konta.',
+    'login'          => '⚠ Podaj login (nazwę konta) — co najmniej 3 znaki.',
+    'login-zajety'   => '⚠ Konto o takim loginie już istnieje.',
     'haslo-krotkie'  => '⚠ Hasło musi mieć co najmniej 6 znaków.',
     'rola'           => '⚠ Nie udało się zmienić roli.',
     'blad'           => '⚠ Nie udało się zapisać zmian.',
@@ -559,8 +582,8 @@ $theme_vars = sprintf(
                                     <div class="manage-grid">
                                         <?php if ($cudzy_konto): ?>
                                             <p class="manage-note">
-                                                🔒 Innemu administratorowi nie zmieniasz imienia i nazwiska ani hasła —
-                                                te dane ustawia wyłącznie właściciel konta.
+                                                🔒 Innemu administratorowi nie zmieniasz imienia i nazwiska ani hasła,
+                                                ani loginu — te dane ustawia wyłącznie właściciel konta.
                                             </p>
                                         <?php endif; ?>
                                         <!-- Zmiana roli -->
@@ -596,8 +619,24 @@ $theme_vars = sprintf(
                                             </form>
                                         <?php endif; ?>
 
-                                        <!-- Zmiana nazwy i klasy -->
                                         <?php if (!$cudzy_konto): ?>
+                                        <!-- Login konta -->
+                                        <form method="post" action="admin.php" class="manage-item">
+                                            <input type="hidden" name="action" value="set_login">
+                                            <input type="hidden" name="id" value="<?= $uid ?>">
+                                            <?= csrf_field() ?>
+                                            <span class="manage-label">👤 Login (nazwa konta)</span>
+                                            <div class="admin-inline">
+                                                <input type="text" name="login" minlength="3" maxlength="64"
+                                                       value="<?= e((string) $u['login']) ?>"
+                                                       placeholder="Login"
+                                                       aria-label="Login <?= e((string) $u['login']) ?>">
+                                                <button type="submit" class="btn btn-sm">Zmień login</button>
+                                            </div>
+                                            <span class="manage-hint">Tym loginem loguje się to konto.</span>
+                                        </form>
+
+                                        <!-- Zmiana nazwy i klasy -->
                                         <form method="post" action="admin.php" class="manage-item">
                                             <input type="hidden" name="action" value="set_name">
                                             <input type="hidden" name="id" value="<?= $uid ?>">
