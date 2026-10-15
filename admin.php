@@ -338,6 +338,39 @@ $theme_vars = sprintf(
                             </div>
                         </div>
 
+                        <?php
+                        // Pasek postępu praktyk ucznia: ile ma godzin i ile jeszcze brakuje.
+                        $wym_u      = $rola === 'uczen' ? wymagane_godziny($uid) : 0;
+                        $wym_min_u  = $wym_u * 60;
+                        $proc_u     = $wym_min_u > 0 ? (int) round($min / $wym_min_u * 100) : 0;
+                        $proc_bar_u = max(0, min(100, $proc_u));
+                        $zostalo_u  = max(0, $wym_min_u - $min);
+                        ?>
+                        <?php if ($rola === 'uczen' && $wym_u > 0): ?>
+                            <section class="progress admin-user-progress" aria-label="Postęp praktyk: <?= e(user_label($u)) ?>">
+                                <div class="progress-head">
+                                    <span class="progress-title">🎯 Postęp praktyk</span>
+                                    <span class="progress-pct<?= $proc_u >= 100 ? ' is-done' : '' ?>"><?= $proc_u ?>%</span>
+                                </div>
+                                <div class="progress-track" role="progressbar"
+                                     aria-valuemin="0" aria-valuemax="<?= $wym_u ?>"
+                                     aria-valuenow="<?= min($wym_u, (int) round($min / 60)) ?>"
+                                     aria-label="Wypracowane godziny z <?= $wym_u ?>">
+                                    <div class="progress-fill<?= $proc_u >= 100 ? ' is-done' : '' ?>" style="width: <?= $proc_bar_u ?>%"></div>
+                                </div>
+                                <div class="progress-foot">
+                                    <span><b><?= e(format_duration_compact($min)) ?></b> z <?= $wym_u ?> h</span>
+                                    <?php if ($zostalo_u > 0): ?>
+                                        <span>Zostało <b><?= e(format_duration_compact($zostalo_u)) ?></b></span>
+                                    <?php else: ?>
+                                        <span class="progress-done">✔ Wypracowano wymagane godziny!</span>
+                                    <?php endif; ?>
+                                </div>
+                            </section>
+                        <?php elseif ($rola === 'uczen'): ?>
+                            <p class="admin-user-progress-empty">🎯 Nie ustawiono wymaganej liczby godzin praktyk.</p>
+                        <?php endif; ?>
+
                         <div class="admin-user-actions">
                             <?php if ($rola === 'uczen'): ?>
                                 <a class="btn btn-today" href="index.php?uczen=<?= $uid ?>"

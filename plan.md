@@ -223,4 +223,6 @@
 - [x] Testy HTTP: grupy klas obecne, poprawna kolejność naturalna, uczniowie w swoich grupach, liczniki grup, „Bez klasy" dla konta bez klasy — 21/21 OK
 - [x] Panel admina: każda klasa jako **rozwijany pasek** (`<details>`/`<summary>`); strzałka obracana przy rozwinięciu, nazwa w jednej linii (długa skracana z „…" + pełna w `title`), przyciski „Zwiń wszystkie"/„Rozwiń wszystkie" przy ≥2 klasach, stan zwinięcia zapamiętywany (`localStorage.dp-admin-collapsed`)
 - [x] Testy HTTP: akordeon klas (details/summary, data-class, domyślnie otwarte, brak przycisków zbiorczych przy 1 klasie, przyciski + liczniki + tooltip przy 2 klasach) — 14/14 OK
+- [x] Panel admina: **pasek postępu praktyk w karcie każdego ucznia** (procent, „X h z N h", „Zostało …", zielony przy 100%); wymagane godziny pobierane per uczeń (`wymagane_godziny($uid)`), godziny z `$stat`; przy braku wymaganych godzin — informacja zamiast paska; pasek tylko dla uczniów (nie dla adminów)
+- [x] Testy HTTP: pasek ucznia z wymaganymi godzinami (40%, „4 h z 10 h", „Zostało 6 h", aria-max), brak paska + komunikat gdy godzin nie ustawiono, dokładnie 1 pasek i 1 karta bez godzin, admin bez paska — 12/12 OK
 
