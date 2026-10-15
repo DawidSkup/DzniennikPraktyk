@@ -2911,17 +2911,45 @@ body:has(#ptab-nowe:checked) { overflow: hidden; }
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px 16px;
-    margin-bottom: 12px;
+    gap: 10px 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
 }
+/* Inicjały w kółku — szybkie rozpoznanie konta na liście */
+.admin-user-avatar {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .04em;
+}
+.admin-user.is-me .admin-user-avatar { background: linear-gradient(135deg, #f59e0b, #d97706); }
 .admin-user-id {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1 1 220px;
+    min-width: 0;
+}
+.admin-user-line1 {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 4px 8px;
 }
-.admin-user-name { font-size: 15px; font-weight: 800; color: var(--primary-dark); }
+.admin-user-line2 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+}
+.admin-user-name { font-size: 15.5px; font-weight: 800; color: var(--primary-dark); }
 .admin-you {
     padding: 1px 7px;
     border-radius: 999px;
@@ -2947,6 +2975,7 @@ body:has(#ptab-nowe:checked) { overflow: hidden; }
     display: flex;
     flex-wrap: wrap;
     gap: 6px 14px;
+    margin-left: auto;
     font-size: 12.5px;
     font-weight: 600;
     color: var(--muted);
@@ -2994,12 +3023,59 @@ body:has(#ptab-nowe:checked) { overflow: hidden; }
 .admin-inline input[type="password"] { min-width: 150px; }
 .admin-inline input[type="number"] { min-width: 120px; }
 
+/* Rozwijana sekcja „Zarządzaj kontem" — domyślnie schowana, żeby karta była czytelna */
+.btn-manage { flex: 0 0 auto; background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+.btn-manage:hover { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.btn-manage::after { content: "▾"; margin-left: 4px; font-size: 11px; line-height: 1; }
+.admin-user-manage { flex: 1 1 100%; min-width: 0; }
+.admin-user-manage > summary { list-style: none; }
+.admin-user-manage > summary::-webkit-details-marker { display: none; }
+.admin-user-manage[open] > summary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.admin-user-manage[open] > summary::after { content: "▴"; }
+.manage-body {
+    margin-top: 10px;
+    padding: 14px;
+    background: var(--tint);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+.manage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px 18px;
+}
+.manage-item {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 0;
+    min-width: 0;
+}
+.manage-label {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.manage-hint { font-size: 11.5px; color: var(--muted); }
+.manage-danger {
+    display: flex;
+    justify-content: flex-end;
+    margin: 14px 0 0;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+}
+
 @media (max-width: 620px) {
     .admin-create-grid { grid-template-columns: 1fr; }
     .admin-user-actions { flex-direction: column; align-items: stretch; }
     .admin-inline { width: 100%; }
     .admin-inline input,
     .admin-inline select { flex: 1 1 auto; }
+    .manage-body { padding: 12px; }
+    .manage-danger { justify-content: stretch; }
+    .manage-danger .btn { width: 100%; }
 }
 
 /* Tryb ciemny — znaczek roli, przycisk admina, panel, baner podglądu */
@@ -3014,7 +3090,15 @@ body:has(#ptab-nowe:checked) { overflow: hidden; }
 }
 :root[data-theme="dark"] .admin-user { background: #16202f; }
 :root[data-theme="dark"] .admin-user-name { color: #a5b4fc; }
+:root[data-theme="dark"] .admin-user-head { border-bottom-color: #1e293b; }
+:root[data-theme="dark"] .admin-user-avatar { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+:root[data-theme="dark"] .admin-user-class { background: #1e293b; color: #a5b4fc; }
 :root[data-theme="dark"] .admin-user-progress-empty { background: #16202f; }
+:root[data-theme="dark"] .btn-manage { background: #1e1b4b; border-color: #4338ca; color: #c7d2fe; }
+:root[data-theme="dark"] .btn-manage:hover,
+:root[data-theme="dark"] .admin-user-manage[open] > summary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+:root[data-theme="dark"] .manage-body { background: #0f172a; border-color: #334155; }
+:root[data-theme="dark"] .manage-danger { border-top-color: #334155; }
 :root[data-theme="dark"] .admin-tabbar label[for="tab-uczniowie"] { background: #1e1b4b; color: #c7d2fe; }
 :root[data-theme="dark"] .admin-tabbar label[for="tab-admini"] { background: #3a2c07; color: #fcd34d; }
 :root[data-theme="dark"] .panel-tabbar { border-bottom-color: var(--line); }

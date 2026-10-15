@@ -384,17 +384,31 @@ $theme_vars = sprintf(
                     $dni    = (int) ($stat[$uid]['dni'] ?? 0);
                     $min    = (int) ($stat[$uid]['min'] ?? 0);
                     $jestem = $uid === (int) $me['id'];
+                    $nazwa    = trim((string) ($u['imie_nazwisko'] ?? ''));
+                    $inicjaly = '';
+                    foreach (preg_split('/\s+/u', $nazwa, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $cz) {
+                        $inicjaly .= mb_strtoupper(mb_substr($cz, 0, 1));
+                        if (mb_strlen($inicjaly) >= 2) { break; }
+                    }
+                    if ($inicjaly === '') {
+                        $inicjaly = mb_strtoupper(mb_substr((string) $u['login'], 0, 1));
+                    }
                     ?>
                     <div class="admin-user<?= $jestem ? ' is-me' : '' ?>">
                         <div class="admin-user-head">
+                            <span class="admin-user-avatar" aria-hidden="true"><?= e($inicjaly) ?></span>
                             <div class="admin-user-id">
-                                <span class="admin-user-name"><?= e(user_label($u)) ?></span>
-                                <span class="role-badge role-<?= e($rola) ?>"><?= e($rola_l) ?></span>
-                                <?php if ($rola === 'uczen'): ?>
-                                    <span class="admin-user-class">🎓 <?= $klasa !== '' ? e($klasa) : 'bez klasy' ?></span>
-                                <?php endif; ?>
-                                <?php if ($jestem): ?><span class="admin-you">to Ty</span><?php endif; ?>
-                                <span class="admin-user-login"><?= e((string) $u['login']) ?></span>
+                                <div class="admin-user-line1">
+                                    <span class="admin-user-name"><?= e(user_label($u)) ?></span>
+                                    <span class="role-badge role-<?= e($rola) ?>"><?= e($rola_l) ?></span>
+                                    <?php if ($rola === 'uczen'): ?>
+                                        <span class="admin-user-class">🎓 <?= $klasa !== '' ? e($klasa) : 'bez klasy' ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($jestem): ?><span class="admin-you">to Ty</span><?php endif; ?>
+                                </div>
+                                <div class="admin-user-line2">
+                                    <span class="admin-user-login" title="Login">👤 <?= e((string) $u['login']) ?></span>
+                                </div>
                             </div>
                             <div class="admin-user-stats">
                                 <span title="Liczba dni z wpisem">📄 <?= $dni ?> <?= $dni === 1 ? 'wpis' : 'wpisów' ?></span>
@@ -441,69 +455,89 @@ $theme_vars = sprintf(
                                    title="Otwórz dziennik ucznia (możesz dodawać i edytować wpisy)">✏️ Otwórz dziennik</a>
                             <?php endif; ?>
 
-                            <!-- Zmiana roli -->
-                            <form method="post" action="admin.php" class="admin-inline">
-                                <input type="hidden" name="action" value="set_role">
-                                <input type="hidden" name="id" value="<?= $uid ?>">
-                                <?= csrf_field() ?>
-                                <select name="rola" aria-label="Rola konta <?= e((string) $u['login']) ?>">
-                                    <option value="uczen" <?= $rola === 'uczen' ? 'selected' : '' ?>>Uczeń</option>
-                                    <option value="admin" <?= $rola === 'admin' ? 'selected' : '' ?>>Administrator</option>
-                                </select>
-                                <button type="submit" class="btn btn-sm">🎭 Zmień rolę</button>
-                            </form>
+                            <details class="admin-user-manage" data-user="<?= $uid ?>">
+                                <summary class="btn btn-sm btn-manage">⚙️ Zarządzaj kontem</summary>
+                                <div class="manage-body">
+                                    <div class="manage-grid">
+                                        <!-- Zmiana roli -->
+                                        <form method="post" action="admin.php" class="manage-item">
+                                            <input type="hidden" name="action" value="set_role">
+                                            <input type="hidden" name="id" value="<?= $uid ?>">
+                                            <?= csrf_field() ?>
+                                            <span class="manage-label">🎭 Rola konta</span>
+                                            <div class="admin-inline">
+                                                <select name="rola" aria-label="Rola konta <?= e((string) $u['login']) ?>">
+                                                    <option value="uczen" <?= $rola === 'uczen' ? 'selected' : '' ?>>Uczeń</option>
+                                                    <option value="admin" <?= $rola === 'admin' ? 'selected' : '' ?>>Administrator</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-sm">Zmień rolę</button>
+                                            </div>
+                                        </form>
 
-                            <?php if ($rola === 'uczen'): ?>
-                                <!-- Wymagane godziny praktyk -->
-                                <form method="post" action="admin.php" class="admin-inline">
-                                    <input type="hidden" name="action" value="set_wymagane">
-                                    <input type="hidden" name="id" value="<?= $uid ?>">
-                                    <?= csrf_field() ?>
-                                    <input type="number" name="wymagane_godziny" min="1" max="100000" step="1"
-                                           value="<?= $wym_u > 0 ? $wym_u : '' ?>"
-                                           placeholder="Wymagane godziny"
-                                           aria-label="Wymagane godziny praktyk dla <?= e((string) $u['login']) ?>">
-                                    <button type="submit" class="btn btn-sm">🎯 Zapisz godziny</button>
-                                </form>
-                            <?php endif; ?>
+                                        <?php if ($rola === 'uczen'): ?>
+                                            <!-- Wymagane godziny praktyk -->
+                                            <form method="post" action="admin.php" class="manage-item">
+                                                <input type="hidden" name="action" value="set_wymagane">
+                                                <input type="hidden" name="id" value="<?= $uid ?>">
+                                                <?= csrf_field() ?>
+                                                <span class="manage-label">🎯 Wymagane godziny praktyk</span>
+                                                <div class="admin-inline">
+                                                    <input type="number" name="wymagane_godziny" min="0" max="100000" step="1"
+                                                           value="<?= $wym_u > 0 ? $wym_u : '' ?>"
+                                                           placeholder="np. 120"
+                                                           aria-label="Wymagane godziny praktyk dla <?= e((string) $u['login']) ?>">
+                                                    <button type="submit" class="btn btn-sm">Zapisz godziny</button>
+                                                </div>
+                                                <span class="manage-hint">Puste pole (albo 0) usuwa wymaganie.</span>
+                                            </form>
+                                        <?php endif; ?>
 
-                            <!-- Zmiana nazwy i klasy -->
-                            <form method="post" action="admin.php" class="admin-inline">
-                                <input type="hidden" name="action" value="set_name">
-                                <input type="hidden" name="id" value="<?= $uid ?>">
-                                <?= csrf_field() ?>
-                                <input type="text" name="imie_nazwisko" maxlength="120"
-                                       value="<?= e((string) ($u['imie_nazwisko'] ?? '')) ?>"
-                                       placeholder="Imię i nazwisko"
-                                       aria-label="Imię i nazwisko <?= e((string) $u['login']) ?>">
-                                <?php if ($rola === 'uczen'): ?>
-                                    <input type="text" name="klasa" maxlength="40"
-                                           value="<?= e($klasa) ?>"
-                                           placeholder="Klasa"
-                                           aria-label="Klasa <?= e((string) $u['login']) ?>">
-                                <?php endif; ?>
-                                <button type="submit" class="btn btn-sm">🪪 Zapisz dane</button>
-                            </form>
+                                        <!-- Zmiana nazwy i klasy -->
+                                        <form method="post" action="admin.php" class="manage-item">
+                                            <input type="hidden" name="action" value="set_name">
+                                            <input type="hidden" name="id" value="<?= $uid ?>">
+                                            <?= csrf_field() ?>
+                                            <span class="manage-label">🪪 Imię i nazwisko<?= $rola === 'uczen' ? ' oraz klasa' : '' ?></span>
+                                            <div class="admin-inline">
+                                                <input type="text" name="imie_nazwisko" maxlength="120"
+                                                       value="<?= e((string) ($u['imie_nazwisko'] ?? '')) ?>"
+                                                       placeholder="Imię i nazwisko"
+                                                       aria-label="Imię i nazwisko <?= e((string) $u['login']) ?>">
+                                                <?php if ($rola === 'uczen'): ?>
+                                                    <input type="text" name="klasa" maxlength="40"
+                                                           value="<?= e($klasa) ?>"
+                                                           placeholder="Klasa"
+                                                           aria-label="Klasa <?= e((string) $u['login']) ?>">
+                                                <?php endif; ?>
+                                                <button type="submit" class="btn btn-sm">Zapisz dane</button>
+                                            </div>
+                                        </form>
 
-                            <!-- Nowe hasło -->
-                            <form method="post" action="admin.php" class="admin-inline">
-                                <input type="hidden" name="action" value="reset_password">
-                                <input type="hidden" name="id" value="<?= $uid ?>">
-                                <?= csrf_field() ?>
-                                <input type="password" name="haslo" minlength="6" autocomplete="new-password"
-                                       placeholder="Nowe hasło (min. 6)"
-                                       aria-label="Nowe hasło dla <?= e((string) $u['login']) ?>">
-                                <button type="submit" class="btn btn-sm">🔑 Ustaw hasło</button>
-                            </form>
+                                        <!-- Nowe hasło -->
+                                        <form method="post" action="admin.php" class="manage-item">
+                                            <input type="hidden" name="action" value="reset_password">
+                                            <input type="hidden" name="id" value="<?= $uid ?>">
+                                            <?= csrf_field() ?>
+                                            <span class="manage-label">🔑 Nowe hasło</span>
+                                            <div class="admin-inline">
+                                                <input type="password" name="haslo" minlength="6" autocomplete="new-password"
+                                                       placeholder="min. 6 znaków"
+                                                       aria-label="Nowe hasło dla <?= e((string) $u['login']) ?>">
+                                                <button type="submit" class="btn btn-sm">Ustaw hasło</button>
+                                            </div>
+                                        </form>
+                                    </div>
 
-                            <!-- Usunięcie konta -->
-                            <form method="post" action="admin.php" class="admin-inline"
-                                  onsubmit="return confirm('Usunąć konto „<?= e((string) $u['login']) ?>”?\nZostanie usunięty także jego dziennik wraz z załącznikami.<?= $dni > 0 ? '\n\nUwaga: konto ma ' . $dni . ' wpis(ów)!' : '' ?>');">
-                                <input type="hidden" name="action" value="delete_user">
-                                <input type="hidden" name="id" value="<?= $uid ?>">
-                                <?= csrf_field() ?>
-                                <button type="submit" class="btn btn-danger btn-sm" title="Usuń konto">🗑 Usuń</button>
-                            </form>
+                                    <!-- Usunięcie konta -->
+                                    <form method="post" action="admin.php" class="manage-danger"
+                                          onsubmit="return confirm('Usunąć konto „<?= e((string) $u['login']) ?>”?\nZostanie usunięty także jego dziennik wraz z załącznikami.<?= $dni > 0 ? '\n\nUwaga: konto ma ' . $dni . ' wpis(ów)!' : '' ?>');">
+                                        <input type="hidden" name="action" value="delete_user">
+                                        <input type="hidden" name="id" value="<?= $uid ?>">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Usuń konto">🗑 Usuń konto</button>
+                                    </form>
+                                </div>
+                            </details>
                         </div>
                     </div>
                     <?php
@@ -740,6 +774,29 @@ $theme_vars = sprintf(
             zapisz();
         });
     });
+})();
+
+(function () {
+    // Sekcje „Zarządzaj kontem": pamiętamy rozwinięte konta, żeby po zapisie
+    // (przeładowaniu strony) sekcja nadal była otwarta i nie trzeba było jej szukać.
+    var sekcje = document.querySelectorAll('.admin-user-manage');
+    if (!sekcje.length) { return; }
+    var key = 'dp-admin-open-user';
+
+    function zapisz() {
+        var otwarte = [];
+        sekcje.forEach(function (s) { if (s.open) { otwarte.push(s.dataset.user); } });
+        try { localStorage.setItem(key, JSON.stringify(otwarte)); } catch (e) {}
+    }
+
+    try {
+        var otwarte = JSON.parse(localStorage.getItem(key) || '[]');
+        sekcje.forEach(function (s) {
+            if (otwarte.indexOf(s.dataset.user) !== -1) { s.open = true; }
+        });
+    } catch (e) {}
+
+    sekcje.forEach(function (s) { s.addEventListener('toggle', zapisz); });
 })();
 </script>
 </body>
