@@ -14,45 +14,44 @@ require_once __DIR__ . '/src/auth.php';
 // Wymagane zalogowanie (brak konta → kreator, brak sesji → logowanie).
 auth_require_login();
 
-// Kontekst: własny dziennik albo podgląd dziennika ucznia (administrator).
-$ctx       = auth_view_context();
-$view_user = $ctx['user'] ?? null;
-$readonly  = (bool) $ctx['readonly'];
-$view_id   = (int) ($view_user['id'] ?? 0);
-$view_name = $view_user !== null ? user_label($view_user) : '';
-$ctx_qs    = $readonly ? '&uczen=' . $view_id : ''; // doklejane do linków GET
+// Kontekst: własny dziennik albo dziennik ucznia (administrator edytuje go w imieniu ucznia).
+$ctx        = auth_view_context();
+$view_user  = $ctx['user'] ?? null;
+$as_admin   = (bool) ($ctx['as_admin'] ?? false);
+$view_id    = (int) ($view_user['id'] ?? 0);
+$view_name  = $view_user !== null ? user_label_klasa($view_user) : '';
+$view_param = $as_admin ? $view_id : 0;           // kontekst ucznia dla adresów
+$ctx_qs     = $as_admin ? '&uczen=' . $view_id : ''; // doklejane do linków GET
+
+// Administrator nie prowadzi własnego dziennika — bez wybranego ucznia
+// wracamy do panelu (`admin.php`).
+auth_guard_own_journal($as_admin);
 
 /* ------------------------------------------------------------------ *
  *  Obsługa akcji (POST) — wzorzec POST/Redirect/GET
  * ------------------------------------------------------------------ */
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Podgląd dziennika ucznia (administrator) jest tylko do odczytu.
-    if ($readonly) {
-        header('Location: kalendarz.php?uczen=' . $view_id);
-        exit;
-    }
-
     $action = $_POST['action'] ?? '';
     $data   = trim((string) ($_POST['data'] ?? ''));
 
     // Przekroczony limit post_max_size (np. zbyt duży załącznik) — PHP nie
     // wypełnia wtedy $_POST/$_FILES. Zgłaszamy czytelny błąd zamiast CSRF.
     if ($_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
-        header('Location: kalendarz.php?zal=za-duzy');
+        header('Location: ' . kal_url('zal=za-duzy', $view_param));
         exit;
     }
 
     // Token CSRF wymagany przy każdej zmianie stanu.
     if (!csrf_check($_POST['csrf'] ?? null)) {
-        $target = 'kalendarz.php' . (is_valid_date($data) ? '?data=' . urlencode($data) . '&blad_csrf=1' : '?blad_csrf=1');
+        $target = kal_url(is_valid_date($data) ? 'data=' . urlencode($data) . '&blad_csrf=1' : 'blad_csrf=1', $view_param);
         header('Location: ' . $target);
         exit;
     }
 
     if ($action === 'add_file' && is_valid_date($data)) {
         $kod = zal_add($view_id, $data, $_FILES['zal'] ?? null);
-        header('Location: kalendarz.php?data=' . urlencode($data) . '&zal=' . urlencode($kod));
+        header('Location: ' . kal_url('data=' . urlencode($data) . '&zal=' . urlencode($kod), $view_param));
         exit;
     }
 
@@ -63,14 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($plik !== null && (string) $plik['data'] === $data && (int) $plik['user_id'] === $view_id) {
             zal_delete($plik_id);
         }
-        header('Location: kalendarz.php?data=' . urlencode($data) . '&zal=usunieto');
+        header('Location: ' . kal_url('data=' . urlencode($data) . '&zal=usunieto', $view_param));
         exit;
     }
 
     if ($action === 'delete_all') {
         delete_all_wpisy($view_id);
         zal_delete_all($view_id);
-        header('Location: kalendarz.php?usunieto=1');
+        header('Location: ' . kal_url('usunieto=1', $view_param));
         exit;
     }
 
@@ -79,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             zal_delete_for_date($view_id, $data);
             delete_wpis($view_id, $data);
             $target = prev_date($view_id, $data) ?? next_date($view_id, $data);
-            header('Location: kalendarz.php' . ($target ? '?data=' . urlencode($target) : ''));
+            header('Location: ' . kal_url($target ? 'data=' . urlencode($target) : '', $view_param));
             exit;
         }
 
@@ -99,17 +98,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $zal_kod = zal_add($view_id, $data, $_FILES['zal']);
             }
 
-            $qs = 'kalendarz.php?data=' . urlencode($data) . '&zapisano=1';
+            $qs = 'data=' . urlencode($data) . '&zapisano=1';
             if ($zal_kod !== null) {
                 $qs .= '&zal=' . urlencode($zal_kod);
             }
-            header('Location: ' . $qs);
+            header('Location: ' . kal_url($qs, $view_param));
             exit;
         }
     }
 
     // Nieprawidłowe dane – wracamy na stronę bez zapisu.
-    header('Location: kalendarz.php' . (is_valid_date($data) ? '?data=' . urlencode($data) : ''));
+    header('Location: ' . kal_url(is_valid_date($data) ? 'data=' . urlencode($data) : '', $view_param));
     exit;
 }
 
@@ -258,8 +257,8 @@ $zal_counts = zal_counts($view_id);
             <div>
                 <h1 class="brand-title">Dziennik Praktyk</h1>
                 <p class="brand-sub">
-                    <?php if ($readonly): ?>
-                        Podgląd dziennika · <?= e($view_name) ?> · <?= count($dates) ?> <?= count($dates) === 1 ? 'wpis' : 'wpisów' ?>
+                    <?php if ($as_admin): ?>
+                        Dziennik ucznia · <?= e($view_name) ?> · <?= count($dates) ?> <?= count($dates) === 1 ? 'wpis' : 'wpisów' ?>
                     <?php else: ?>
                         <?= count($dates) ?> <?= count($dates) === 1 ? 'wpis' : 'wpisów' ?> w dzienniku
                     <?php endif; ?>
@@ -271,7 +270,7 @@ $zal_counts = zal_counts($view_id);
     <!-- Akcje: pasek chowający się w bok + przycisk „⋮" do przywołania -->
     <div class="actions-dock no-print">
         <div class="topbar-actions" id="actions-bar" role="toolbar" aria-label="Akcje">
-            <a class="btn" href="index.php<?= $readonly ? '?uczen=' . $view_id : '' ?>" title="Strona główna — podsumowanie godzin">🏠 Start</a>
+            <a class="btn" href="index.php<?= $as_admin ? '?uczen=' . $view_id : '' ?>" title="Strona główna — podsumowanie godzin">🏠 Start</a>
             <div class="theme-switch no-print" role="group" aria-label="Motyw: jasny, ciemny lub automatyczny">
                 <button type="button" class="theme-btn" data-theme-mode="light" aria-pressed="false" title="Tryb jasny (dzień)">☀️</button>
                 <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
@@ -280,15 +279,11 @@ $zal_counts = zal_counts($view_id);
             <?php if (auth_is_admin()): ?>
                 <a class="btn btn-admin" href="admin.php" title="Panel administratora">👑 Panel admina</a>
             <?php endif; ?>
-            <?php if ($readonly): ?>
-                <a class="btn btn-today" href="index.php" title="Wróć do swojego dziennika">↩ Mój dziennik</a>
-            <?php else: ?>
-                <a class="btn btn-today" href="kalendarz.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
-                <button type="button" class="btn btn-save" data-open-dodaj
-                        title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</button>
-            <?php endif; ?>
+            <a class="btn btn-today" href="<?= e(kal_url('data=' . date('Y-m-d') . $widok_qs, $view_param)) ?>">Dzisiaj</a>
+            <button type="button" class="btn btn-save" data-open-dodaj
+                    title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</button>
             <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
-            <?php if (!$readonly): ?>
+            <?php if (!$as_admin): ?>
                 <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
             <?php endif; ?>
         </div>
@@ -348,7 +343,7 @@ $zal_counts = zal_counts($view_id);
            title="<?= e($nav_label_prev) ?>">←</a>
 
         <form class="jump" method="get" action="kalendarz.php">
-            <?php if ($readonly): ?>
+            <?php if ($as_admin): ?>
                 <input type="hidden" name="uczen" value="<?= $view_id ?>">
             <?php endif; ?>
             <?php if ($tydzien): ?>
@@ -386,8 +381,8 @@ $zal_counts = zal_counts($view_id);
            title="<?= e($nav_label_next) ?>">→</a>
     </nav>
 
-    <?php if ($readonly): ?>
-        <p class="alert alert-info no-print">👀 Podglądasz dziennik ucznia: <b><?= e($view_name) ?></b>. Tryb tylko do odczytu.</p>
+    <?php if ($as_admin): ?>
+        <p class="alert alert-info no-print">✏️ Edytujesz dziennik ucznia: <b><?= e($view_name) ?></b>. Wpisy zapisują się na jego koncie.</p>
     <?php endif; ?>
 
     <?php if ($zapisano): ?>
@@ -514,8 +509,6 @@ $zal_counts = zal_counts($view_id);
                                 <a class="btn wk-edit-link" href="kalendarz.php?data=<?= e($d) ?><?= $ctx_qs ?>">
                                     <span class="wk-edit-ico" aria-hidden="true">📄</span> Otwórz
                                 </a>
-                            <?php elseif ($readonly): ?>
-                                <span class="wk-none">—</span>
                             <?php elseif ($weekend): ?>
                                 <a class="btn btn-today wk-edit-link" href="kalendarz.php?data=<?= e($d) ?><?= $ctx_qs ?>"
                                    onclick="return confirm('Czy na pewno chcesz dodać wpis w weekend?\nSobota i niedziela to dni bez praktyk.');">
@@ -607,16 +600,15 @@ $zal_counts = zal_counts($view_id);
                                target="_blank" rel="noopener"><?= e($z['nazwa']) ?></a>
                             <span class="zal-size"><?= e(format_bytes((int) $z['rozmiar'])) ?></span>
                         </div>
-                        <?php if (!$readonly): ?>
                         <form method="post" action="kalendarz.php" class="zal-del no-print"
                               onsubmit="return confirm('Usunąć plik „<?= e($z['nazwa']) ?>”?');">
                             <input type="hidden" name="action" value="delete_file">
                             <input type="hidden" name="data" value="<?= e($data) ?>">
                             <input type="hidden" name="id" value="<?= (int) $z['id'] ?>">
+                            <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                             <?= csrf_field() ?>
                             <button type="submit" class="btn btn-danger btn-sm" title="Usuń plik">🗑</button>
                         </form>
-                        <?php endif; ?>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -634,20 +626,12 @@ $zal_counts = zal_counts($view_id);
     <?php endif; ?>
 
     <?php if ($tydzien): ?>
-        <?php if ($readonly): ?>
-            <p class="week-notice no-print">
-                To podgląd całego tygodnia — do przeglądu i wydruku.
-                <a href="kalendarz.php?data=<?= e($data) ?><?= $ctx_qs ?>">Przejdź do widoku dnia</a>.
-            </p>
-        <?php else: ?>
-            <p class="week-notice no-print">
-                To podgląd całego tygodnia — do przeglądu i wydruku. Aby dodać nowy lub poprawić
-                istniejący wpis, <a href="kalendarz.php?data=<?= e($data) ?>">przejdź do widoku dnia</a>
-                albo skorzystaj z przycisku przy wybranym dniu.
-            </p>
-        <?php endif; ?>
+        <p class="week-notice no-print">
+            To podgląd całego tygodnia — do przeglądu i wydruku. Aby dodać nowy lub poprawić
+            istniejący wpis, <a href="kalendarz.php?data=<?= e($data) ?><?= $ctx_qs ?>">przejdź do widoku dnia</a>
+            albo skorzystaj z przycisku przy wybranym dniu.
+        </p>
     <?php else: ?>
-    <?php if (!$readonly): ?>
     <!-- Formularz (nie drukuje się) -->
     <section class="form-card no-print" id="dodaj-wpis">
         <header class="form-head">
@@ -662,6 +646,7 @@ $zal_counts = zal_counts($view_id);
 
         <form method="post" action="kalendarz.php" class="form-body">
             <input type="hidden" name="action" value="save">
+            <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
             <?= csrf_field() ?>
 
             <div class="form-grid">
@@ -698,6 +683,7 @@ $zal_counts = zal_counts($view_id);
                   onsubmit="return confirm('Usunąć wpis z dnia <?= e($data) ?>?\nUsunięte zostaną też załączniki tego dnia.');">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="data" value="<?= e($data) ?>">
+                <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                 <?= csrf_field() ?>
             </form>
         <?php endif; ?>
@@ -707,6 +693,7 @@ $zal_counts = zal_counts($view_id);
             <form method="post" action="kalendarz.php" enctype="multipart/form-data" class="zal-upload-form">
                 <input type="hidden" name="action" value="add_file">
                 <input type="hidden" name="data" value="<?= e($data) ?>">
+                <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                 <?= csrf_field() ?>
                 <input class="zal-file" type="file" name="zal" required
                        aria-label="Wybierz zdjęcie lub plik">
@@ -718,7 +705,6 @@ $zal_counts = zal_counts($view_id);
             </p>
         </div>
     </section>
-    <?php endif; /* formularz edycji — ukryty w podglądzie */ ?>
     <?php endif; ?>
 
         <!-- Panel prawy: motyw i skróty (podsumowanie godzin jest na stronie głównej) -->
@@ -751,7 +737,7 @@ $zal_counts = zal_counts($view_id);
     </footer>
 
     <!-- Strefa usuwania: na samym dole strony -->
-    <?php if ($ilosc_dni > 0 && !$readonly): ?>
+    <?php if ($ilosc_dni > 0): ?>
         <section class="danger-zone no-print">
             <div class="danger-text">
                 <strong>Strefa usuwania</strong>
@@ -760,6 +746,7 @@ $zal_counts = zal_counts($view_id);
             <form method="post" action="kalendarz.php"
                   onsubmit="return confirm('UWAGA! Trwale usuniesz WSZYSTKIE wpisy z dziennika. Kontynuować?');">
                 <input type="hidden" name="action" value="delete_all">
+                <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn-danger">🗑 Usuń wszystko</button>
             </form>
@@ -768,15 +755,14 @@ $zal_counts = zal_counts($view_id);
 
     <!-- Linki informacyjne na samym dole -->
     <nav class="pagefoot no-print" aria-label="Informacje">
-        <a href="index.php<?= $readonly ? '?uczen=' . $view_id : '' ?>">🏠 Start</a>
+        <a href="index.php<?= $as_admin ? '?uczen=' . $view_id : '' ?>">🏠 Start</a>
         <a href="kalendarz.php?data=<?= e($data) ?><?= $link_qs ?>" aria-current="page">📅 Kalendarz</a>
-        <?php if (!$readonly): ?>
+        <?php if (!$as_admin): ?>
             <a href="ustawienia.php">⚙️ Ustawienia</a>
         <?php endif; ?>
         <a href="o-mnie.php">ℹ️ O mnie</a>
     </nav>
 
-    <?php if (!$readonly): ?>
     <!-- Popup „Dodaj wpis" -->
     <div class="modal no-print" id="dodaj-modal" hidden>
         <div class="modal-backdrop" data-close-modal></div>
@@ -790,6 +776,7 @@ $zal_counts = zal_counts($view_id);
             </header>
             <form method="post" action="kalendarz.php" class="modal-form" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="save">
+                <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                 <?= csrf_field() ?>
                 <div class="field">
                     <label for="m-data">Data</label>
@@ -825,10 +812,9 @@ $zal_counts = zal_counts($view_id);
             </form>
         </div>
     </div>
-    <?php endif; /* popup dodawania — ukryty w podglądzie */ ?>
 
 </div>
-<?php if ($dodaj_flow && !$readonly): ?><script>window.__dpDodajAutoOpen = true;</script><?php endif; ?>
+<?php if ($dodaj_flow): ?><script>window.__dpDodajAutoOpen = true;</script><?php endif; ?>
 <script src="assets/app.js?v=<?= @filemtime(__DIR__ . '/assets/app.js') ?: time() ?>"></script>
 </body>
 </html>

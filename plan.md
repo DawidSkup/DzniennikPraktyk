@@ -204,4 +204,21 @@
 - [x] Testy CLI: migracja starej bazy (admin, przypisanie wpisów/załączników/godzin, nadpisanie wpisu) — OK
 - [x] Testy HTTP: kreator admina, panel, dodanie ucznia, podgląd (readonly), brak kopii u ucznia, brak dostępu do panelu, auto-otwarcie popupu — 21/21 OK
 - [x] Testy: brak ostrzeżeń/notice PHP na wszystkich stronach; `php -l` wszystkich plików — poprawnie
+- [x] Administrator nie ma własnego kalendarza/dziennika: `auth_guard_own_journal()` + `auth_home_url()` w `src/auth.php`; `index.php` i `kalendarz.php` bez `?uczen=ID` przekierowują admina do `admin.php` (POST zapisu też zablokowany)
+- [x] Usunięte linki do własnego dziennika/kalendarza z panelu (`admin.php`), ustawień i „O mnie"; logowanie/reset hasła kierują admina na `admin.php`, ucznia na `index.php`
+- [x] Ustawienia: administrator nie widzi sekcji „Wymagane godziny praktyk" ani nie może jej zapisać (akcja `save_wymagane_godziny` zablokowana)
+- [x] Testy HTTP (serwer wbudowany PHP, świeża baza): admin — redirect `index.php`/`kalendarz.php` → `admin.php`, brak linków kalendarza, brak sekcji godzin, podgląd ucznia (readonly) działa; uczeń — własny dziennik i kalendarz bez zmian — OK
+- [x] Administrator może **edytować** dziennik ucznia (nie tylko podglądać): `auth_view_context()` zwraca `as_admin` i czyta `uczen` z GET oraz POST; `kal_url()` dokleja kontekst ucznia do adresów i przekierowań; wejście w dziennik ucznia (`index.php?uczen=ID` / `kalendarz.php?uczen=ID`) ma pełny formularz dodawania/edycji/usuwania i załączników — wpisy zapisują się na koncie ucznia
+- [x] Formularze POST w kalendarzu niosą ukryte `uczen=ID`, gdy działa administrator; przekierowania po zapisie/usunięciu zachowują kontekst ucznia; bez `?uczen=ID` admin nadal nie zapisze (guard)
+- [x] Panel admina: przycisk „✏️ Otwórz dziennik" (zamiast „👀 Podgląd"), zaktualizowane opisy
+- [x] Testy HTTP: admin edytuje dziennik ucznia (dodanie, usunięcie wpisu, banner edycji, formularz/modal obecne), redirecty z kontekstem, wpis widoczny u ucznia (8 h), blokada zapisu bez wyboru ucznia — 16/16 OK
+- [x] Klasa ucznia: nowa kolumna `klasa` w `uzytkownicy` (`src/db.php`, migracja `db_ensure_column`); `user_klasa()` / `user_label_klasa()` w `src/auth.php`
+- [x] Zakładanie konta ucznia wymaga podania klasy: `user_create()` zwraca kod `klasa`, a panel pokazuje „⚠ Podaj klasę ucznia."; konta administratorów nie wymagają klasy
+- [x] Panel admina: pole „🎓 Klasa" w formularzu nowego konta (wymagane i widoczne tylko dla roli uczeń — przełączane JS), klasa widoczna na liście kont oraz edytowalna razem z nazwą; etykieta dziennika ucznia z klasą, np. „Jan Kowalski (4A)"
+- [x] Testy HTTP: uczeń bez klasy → błąd i brak konta; uczeń z klasą → utworzony i widoczny; admin bez klasy → OK; edycja klasy; etykieta z klasą — 12/12 OK
+- [x] Test migracji: stara baza bez kolumny `klasa` po uruchomieniu dostaje kolumnę z domyślną pustą wartością — OK
+- [x] Panel admina: lista kont podzielona na **dwie zakładki** — „🎓 Uczniowie" i „👑 Administratorzy" (zakładki CSS na radio-inputach — działają bez JS; licznik kont na każdej zakładce; domyślnie otwarci uczniowie; wspólna karta konta przez domknięcie PHP; wybrana zakładka zapamiętywana w `localStorage`)
+- [x] Testy HTTP: zakładki obecne, uczniowie w panelu uczniów, admini w panelu adminów (bez przeciekania), liczniki 2/2, domyślnie zaznaczeni uczniowie — 13/13 OK
+- [x] Panel admina: w zakładce „Uczniowie" konta **pogrupowane według klasy** (nagłówek klasy + licznik; „Bez klasy" na końcu; sortowanie naturalne, np. 1A → 2B → 10A); uczniowie z tej samej klasy razem
+- [x] Testy HTTP: grupy klas obecne, poprawna kolejność naturalna, uczniowie w swoich grupach, liczniki grup, „Bez klasy" dla konta bez klasy — 21/21 OK
 

@@ -17,9 +17,14 @@ auth_require_login();
 // Kontekst: własny dziennik albo podgląd dziennika ucznia (administrator).
 $ctx        = auth_view_context();
 $view_user  = $ctx['user'] ?? null;
-$readonly   = (bool) $ctx['readonly'];
+$as_admin   = (bool) ($ctx['as_admin'] ?? false);
 $view_id    = (int) ($view_user['id'] ?? 0);
-$view_name  = $view_user !== null ? user_label($view_user) : '';
+$view_name  = $view_user !== null ? user_label_klasa($view_user) : '';
+$view_param = $as_admin ? $view_id : 0; // kontekst ucznia dla adresów kalendarza
+
+// Administrator nie prowadzi własnego dziennika — bez wybranego ucznia
+// wracamy do panelu (`admin.php`).
+auth_guard_own_journal($as_admin);
 
 /* ------------------------------------------------------------------ *
  *  Podsumowanie — liczone z jednego zapytania do bazy
@@ -121,8 +126,8 @@ $theme_vars = sprintf(
             <div>
                 <h1 class="brand-title">Dziennik Praktyk</h1>
                 <p class="brand-sub">
-                    <?php if ($readonly): ?>
-                        Podgląd dziennika · <?= e($view_name) ?> · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?>
+                    <?php if ($as_admin): ?>
+                        Dziennik ucznia · <?= e($view_name) ?> · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?>
                     <?php else: ?>
                         Strona główna · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?> w dzienniku
                     <?php endif; ?>
@@ -142,14 +147,12 @@ $theme_vars = sprintf(
             <?php if (auth_is_admin()): ?>
                 <a class="btn btn-admin" href="admin.php" title="Panel administratora">👑 Panel admina</a>
             <?php endif; ?>
-            <a class="btn btn-today" href="kalendarz.php<?= $readonly ? '?uczen=' . $view_id : '' ?>" title="Przejdź do kalendarza">📅 Kalendarz</a>
-            <?php if ($readonly): ?>
-                <a class="btn" href="index.php" title="Wróć do swojego dziennika">↩ Mój dziennik</a>
-            <?php else: ?>
-                <form method="post" action="logout.php" class="logout-form">
-                    <?= csrf_field() ?>
-                    <button type="submit" class="btn btn-logout" title="Wyloguj się">🚪 Wyloguj</button>
-                </form>
+            <a class="btn btn-today" href="<?= e(kal_url('', $view_param)) ?>" title="Przejdź do kalendarza">📅 Kalendarz</a>
+            <form method="post" action="logout.php" class="logout-form">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-logout" title="Wyloguj się">🚪 Wyloguj</button>
+            </form>
+            <?php if (!$as_admin): ?>
                 <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
             <?php endif; ?>
         </div>
@@ -160,8 +163,8 @@ $theme_vars = sprintf(
 
     <main class="main home-main">
 
-        <?php if ($readonly): ?>
-            <p class="alert alert-info no-print">👀 Podglądasz dziennik ucznia: <b><?= e($view_name) ?></b>. Tryb tylko do odczytu.</p>
+        <?php if ($as_admin): ?>
+            <p class="alert alert-info no-print">✏️ Edytujesz dziennik ucznia: <b><?= e($view_name) ?></b>.</p>
         <?php endif; ?>
 
         <?php if ($witaj): ?>
@@ -171,7 +174,7 @@ $theme_vars = sprintf(
         <article class="sheet home-sheet">
             <header class="sheet-head">
                 <div>
-                    <p class="sheet-kicker">Dziennik Praktyk<?= $readonly ? ' · ' . e($view_name) : '' ?></p>
+                    <p class="sheet-kicker">Dziennik Praktyk<?= $as_admin ? ' · ' . e($view_name) : '' ?></p>
                     <p class="sheet-date">Podsumowanie godzin</p>
                 </div>
                 <?php if ($ilosc_dni > 0): ?>
@@ -203,7 +206,7 @@ $theme_vars = sprintf(
                     </div>
                 </section>
             <?php else: ?>
-                <?php if ($readonly): ?>
+                <?php if ($as_admin): ?>
                     <p class="progress-empty">🎯 Uczeń nie ustawił jeszcze wymaganej liczby godzin praktyk.</p>
                 <?php else: ?>
                     <p class="progress-empty">
@@ -214,14 +217,12 @@ $theme_vars = sprintf(
             <?php endif; ?>
 
             <?php if ($ilosc_dni === 0): ?>
-                <p class="empty"><?= $readonly
+                <p class="empty"><?= $as_admin
                     ? 'Ten uczeń nie ma jeszcze żadnych wpisów.'
                     : 'Nie masz jeszcze żadnych wpisów. Zacznij od dodania pierwszego dnia praktyk.' ?></p>
                 <div class="home-actions">
-                    <?php if (!$readonly): ?>
-                        <a class="btn btn-today home-big" href="kalendarz.php?dodaj=1">➕ Dodaj pierwszy wpis</a>
-                    <?php endif; ?>
-                    <a class="btn" href="kalendarz.php<?= $readonly ? '?uczen=' . $view_id : '' ?>">📅 Kalendarz</a>
+                    <a class="btn btn-today home-big" href="<?= e(kal_url('dodaj=1', $view_param)) ?>">➕ Dodaj pierwszy wpis</a>
+                    <a class="btn" href="<?= e(kal_url('', $view_param)) ?>">📅 Kalendarz</a>
                 </div>
             <?php else: ?>
                 <div class="home-hero">
@@ -268,18 +269,16 @@ $theme_vars = sprintf(
                 </div>
 
                 <div class="home-actions">
-                    <a class="btn btn-today home-big" href="kalendarz.php<?= $readonly ? '?uczen=' . $view_id : '' ?>">📅 Przejdź do kalendarza</a>
-                    <?php if (!$readonly): ?>
-                        <a class="btn btn-save" href="kalendarz.php?dodaj=1">➕ Dodaj wpis</a>
-                    <?php endif; ?>
+                    <a class="btn btn-today home-big" href="<?= e(kal_url('', $view_param)) ?>">📅 Przejdź do kalendarza</a>
+                    <a class="btn btn-save" href="<?= e(kal_url('dodaj=1', $view_param)) ?>">➕ Dodaj wpis</a>
                 </div>
             <?php endif; ?>
         </article>
 
         <nav class="pagefoot no-print" aria-label="Informacje">
-            <a href="index.php<?= $readonly ? '?uczen=' . $view_id : '' ?>" aria-current="page">🏠 Start</a>
-            <a href="kalendarz.php<?= $readonly ? '?uczen=' . $view_id : '' ?>">📅 Kalendarz</a>
-            <?php if (!$readonly): ?>
+            <a href="index.php<?= $as_admin ? '?uczen=' . $view_id : '' ?>" aria-current="page">🏠 Start</a>
+            <a href="<?= e(kal_url('', $view_param)) ?>">📅 Kalendarz</a>
+            <?php if (!$as_admin): ?>
                 <a href="ustawienia.php">⚙️ Ustawienia</a>
             <?php endif; ?>
             <a href="o-mnie.php">ℹ️ O mnie</a>

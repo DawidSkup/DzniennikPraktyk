@@ -17,7 +17,7 @@ $setup = !auth_has_account();
 
 // Zalogowany użytkownik nie ma czego szukać na ekranie logowania.
 if (!$setup && auth_is_logged_in()) {
-    header('Location: index.php');
+    header('Location: ' . auth_home_url());
     exit;
 }
 
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Podaj login i hasło.';
         } elseif (auth_login($login, $haslo)) {
             auth_login_reset();
-            header('Location: index.php');
+            header('Location: ' . auth_home_url());
             exit;
         } else {
             usleep(400000); // drobne opóźnienie utrudniające zgadywanie hasła
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Konto już istnieje. Zaloguj się.';
             $setup = false;
         } elseif (auth_login($login, $haslo)) {
-            header('Location: index.php?witaj=1');
+            header('Location: ' . auth_home_url() . (auth_is_admin() ? '' : '?witaj=1'));
             exit;
         } else {
             $error = 'Konto utworzone, ale logowanie nie powiodło się. Spróbuj się zalogować.';

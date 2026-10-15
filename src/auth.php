@@ -98,6 +98,20 @@ function user_label(array $user): string
     return $imie !== '' ? $imie : (string) ($user['login'] ?? '');
 }
 
+/** Klasa ucznia (pusta dla kont bez klasy albo administratorów). */
+function user_klasa(array $user): string
+{
+    return trim((string) ($user['klasa'] ?? ''));
+}
+
+/** Etykieta dziennika z klasą, np. „Jan Kowalski (3T)". */
+function user_label_klasa(array $user): string
+{
+    $klasa = user_klasa($user);
+
+    return user_label($user) . ($klasa !== '' ? ' (' . $klasa . ')' : '');
+}
+
 /** Czy konto zostało już utworzone (kreator pierwszego uruchomienia). */
 function auth_has_account(): bool
 {
@@ -172,12 +186,13 @@ function auth_create_account(string $login, string $haslo, string $email = ''): 
 
 /**
  * Zakłada konto (panel administratora).
- * Zwraca kod: 'ok' | 'login' | 'krotki' | 'haslo' | 'email' | 'rola' | 'zajety'.
+ * Zwraca kod: 'ok' | 'login' | 'krotki' | 'haslo' | 'email' | 'rola' | 'klasa' | 'zajety'.
  */
-function user_create(string $login, string $haslo, string $rola, string $imie, string $email): string
+function user_create(string $login, string $haslo, string $rola, string $imie, string $klasa, string $email): string
 {
     $login = trim($login);
     $imie  = trim($imie);
+    $klasa = trim($klasa);
     $email = trim($email);
 
     if ($login === '') {
@@ -188,6 +203,10 @@ function user_create(string $login, string $haslo, string $rola, string $imie, s
     }
     if (!in_array($rola, ['admin', 'uczen'], true)) {
         return 'rola';
+    }
+    // Klasę podaje się obowiązkowo przy zakładaniu konta ucznia.
+    if ($rola === 'uczen' && $klasa === '') {
+        return 'klasa';
     }
     if (strlen($haslo) < 6) {
         return 'haslo';
@@ -200,8 +219,8 @@ function user_create(string $login, string $haslo, string $rola, string $imie, s
     }
 
     $stmt = db()->prepare(
-        'INSERT INTO uzytkownicy (login, haslo_hash, email, rola, imie_nazwisko, created_at)
-         VALUES (:l, :h, :e, :r, :n, :c)'
+        'INSERT INTO uzytkownicy (login, haslo_hash, email, rola, imie_nazwisko, klasa, created_at)
+         VALUES (:l, :h, :e, :r, :n, :k, :c)'
     );
     $stmt->execute([
         ':l' => $login,
@@ -209,6 +228,7 @@ function user_create(string $login, string $haslo, string $rola, string $imie, s
         ':e' => $email,
         ':r' => $rola,
         ':n' => $imie,
+        ':k' => $rola === 'uczen' ? $klasa : '', // klasa dotyczy tylko uczniów
         ':c' => date('Y-m-d H:i:s'),
     ]);
 
@@ -241,15 +261,22 @@ function user_set_role(int $id, string $rola): bool
     return true;
 }
 
-/** Ustawia imię i nazwisko (etykietę) konta. */
-function user_set_name(int $id, string $imie): bool
+/** Ustawia imię i nazwisko (etykietę) konta oraz opcjonalnie klasę. */
+function user_set_name(int $id, string $imie, ?string $klasa = null): bool
 {
     if (user_get($id) === null) {
         return false;
     }
 
-    $stmt = db()->prepare('UPDATE uzytkownicy SET imie_nazwisko = :n WHERE id = :id');
-    $stmt->execute([':n' => trim($imie), ':id' => $id]);
+    if ($klasa === null) {
+        $stmt = db()->prepare('UPDATE uzytkownicy SET imie_nazwisko = :n WHERE id = :id');
+        $stmt->execute([':n' => trim($imie), ':id' => $id]);
+
+        return true;
+    }
+
+    $stmt = db()->prepare('UPDATE uzytkownicy SET imie_nazwisko = :n, klasa = :k WHERE id = :id');
+    $stmt->execute([':n' => trim($imie), ':k' => trim($klasa), ':id' => $id]);
 
     return true;
 }
@@ -388,25 +415,56 @@ function auth_set_login(string $login): bool
 /**
  * Ustala, czyj dziennik oglądamy.
  *
- * Administrator może podejrzeć dziennik ucznia przez `?uczen=ID` (tylko
- * do odczytu). W pozostałych przypadkach oglądamy własny dziennik.
+ * Administrator może wejść na dziennik ucznia przez `?uczen=ID` (GET) albo
+ * przez formularz (`uczen` w POST) i tam dodawać, edytować i usuwać wpisy
+ * w imieniu ucznia (`as_admin=true`). Uczeń ogląda własny dziennik,
+ * a administrator — który nie prowadzi własnego — trafia do panelu
+ * (`admin.php`).
  *
- * @return array{viewer:?array, user:?array, readonly:bool}
+ * @return array{viewer:?array, user:?array, as_admin:bool}
  */
 function auth_view_context(): array
 {
     $viewer = auth_user();
-    $ctx    = ['viewer' => $viewer, 'user' => $viewer, 'readonly' => false];
+    $ctx    = ['viewer' => $viewer, 'user' => $viewer, 'as_admin' => false];
 
-    if ($viewer !== null && ($viewer['rola'] ?? '') === 'admin' && isset($_GET['uczen'])) {
-        $uczen = user_get((int) $_GET['uczen']);
-        if ($uczen !== null && ($uczen['rola'] ?? '') === 'uczen') {
-            $ctx['user']     = $uczen;
-            $ctx['readonly'] = true;
+    if ($viewer !== null && ($viewer['rola'] ?? '') === 'admin') {
+        // Kontekst ucznia przekazujemy w adresie (GET) albo w formularzu (POST).
+        $uczen_id = $_GET['uczen'] ?? $_POST['uczen'] ?? null;
+        if ($uczen_id !== null && $uczen_id !== '') {
+            $uczen = user_get((int) $uczen_id);
+            if ($uczen !== null && ($uczen['rola'] ?? '') === 'uczen') {
+                $ctx['user']     = $uczen;
+                $ctx['as_admin'] = true;
+            }
         }
     }
 
     return $ctx;
+}
+
+/**
+ * Administrator nie prowadzi własnego dziennika (kalendarza) — jego miejscem
+ * pracy jest panel (`admin.php`). Gdy administrator wejdzie na stronę dziennika
+ * bez wybranego ucznia (`?uczen=ID`), odsyłamy go do panelu.
+ *
+ * @param bool $viewing_student true, gdy administrator pracuje na dzienniku ucznia.
+ */
+function auth_guard_own_journal(bool $viewing_student): void
+{
+    if (auth_is_admin() && !$viewing_student) {
+        header('Location: admin.php');
+        exit;
+    }
+}
+
+/**
+ * Adres strony startowej zalogowanego użytkownika. Administrator nie ma
+ * własnego dziennika, więc jego „startem" jest panel (`admin.php`).
+ */
+function auth_home_url(): string
+{
+    return auth_is_admin() ? 'admin.php' : 'index.php';
 }
 
 /** Pilnuje dostępu: brak konta → kreator, brak sesji → ekran logowania. */

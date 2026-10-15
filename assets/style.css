@@ -2579,6 +2579,94 @@ body.auth-body::before {
 /* Lista kont */
 .admin-users { display: flex; flex-direction: column; gap: 12px; }
 
+/* Zakładki: uczniowie / administratorzy */
+.admin-tab-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.admin-tabbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.admin-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--tint);
+    color: var(--primary-dark);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    border: 2px solid transparent;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.admin-tab:hover { border-color: var(--primary); }
+.admin-tab-count {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--primary-dark);
+    font-size: 11.5px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.admin-tabpanel { display: none; }
+
+#tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"],
+#tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+#tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"] .admin-tab-count,
+#tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] .admin-tab-count {
+    background: rgba(255, 255, 255, .25);
+    color: #fff;
+}
+#tab-uczniowie:focus-visible ~ .admin-tabbar label[for="tab-uczniowie"],
+#tab-admini:focus-visible ~ .admin-tabbar label[for="tab-admini"] {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+#tab-uczniowie:checked ~ .admin-tabpanel[data-tab="uczniowie"],
+#tab-admini:checked ~ .admin-tabpanel[data-tab="admini"] { display: block; }
+
+.admin-empty { margin: 0; padding: 10px 2px; color: var(--muted); font-size: 13.5px; }
+
+/* Grupy uczniów według klasy */
+.admin-class-group { margin-bottom: 20px; }
+.admin-class-group:last-child { margin-bottom: 0; }
+.admin-class-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--line);
+}
+.admin-class-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--primary-dark);
+}
+.admin-class-count {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--tint);
+    color: var(--primary-dark);
+    font-size: 11.5px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
 .admin-user {
     padding: 14px 16px;
     background: var(--card);
@@ -2614,6 +2702,14 @@ body.auth-body::before {
     font-size: 12.5px;
     color: var(--muted);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.admin-user-class {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--tint);
+    color: var(--primary-dark);
+    font-size: 11px;
+    font-weight: 800;
 }
 .admin-user-stats {
     display: flex;

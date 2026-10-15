@@ -22,7 +22,7 @@ if (!auth_has_account()) {
 
 // Zalogowany użytkownik zmienia hasło w aplikacji — tu nie ma czego szukać.
 if (auth_is_logged_in()) {
-    header('Location: index.php');
+    header('Location: ' . auth_home_url());
     exit;
 }
 

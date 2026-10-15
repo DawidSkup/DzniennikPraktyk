@@ -38,6 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'save_wymagane_godziny') {
+        // Administrator nie prowadzi własnego dziennika — nie ustawia godzin.
+        if (auth_is_admin()) {
+            header('Location: ustawienia.php');
+            exit;
+        }
         $godz = trim((string) ($_POST['wymagane_godziny'] ?? ''));
         if ($godz === '' || !ctype_digit($godz) || (int) $godz < 1 || (int) $godz > 100000) {
             header('Location: ustawienia.php?godziny=zle');
@@ -179,9 +184,10 @@ $theme_vars = sprintf(
             </div>
             <?php if (auth_is_admin()): ?>
                 <a class="btn btn-admin" href="admin.php" title="Panel administratora">👑 Panel admina</a>
+            <?php else: ?>
+                <a class="btn btn-today" href="index.php" title="Wróć na stronę główną">🏠 Start</a>
+                <a class="btn btn-today" href="kalendarz.php" title="Przejdź do kalendarza">📅 Kalendarz</a>
             <?php endif; ?>
-            <a class="btn btn-today" href="index.php" title="Wróć na stronę główną">🏠 Start</a>
-            <a class="btn btn-today" href="kalendarz.php" title="Przejdź do kalendarza">📅 Kalendarz</a>
         </div>
         <button type="button" class="actions-toggle" id="actions-toggle"
                 aria-controls="actions-bar" aria-expanded="true"
@@ -246,6 +252,7 @@ $theme_vars = sprintf(
                 </div>
             </header>
 
+            <?php if (!auth_is_admin()): /* wymagane godziny — tylko uczniowie (admin nie ma dziennika) */ ?>
             <section class="settings-block">
                 <div class="settings-head">
                     <span class="settings-ico" aria-hidden="true">🎯</span>
@@ -280,6 +287,7 @@ $theme_vars = sprintf(
                     <p class="settings-summary">Nie ustawiono jeszcze wymaganej liczby godzin.</p>
                 <?php endif; ?>
             </section>
+            <?php endif; /* wymagane godziny — tylko uczniowie */ ?>
 
             <section class="settings-block" id="konto">
                 <div class="settings-head">
@@ -366,8 +374,10 @@ $theme_vars = sprintf(
         </article>
 
         <nav class="pagefoot no-print" aria-label="Informacje">
-            <a href="index.php">🏠 Start</a>
-            <a href="kalendarz.php">📅 Kalendarz</a>
+            <a href="<?= e(auth_home_url()) ?>"><?= auth_is_admin() ? '👑 Panel admina' : '🏠 Start' ?></a>
+            <?php if (!auth_is_admin()): ?>
+                <a href="kalendarz.php">📅 Kalendarz</a>
+            <?php endif; ?>
             <a href="ustawienia.php" aria-current="page">⚙️ Ustawienia</a>
             <a href="o-mnie.php">ℹ️ O mnie</a>
         </nav>

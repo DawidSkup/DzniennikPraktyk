@@ -309,6 +309,28 @@ function e(?string $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Buduje adres kalendarza, zachowując kontekst ucznia (administrator, który
+ * edytuje dziennik wybranego ucznia — parametr `uczen=ID`).
+ *
+ * @param string $params   dodatkowe parametry zapytania (bez wiodącego „?" ani „&")
+ * @param int    $uczen_id ID ucznia lub 0, gdy oglądamy własny dziennik
+ */
+function kal_url(string $params = '', int $uczen_id = 0): string
+{
+    $parts = [];
+    if ($uczen_id > 0) {
+        $parts[] = 'uczen=' . $uczen_id;
+    }
+
+    $params = ltrim($params, '?&');
+    if ($params !== '') {
+        $parts[] = $params;
+    }
+
+    return 'kalendarz.php' . ($parts !== [] ? '?' . implode('&', $parts) : '');
+}
+
 /** Formatuje datę ISO na czytelną wersję (np. poniedziałek, 09.10.2026). */
 function format_date_full(string $data): string
 {
