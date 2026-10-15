@@ -2897,34 +2897,57 @@ body:has(#ptab-nowe:checked) { overflow: hidden; }
     font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
-.admin-class-group .admin-class-body { padding: 14px; }
+.admin-class-group .admin-users { padding: 14px; }
 
-/* Pasek „Zmień klasę całej grupie" wewnątrz grupy uczniów */
-.admin-class-rename {
+/* Zarządzanie klasą całej grupy bezpośrednio w nagłówku paska (bez rozwijania) */
+.admin-class-head .admin-class-rename {
+    flex: 0 0 auto;
     display: flex;
-    flex-direction: column;
-    gap: 7px;
-    margin: 0 0 14px;
-    padding: 12px 14px;
-    background: var(--cls-tint);
-    border: 1px dashed var(--cls);
-    border-radius: var(--radius-sm);
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: default;
 }
-.admin-class-rename .manage-label { color: var(--cls-ink); }
-.admin-class-rename .admin-inline input[type="text"] {
-    min-width: 160px;
-    border-color: var(--cls);
+.admin-class-rename .admin-class-label {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    color: var(--cls-ink);
+    opacity: .85;
 }
-.admin-class-rename .admin-inline input[type="text"]:focus {
+.admin-class-rename input[name="klasa"] {
+    flex: 0 0 auto;
+    width: 88px;
+    padding: 4px 9px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--cls-ink);
+    background: var(--card);
+    border: 1px solid var(--cls);
+    border-radius: 999px;
+    cursor: text;
+    user-select: text;
+}
+.admin-class-rename input[name="klasa"]::placeholder { color: var(--muted); font-weight: 600; }
+.admin-class-rename input[name="klasa"]:focus {
     outline: 2px solid var(--cls);
     outline-offset: 1px;
 }
-.admin-class-rename .admin-inline .btn {
-    background: var(--cls);
-    border-color: var(--cls);
+.admin-class-rename .admin-class-save {
+    padding: 4px 11px;
+    font-size: 12.5px;
+    font-weight: 800;
     color: #fff;
+    background: var(--cls);
+    border: 1px solid var(--cls);
+    border-radius: 999px;
+    cursor: pointer;
 }
-.admin-class-rename .admin-inline .btn:hover { filter: brightness(1.08); }
+.admin-class-rename .admin-class-save:hover { filter: brightness(1.08); }
 
 .admin-user {
     padding: 14px 16px;
@@ -3103,6 +3126,10 @@ body:has(#ptab-nowe:checked) { overflow: hidden; }
     .manage-body { padding: 12px; }
     .manage-danger { justify-content: stretch; }
     .manage-danger .btn { width: 100%; }
+    /* Klasa: zmiana nazwy klasy przechodzi w drugą linię nagłówka paska */
+    .admin-class-head { flex-wrap: wrap; }
+    .admin-class-head .admin-class-rename { width: 100%; justify-content: flex-end; }
+    .admin-class-rename input[name="klasa"] { flex: 1 1 auto; width: auto; }
 }
 
 /* Tryb ciemny — znaczek roli, przycisk admina, panel, baner podglądu */
@@ -3136,6 +3163,7 @@ body:has(#ptab-nowe:checked) { overflow: hidden; }
 :root[data-theme="dark"] #ptab-nowe:checked ~ .panel-tabbar label[for="ptab-nowe"] { color: #fff; }
 :root[data-theme="dark"] .admin-tab-count { background: rgba(255, 255, 255, .15); color: inherit; }
 :root[data-theme="dark"] .admin-search input[type="search"] { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+:root[data-theme="dark"] .admin-class-rename input[name="klasa"] { background: #0f172a; }
 :root[data-theme="dark"] .admin-search-info b { color: #c7d2fe; }
 :root[data-theme="dark"] #tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"],
 :root[data-theme="dark"] #tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] { color: #fff; }

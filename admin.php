@@ -624,34 +624,33 @@ $theme_vars = sprintf(
                             <?php endif; ?>
                             <?php $idx = 0; foreach ($klasy as $nazwa => $lista): $idx++; ?>
                                 <?php $stara = $nazwa === 'Bez klasy' ? '' : $nazwa; ?>
+                                <?php $osob  = count($lista); ?>
                                 <details class="admin-class-group" data-class="<?= e($nazwa) ?>" open>
                                     <summary class="admin-class-head">
                                         <span class="admin-class-chevron" aria-hidden="true">▸</span>
                                         <span class="admin-class-name" title="🎓 <?= e($nazwa) ?>">🎓 <?= e($nazwa) ?></span>
-                                        <span class="admin-class-count"><?= count($lista) ?> <?= count($lista) === 1 ? 'uczeń' : 'uczniów' ?></span>
-                                    </summary>
-                                    <div class="admin-class-body">
-                                        <?php // Masowa zmiana klasy całej grupy (np. 2A -> 3A); przy szukaniu ukryta. ?>
+                                        <span class="admin-class-count"><?= $osob ?> <?= $osob === 1 ? 'uczeń' : 'uczniów' ?></span>
+                                        <?php // Zarządzanie klasą całej grupy bezpośrednio w nagłówku paska (bez rozwijania). ?>
                                         <?php if ($q === ''): ?>
                                             <form method="post" action="admin.php" class="admin-class-rename no-print"
+                                                  title="Zmień klasę wszystkim uczniom w tej grupie. Puste pole przenosi uczniów do grupy „Bez klasy”."
                                                   onsubmit="return confirm('Zmienić klasę wszystkim uczniom w tej grupie?');">
                                                 <input type="hidden" name="action" value="set_klasa">
                                                 <input type="hidden" name="from" value="<?= e($stara) ?>">
                                                 <?= csrf_field() ?>
-                                                <span class="manage-label">✏️ Zmień klasę całej grupie (<?= count($lista) ?> <?= count($lista) === 1 ? 'uczeń' : 'uczniów' ?>)</span>
-                                                <div class="admin-inline">
-                                                    <input type="text" id="klasa-grupa-<?= $idx ?>" name="klasa" maxlength="40"
-                                                           value="<?= e($stara) ?>"
-                                                           placeholder="np. 3A"
-                                                           aria-label="Nowa nazwa klasy dla grupy <?= e($nazwa) ?>">
-                                                    <button type="submit" class="btn btn-sm">✏️ Zmień klasę</button>
-                                                </div>
-                                                <span class="manage-hint">Puste pole przenosi uczniów do grupy „Bez klasy".</span>
+                                                <span class="admin-class-label">Klasa:</span>
+                                                <input type="text" id="klasa-grupa-<?= $idx ?>" name="klasa" maxlength="40"
+                                                       value="<?= e($stara) ?>"
+                                                       placeholder="np. 3A"
+                                                       title="Nowa nazwa klasy dla całej grupy (<?= $osob ?> <?= $osob === 1 ? 'uczeń' : 'uczniów' ?>)"
+                                                       aria-label="Nowa nazwa klasy dla grupy <?= e($nazwa) ?>">
+                                                <button type="submit" class="btn btn-sm admin-class-save"
+                                                        title="Zmień klasę całej grupie (<?= $osob ?> <?= $osob === 1 ? 'uczeń' : 'uczniów' ?>)">✏️ Zapisz</button>
                                             </form>
                                         <?php endif; ?>
-                                        <div class="admin-users">
-                                            <?php foreach ($lista as $u) { $karta($u); } ?>
-                                        </div>
+                                    </summary>
+                                    <div class="admin-users">
+                                        <?php foreach ($lista as $u) { $karta($u); } ?>
                                     </div>
                                 </details>
                             <?php endforeach; ?>
@@ -822,6 +821,19 @@ $theme_vars = sprintf(
             var otworz = btn.getAttribute('data-class-toggle') === 'expand';
             grupy.forEach(function (g) { g.open = otworz; });
             zapisz();
+        });
+    });
+})();
+
+(function () {
+    // Klasa: zmiana nazwy klasy jest w nagłówku paska (wewnątrz <summary>),
+    // więc praca z formularzem nie może rozwijać ani zwijać grupy.
+    document.querySelectorAll('.admin-class-head').forEach(function (head) {
+        head.addEventListener('click', function (e) {
+            if (!e.target.closest || !e.target.closest('.admin-class-rename')) { return; }
+            // Przycisk „Zapisz" musi zachować domyślne zachowanie (wysyłka formularza).
+            if (e.target.closest('.admin-class-save')) { return; }
+            e.preventDefault();
         });
     });
 })();
