@@ -227,4 +227,6 @@
 - [x] Testy HTTP: pasek ucznia z wymaganymi godzinami (40%, „4 h z 10 h", „Zostało 6 h", aria-max), brak paska + komunikat gdy godzin nie ustawiono, dokładnie 1 pasek i 1 karta bez godzin, admin bez paska — 12/12 OK
 - [x] Panel admina: **ustawianie wymaganych godzin praktyk uczniowi** — akcja `set_wymagane` (tylko uczniowie; admin odrzucony), walidacja 1–100000, puste/0 czyści wymaganie, komunikat ok/błąd; pole w karcie z aktualną wartością
 - [x] Testy HTTP: zapis 10 h i 20 h (ok=godziny, pole z wartością, pasek postępu), wyczyszczenie 0 (brak paska, puste pole), odrzucenie `abc`/`-5`, odrzucenie dla administratora, komunikaty ok/błąd, formularz tylko u uczniów — 18/18 OK
+- [x] Panel admina: **dwie zakładki najwyższego poziomu** — „✏️ Edycja kont" (lista, domyślna) i „➕ Nowe konto" (formularz); CSS-only radio, wybór pamiętany (`localStorage.dp-admin-panel-tab`); po dodaniu konta wymuszany powrót na „Edycja kont"
+- [x] Testy HTTP: obecność zakładek, domyślna Edycja, formularz w panelu „nowe", lista i wewnętrzne zakładki w panelu „edycja", licznik kont, wymuszenie Edycji po dodaniu, komunikat i wewnętrzne zakładki nadal działają — 16/16 OK
 

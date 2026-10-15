@@ -197,7 +197,7 @@ $theme_vars = sprintf(
     <link rel="stylesheet" href="assets/style.css?v=<?= @filemtime(__DIR__ . '/assets/style.css') ?: time() ?>">
     <script src="assets/theme.js?v=<?= @filemtime(__DIR__ . '/assets/theme.js') ?: time() ?>"></script>
 </head>
-<body style="<?= e($theme_vars) ?>">
+<body style="<?= e($theme_vars) ?>"<?= $ok_kod === 'dodano' ? ' data-panel-tab="ptab-edycja"' : '' ?>>
 <div class="app">
 
     <header class="topbar no-print">
@@ -245,8 +245,23 @@ $theme_vars = sprintf(
                 </div>
             </header>
 
-            <!-- Zakładanie nowego konta -->
-            <section class="settings-block" id="nowe-konto">
+            <div class="panel-tabs">
+                <input class="panel-tab-input" type="radio" name="panel-tab" id="ptab-edycja" checked>
+                <input class="panel-tab-input" type="radio" name="panel-tab" id="ptab-nowe">
+
+                <div class="panel-tabbar" role="tablist" aria-label="Sekcja panelu">
+                    <label class="panel-tab" for="ptab-edycja" role="tab">
+                        <span aria-hidden="true">✏️</span> Edycja kont
+                        <span class="panel-tab-count"><?= count($users) ?></span>
+                    </label>
+                    <label class="panel-tab" for="ptab-nowe" role="tab">
+                        <span aria-hidden="true">➕</span> Nowe konto
+                    </label>
+                </div>
+
+                <div class="panel-tabpanel" data-ptab="nowe">
+                <!-- Zakładanie nowego konta -->
+                <section class="settings-block" id="nowe-konto">
                 <div class="settings-head">
                     <span class="settings-ico" aria-hidden="true">➕</span>
                     <div>
@@ -300,9 +315,11 @@ $theme_vars = sprintf(
                     <button type="submit" class="btn btn-save">➕ Utwórz konto</button>
                 </form>
             </section>
+                </div>
 
-            <!-- Lista kont -->
-            <section class="settings-block" id="lista-kont">
+                <div class="panel-tabpanel" data-ptab="edycja">
+                <!-- Lista kont -->
+                <section class="settings-block" id="lista-kont">
                 <div class="settings-head">
                     <span class="settings-ico" aria-hidden="true">👥</span>
                     <div>
@@ -490,7 +507,7 @@ $theme_vars = sprintf(
 
                     <div class="admin-tabpanel" data-tab="uczniowie">
                         <?php if ($uczniowie === []): ?>
-                            <p class="admin-empty">Brak kont uczniów. Dodaj pierwsze konto w formularzu powyżej.</p>
+                            <p class="admin-empty">Brak kont uczniów. Dodaj pierwsze konto w zakładce „➕ Nowe konto".</p>
                         <?php else: ?>
                             <?php if (count($klasy) > 1): ?>
                                 <div class="admin-accordion-tools no-print">
@@ -524,6 +541,8 @@ $theme_vars = sprintf(
                     </div>
                 </div>
             </section>
+                </div>
+            </div>
         </article>
 
         <nav class="pagefoot no-print" aria-label="Informacje">
@@ -558,6 +577,25 @@ $theme_vars = sprintf(
     if (!inputs.length) { return; }
     try {
         var zapisana = localStorage.getItem(key);
+        var el = zapisana ? document.getElementById(zapisana) : null;
+        if (el) { el.checked = true; }
+    } catch (e) {}
+    inputs.forEach(function (inp) {
+        inp.addEventListener('change', function () {
+            try { localStorage.setItem(key, inp.id); } catch (e) {}
+        });
+    });
+})();
+
+(function () {
+    // Zapamiętaj wybraną zakładkę panelu (edycja / nowe konto).
+    var key    = 'dp-admin-panel-tab';
+    var inputs = document.querySelectorAll('.panel-tab-input');
+    if (!inputs.length) { return; }
+    var wymusz = document.body.dataset.panelTab || '';
+    if (wymusz) { try { localStorage.setItem(key, wymusz); } catch (e) {} }
+    try {
+        var zapisana = wymusz || localStorage.getItem(key);
         var el = zapisana ? document.getElementById(zapisana) : null;
         if (el) { el.checked = true; }
     } catch (e) {}

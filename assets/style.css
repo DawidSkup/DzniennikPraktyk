@@ -2646,6 +2646,74 @@ body.auth-body::before {
 #tab-uczniowie:checked ~ .admin-tabpanel[data-tab="uczniowie"],
 #tab-admini:checked ~ .admin-tabpanel[data-tab="admini"] { display: block; }
 
+/* Zakładki panelu: „Edycja kont" / „Nowe konto" */
+.panel-tabs { margin-bottom: 4px; }
+.panel-tab-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.panel-tabbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+.panel-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    user-select: none;
+    border: 2px solid transparent;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.panel-tabbar label[for="ptab-edycja"]:hover { border-color: #4f46e5; }
+.panel-tabbar label[for="ptab-nowe"] { background: #ecfdf5; color: #047857; }
+.panel-tabbar label[for="ptab-nowe"]:hover { border-color: #059669; }
+.panel-tab-count {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #fff;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.panel-tabpanel { display: none; }
+#ptab-edycja:checked ~ .panel-tabbar label[for="ptab-edycja"] {
+    background: linear-gradient(135deg, #4f46e5, #0891b2);
+    color: #fff;
+    border-color: #4f46e5;
+}
+#ptab-nowe:checked ~ .panel-tabbar label[for="ptab-nowe"] {
+    background: linear-gradient(135deg, #059669, #0891b2);
+    color: #fff;
+    border-color: #059669;
+}
+#ptab-edycja:checked ~ .panel-tabbar label[for="ptab-edycja"] .panel-tab-count,
+#ptab-nowe:checked ~ .panel-tabbar label[for="ptab-nowe"] .panel-tab-count {
+    background: rgba(255, 255, 255, .25);
+    color: #fff;
+}
+#ptab-edycja:focus-visible ~ .panel-tabbar label[for="ptab-edycja"],
+#ptab-nowe:focus-visible ~ .panel-tabbar label[for="ptab-nowe"] {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+#ptab-edycja:checked ~ .panel-tabpanel[data-ptab="edycja"],
+#ptab-nowe:checked ~ .panel-tabpanel[data-ptab="nowe"] { display: block; }
+
 .admin-empty { margin: 0; padding: 10px 2px; color: var(--muted); font-size: 13.5px; }
 
 /* Grupy uczniów według klasy (rozwijany pasek) — każda klasa w innym kolorze */
@@ -2837,6 +2905,12 @@ body.auth-body::before {
 :root[data-theme="dark"] .admin-user-progress-empty { background: #16202f; }
 :root[data-theme="dark"] .admin-tabbar label[for="tab-uczniowie"] { background: #1e1b4b; color: #c7d2fe; }
 :root[data-theme="dark"] .admin-tabbar label[for="tab-admini"] { background: #3a2c07; color: #fcd34d; }
+:root[data-theme="dark"] .panel-tabbar { border-bottom-color: var(--line); }
+:root[data-theme="dark"] .panel-tab { background: #1e1b4b; color: #c7d2fe; }
+:root[data-theme="dark"] .panel-tabbar label[for="ptab-nowe"] { background: #0e3326; color: #6ee7b7; }
+:root[data-theme="dark"] .panel-tab-count { background: rgba(255, 255, 255, .15); }
+:root[data-theme="dark"] #ptab-edycja:checked ~ .panel-tabbar label[for="ptab-edycja"],
+:root[data-theme="dark"] #ptab-nowe:checked ~ .panel-tabbar label[for="ptab-nowe"] { color: #fff; }
 :root[data-theme="dark"] .admin-tab-count { background: rgba(255, 255, 255, .15); color: inherit; }
 :root[data-theme="dark"] #tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"],
 :root[data-theme="dark"] #tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] { color: #fff; }
