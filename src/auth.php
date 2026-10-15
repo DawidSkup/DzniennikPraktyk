@@ -318,6 +318,32 @@ function user_set_klasa_bulk(string $from, string $to): int
 }
 
 /**
+ * Usuwa wszystkie konta uczniów z podanej klasy wraz z ich dziennikami.
+ * Pusta nazwa oznacza grupę „Bez klasy".
+ *
+ * @return int liczba usuniętych kont (0 = brak uczniów w tej klasie)
+ */
+function user_delete_class(string $klasa): int
+{
+    $klasa = trim($klasa);
+
+    $stmt = db()->prepare(
+        "SELECT id FROM uzytkownicy WHERE rola = 'uczen' AND COALESCE(klasa, '') = :klasa"
+    );
+    $stmt->execute([':klasa' => $klasa]);
+    $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+
+    $usuniete = 0;
+    foreach ($ids as $id) {
+        if (user_delete($id)) {
+            $usuniete++;
+        }
+    }
+
+    return $usuniete;
+}
+
+/**
  * Usuwa konto wraz z jego dziennikiem (wpisy + metadane załączników).
  * Nie pozwala usunąć ostatniego administratora.
  */

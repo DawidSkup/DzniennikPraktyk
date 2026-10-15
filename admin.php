@@ -107,6 +107,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'delete_class') {
+        $from = trim((string) ($_POST['from'] ?? ''));
+        // Grupy „Bez klasy" nie usuwamy hurtem — tylko pojedyncze konta.
+        $ile = $from === '' ? 0 : user_delete_class($from);
+        if ($ile === 0) {
+            header('Location: admin.php?err=klasa-pusto');
+            exit;
+        }
+        header('Location: admin.php?ok=usun-klase&ile=' . $ile);
+        exit;
+    }
+
     if ($action === 'set_wymagane') {
         $id = (int) ($_POST['id'] ?? 0);
         $u  = user_get($id);
@@ -176,15 +188,26 @@ $ok_msg = [
     'nazwa'   => '✔ Nazwa konta została zapisana.',
     'godziny' => '✔ Wymagane godziny praktyk zostały zapisane.',
     'klasa'   => '✔ Klasa uczniów została zmieniona.',
+    'usun-klase' => '✔ Cała klasa została usunięta.',
 ][$ok_kod] ?? '';
 
-// Masowa zmiana klasy: pokazujemy, ilu uczniów objęła (poprawna odmiana „konto").
-if ($ok_kod === 'klasa') {
-    $ile   = (int) ($_GET['ile'] ?? 0);
-    $forma = $ile === 1
+// Poprawna odmiana słowa „konto" dla liczby uczniów objętych operacją.
+$forma_konta = static function (int $ile): string {
+    return $ile === 1
         ? 'konto'
         : (($ile % 10 >= 2 && $ile % 10 <= 4 && ($ile % 100 < 12 || $ile % 100 > 14)) ? 'konta' : 'kont');
-    $ok_msg = '✔ Zmieniono klasę (' . $ile . ' ' . $forma . ').';
+};
+
+// Masowa zmiana klasy: pokazujemy, ilu uczniów objęła.
+if ($ok_kod === 'klasa') {
+    $ile    = (int) ($_GET['ile'] ?? 0);
+    $ok_msg = '✔ Zmieniono klasę (' . $ile . ' ' . $forma_konta($ile) . ').';
+}
+
+// Usunięcie całej klasy: pokazujemy, ile kont usunięto.
+if ($ok_kod === 'usun-klase') {
+    $ile    = (int) ($_GET['ile'] ?? 0);
+    $ok_msg = '✔ Usunięto całą klasę (' . $ile . ' ' . $forma_konta($ile) . ' wraz z dziennikami).';
 }
 
 $err_msg = [
@@ -625,35 +648,88 @@ $theme_vars = sprintf(
                             <?php $idx = 0; foreach ($klasy as $nazwa => $lista): $idx++; ?>
                                 <?php $stara = $nazwa === 'Bez klasy' ? '' : $nazwa; ?>
                                 <?php $osob  = count($lista); ?>
+                                <?php
+                                // Łączna liczba wpisów w grupie — do ostrzeżenia przy usuwaniu klasy.
+                                $dni_grupy = 0;
+                                foreach ($lista as $u) {
+                                    $dni_grupy += (int) ($stat[(int) $u['id']]['dni'] ?? 0);
+                                }
+                                ?>
                                 <details class="admin-class-group" data-class="<?= e($nazwa) ?>" open>
                                     <summary class="admin-class-head">
                                         <span class="admin-class-chevron" aria-hidden="true">▸</span>
                                         <span class="admin-class-name" title="🎓 <?= e($nazwa) ?>">🎓 <?= e($nazwa) ?></span>
                                         <span class="admin-class-count"><?= $osob ?> <?= $osob === 1 ? 'uczeń' : 'uczniów' ?></span>
-                                        <?php // Zarządzanie klasą całej grupy bezpośrednio w nagłówku paska (bez rozwijania). ?>
+                                        <?php // „Zarządzaj klasą" — okienko działa też przy zwiniętym pasku (przy szukaniu ukryte). ?>
                                         <?php if ($q === ''): ?>
-                                            <form method="post" action="admin.php" class="admin-class-rename no-print"
-                                                  title="Zmień klasę wszystkim uczniom w tej grupie. Puste pole przenosi uczniów do grupy „Bez klasy”."
-                                                  onsubmit="return confirm('Zmienić klasę wszystkim uczniom w tej grupie?');">
-                                                <input type="hidden" name="action" value="set_klasa">
-                                                <input type="hidden" name="from" value="<?= e($stara) ?>">
-                                                <?= csrf_field() ?>
-                                                <span class="admin-class-label">Klasa:</span>
-                                                <input type="text" id="klasa-grupa-<?= $idx ?>" name="klasa" maxlength="40"
-                                                       value="<?= e($stara) ?>"
-                                                       placeholder="np. 3A"
-                                                       title="Nowa nazwa klasy dla całej grupy (<?= $osob ?> <?= $osob === 1 ? 'uczeń' : 'uczniów' ?>)"
-                                                       aria-label="Nowa nazwa klasy dla grupy <?= e($nazwa) ?>">
-                                                <button type="submit" class="btn btn-sm admin-class-save"
-                                                        title="Zmień klasę całej grupie (<?= $osob ?> <?= $osob === 1 ? 'uczeń' : 'uczniów' ?>)">✏️ Zapisz</button>
-                                            </form>
+                                            <label for="class-mgr-<?= $idx ?>" class="btn btn-sm admin-class-manage no-print"
+                                                   title="Zmień nazwę klasy wszystkim uczniom albo usuń całą klasę">
+                                                <span aria-hidden="true">⚙️</span> Zarządzaj klasą
+                                            </label>
                                         <?php endif; ?>
                                     </summary>
                                     <div class="admin-users">
                                         <?php foreach ($lista as $u) { $karta($u); } ?>
                                     </div>
                                 </details>
+                                <?php if ($q === ''): ?>
+                                    <?php // Checkbox + okienko jako rodzeństwo paska: CSS pokazuje okno bez JS. ?>
+                                    <input type="checkbox" class="class-mgr-input" id="class-mgr-<?= $idx ?>"
+                                           aria-label="Zarządzaj klasą <?= e($nazwa) ?>">
+                                    <div class="class-mgr no-print" role="dialog" aria-modal="true"
+                                         aria-label="Zarządzaj klasą <?= e($nazwa) ?>">
+                                        <label for="class-mgr-<?= $idx ?>" class="modal-backdrop" aria-label="Zamknij okno"></label>
+                                        <div class="modal-card">
+                                            <div class="class-mgr-head">
+                                                <span class="class-mgr-ico" aria-hidden="true">⚙️</span>
+                                                <div class="class-mgr-titles">
+                                                    <h2 class="modal-title">Zarządzaj klasą <span class="class-mgr-name"><?= e($nazwa) ?></span></h2>
+                                                    <p class="modal-hint">
+                                                        <?= $osob ?> <?= $osob === 1 ? 'uczeń' : 'uczniów' ?>
+                                                        · <?= $dni_grupy ?> <?= $dni_grupy === 1 ? 'wpis' : 'wpisów' ?>
+                                                    </p>
+                                                </div>
+                                                <label for="class-mgr-<?= $idx ?>" class="modal-close no-print"
+                                                       title="Zamknij (Esc)" aria-label="Zamknij">✕</label>
+                                            </div>
+
+                                            <?php // 1) Zmiana klasy całej grupy. ?>
+                                            <form method="post" action="admin.php" class="class-mgr-form"
+                                                  onsubmit="return confirm('Zmienić klasę wszystkim uczniom w tej grupie?');">
+                                                <input type="hidden" name="action" value="set_klasa">
+                                                <input type="hidden" name="from" value="<?= e($stara) ?>">
+                                                <?= csrf_field() ?>
+                                                <label class="class-mgr-label" for="klasa-grupa-<?= $idx ?>">Nowa nazwa klasy</label>
+                                                <div class="admin-inline">
+                                                    <input type="text" id="klasa-grupa-<?= $idx ?>" name="klasa" maxlength="40"
+                                                           value="<?= e($stara) ?>"
+                                                           placeholder="np. 3A"
+                                                           aria-label="Nowa nazwa klasy dla grupy <?= e($nazwa) ?>">
+                                                    <button type="submit" class="btn btn-sm btn-primary">✏️ Zmień klasę</button>
+                                                </div>
+                                                <p class="modal-hint">Puste pole przenosi uczniów do grupy „Bez klasy”.</p>
+                                            </form>
+
+                                            <?php // 2) Usunięcie całej klasy (konta uczniów + dzienniki). ?>
+                                            <?php if ($stara !== ''): ?>
+                                                <form method="post" action="admin.php" class="manage-danger class-mgr-danger"
+                                                      onsubmit="return confirm('Usunąć wszystkie konta uczniów tej klasy?\nUsunięte zostaną także ich dzienniki wraz z załącznikami. Tej operacji nie można cofnąć.<?= $dni_grupy > 0 ? '\n\nUwaga: te konta mają łącznie ' . $dni_grupy . ' wpis(ów)!' : '' ?>');">
+                                                    <input type="hidden" name="action" value="delete_class">
+                                                    <input type="hidden" name="from" value="<?= e($stara) ?>">
+                                                    <?= csrf_field() ?>
+                                                    <button type="submit" class="btn btn-danger btn-sm">🗑 Usuń całą klasę (<?= $osob ?>)</button>
+                                                    <p class="manage-hint">Trwale usuwa konta wszystkich uczniów tej klasy razem z ich dziennikami.</p>
+                                                </form>
+                                            <?php else: ?>
+                                                <p class="class-mgr-note">
+                                                    To uczniowie bez przypisanej klasy — usuń ich konta pojedynczo z listy powyżej.
+                                                </p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
                             <?php endforeach; ?>
+
                         <?php endif; ?>
                     </div>
 
@@ -826,14 +902,66 @@ $theme_vars = sprintf(
 })();
 
 (function () {
-    // Klasa: zmiana nazwy klasy jest w nagłówku paska (wewnątrz <summary>),
-    // więc praca z formularzem nie może rozwijać ani zwijać grupy.
-    document.querySelectorAll('.admin-class-head').forEach(function (head) {
-        head.addEventListener('click', function (e) {
-            if (!e.target.closest || !e.target.closest('.admin-class-rename')) { return; }
-            // Przycisk „Zapisz" musi zachować domyślne zachowanie (wysyłka formularza).
-            if (e.target.closest('.admin-class-save')) { return; }
+    // Okienko „Zarządzaj klasą" (otwierane z nagłówka paska klasy, bez rozwijania grupy):
+    // Esc zamyka, otwarcie ustawia kursor w polu nazwy klasy, zmiana zakładki zamyka okienko,
+    // Tab nie ucieka poza otwarte okienko.
+    var wejscia = document.querySelectorAll('.class-mgr-input');
+    if (!wejscia.length) { return; }
+
+    function okno(inp) {
+        var el = inp.nextElementSibling;
+        return el && el.classList.contains('class-mgr') ? el : null;
+    }
+    function zamknij(inp) {
+        inp.checked = false;
+        var lbl = document.querySelector('label.admin-class-manage[for="' + inp.id + '"]');
+        if (lbl) { try { lbl.focus({ preventScroll: true }); } catch (e) { lbl.focus(); } }
+    }
+
+    wejscia.forEach(function (inp) {
+        inp.addEventListener('change', function () {
+            if (!inp.checked) { return; }
+            var box  = inp.nextElementSibling;
+            var pole = box ? box.querySelector('input[name="klasa"]') : null;
+            if (!pole) { return; }
+            try { pole.focus({ preventScroll: true }); } catch (e) { pole.focus(); }
+            pole.select();
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        var otwarte = null;
+        wejscia.forEach(function (inp) { if (inp.checked) { otwarte = inp; } });
+        if (!otwarte) { return; }
+
+        if (e.key === 'Escape' || e.key === 'Esc') {
+            zamknij(otwarte);
+            return;
+        }
+
+        // Prosta pułapka fokusu w otwartym okienku (spójna z aria-modal="true").
+        if (e.key !== 'Tab') { return; }
+        var box = okno(otwarte);
+        if (!box) { return; }
+        var f = box.querySelectorAll(
+            'button:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+        );
+        if (!f.length) { return; }
+        var first = f[0];
+        var last  = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
             e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    });
+
+    // Zmiana zakładki (uczniowie / administratorzy) zamyka otwarte okienko klasy.
+    document.querySelectorAll('.admin-tab-input').forEach(function (r) {
+        r.addEventListener('change', function () {
+            wejscia.forEach(function (inp) { inp.checked = false; });
         });
     });
 })();
