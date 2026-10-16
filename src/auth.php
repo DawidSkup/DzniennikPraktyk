@@ -333,6 +333,36 @@ function user_set_klasa_bulk(string $from, string $to): int
 }
 
 /**
+ * Masowo ustawia wymagane godziny praktyk i/lub okres (od – do) wszystkim
+ * uczniom podanej klasy. Wartość null oznacza „nie zmieniaj" (w godzinach
+ * 0 czyści wymaganie). Pusta nazwa klasy to grupa „Bez klasy".
+ * Administratorzy nie są objęci — ustawiamy tylko konta o roli 'uczen'.
+ *
+ * @return int liczba uczniów w klasie (0 = brak uczniów / nie ma takiej grupy)
+ */
+function user_set_klasa_parametry(string $klasa, ?int $godz, ?string $od, ?string $do): int
+{
+    $klasa = trim($klasa);
+
+    $stmt = db()->prepare(
+        "SELECT id FROM uzytkownicy WHERE rola = 'uczen' AND COALESCE(klasa, '') = :klasa"
+    );
+    $stmt->execute([':klasa' => $klasa]);
+    $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+
+    foreach ($ids as $id) {
+        if ($godz !== null) {
+            wymagane_godziny_set($id, $godz);
+        }
+        if ($od !== null && $do !== null) {
+            praktyki_okres_set($id, $od, $do);
+        }
+    }
+
+    return count($ids);
+}
+
+/**
  * Usuwa wszystkie konta uczniów z podanej klasy wraz z ich dziennikami.
  * Pusta nazwa oznacza grupę „Bez klasy".
  *

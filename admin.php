@@ -166,6 +166,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'set_klasa_parametry') {
+        $from = trim((string) ($_POST['from'] ?? ''));
+
+        // Wymagane godziny: puste = bez zmian, 0 = wyczyść, 1–100000 = ustaw.
+        $godz_raw = trim((string) ($_POST['wymagane_godziny'] ?? ''));
+        $godz     = null;
+        if ($godz_raw !== '') {
+            if ($godz_raw === '0') {
+                $godz = 0;
+            } elseif (ctype_digit($godz_raw) && (int) $godz_raw >= 1 && (int) $godz_raw <= 100000) {
+                $godz = (int) $godz_raw;
+            } else {
+                header('Location: admin.php?err=klasa-godziny');
+                exit;
+            }
+        }
+
+        // Okres praktyk: oba pola puste = bez zmian, oba wypełnione = ustaw.
+        $od = trim((string) ($_POST['praktyki_od'] ?? ''));
+        $do = trim((string) ($_POST['praktyki_do'] ?? ''));
+        if (($od === '') !== ($do === '')) {
+            header('Location: admin.php?err=klasa-okres');
+            exit;
+        }
+        if ($od !== '') {
+            if (!is_valid_date($od) || !is_valid_date($do)) {
+                header('Location: admin.php?err=klasa-okres-zle');
+                exit;
+            }
+            if ($od > $do) {
+                header('Location: admin.php?err=klasa-okres-kolejnosc');
+                exit;
+            }
+        } else {
+            $od = null;
+            $do = null;
+        }
+
+        // Nic nie podano — nie ma czego zapisywać.
+        if ($godz === null && $od === null) {
+            header('Location: admin.php?err=klasa-nic');
+            exit;
+        }
+
+        $ile = user_set_klasa_parametry($from, $godz, $od, $do);
+        if ($ile === 0) {
+            header('Location: admin.php?err=klasa-pusto');
+            exit;
+        }
+        header('Location: admin.php?ok=klasa-parametry&ile=' . $ile);
+        exit;
+    }
+
     if ($action === 'delete_class') {
         $from = trim((string) ($_POST['from'] ?? ''));
         // Grupy „Bez klasy" nie usuwamy hurtem — tylko pojedyncze konta.
@@ -271,7 +324,7 @@ $ok_kod   = trim((string) ($_GET['ok'] ?? ''));
 $err_kod  = trim((string) ($_GET['err'] ?? ''));
 
 // Zakładka kont wymuszona przez wyszukiwanie (albo po zmianie klasy).
-$tab_wymuszony = ($q !== '' || $ok_kod === 'klasa') ? 'tab-uczniowie' : ($qa !== '' ? 'tab-admini' : '');
+$tab_wymuszony = ($q !== '' || $ok_kod === 'klasa' || $ok_kod === 'klasa-parametry') ? 'tab-uczniowie' : ($qa !== '' ? 'tab-admini' : '');
 
 $ok_msg = [
     'dodano'  => '✔ Konto zostało utworzone.',
@@ -283,6 +336,7 @@ $ok_msg = [
     'okres'   => '✔ Okres praktyk (od – do) został zapisany.',
     'klasa'   => '✔ Klasa uczniów została zmieniona.',
     'usun-klase' => '✔ Cała klasa została usunięta.',
+    'klasa-parametry' => '✔ Zapisano ustawienia praktyk dla całej klasy.',
 ][$ok_kod] ?? '';
 
 // Poprawna odmiana słowa „konto" dla liczby uczniów objętych operacją.
@@ -302,6 +356,12 @@ if ($ok_kod === 'klasa') {
 if ($ok_kod === 'usun-klase') {
     $ile    = (int) ($_GET['ile'] ?? 0);
     $ok_msg = '✔ Usunięto całą klasę (' . $ile . ' ' . $forma_konta($ile) . ' wraz z dziennikami).';
+}
+
+// Ustawienia praktyk dla całej klasy: pokazujemy, ilu uczniów objęły.
+if ($ok_kod === 'klasa-parametry') {
+    $ile    = (int) ($_GET['ile'] ?? 0);
+    $ok_msg = '✔ Zapisano ustawienia praktyk (' . $ile . ' ' . $forma_konta($ile) . ').';
 }
 
 $err_msg = [
@@ -328,6 +388,11 @@ $err_msg = [
     'okres-kolejnosc' => '⚠ Data „od" nie może być późniejsza niż data „do".',
     'klasa'          => '⚠ Nazwa klasy może mieć maksymalnie 40 znaków.',
     'klasa-pusto'    => '⚠ Nie znaleziono uczniów w tej klasie (odśwież stronę i spróbuj ponownie).',
+    'klasa-godziny'  => '⚠ Podaj poprawną liczbę godzin (1–100000), wpisz 0, aby wyczyścić, albo zostaw puste pole (bez zmian).',
+    'klasa-okres'    => '⚠ Podaj obie daty okresu praktyk (od i do) albo zostaw oba pola puste (bez zmian).',
+    'klasa-okres-zle' => '⚠ Podaj poprawne daty (format RRRR-MM-DD).',
+    'klasa-okres-kolejnosc' => '⚠ Data „od" nie może być późniejsza niż data „do".',
+    'klasa-nic'      => '⚠ Podaj wymagane godziny albo okres praktyk.',
 ][$err_kod] ?? '';
 
 $theme      = day_theme(date('Y-m-d'));
@@ -848,7 +913,7 @@ $theme_vars = sprintf(
                                         <?php // „Zarządzaj klasą" — okienko działa też przy zwiniętym pasku (przy szukaniu ukryte). ?>
                                         <?php if ($q === ''): ?>
                                             <label for="class-mgr-<?= $idx ?>" class="btn btn-sm admin-class-manage no-print"
-                                                   title="Zmień nazwę klasy wszystkim uczniom albo usuń całą klasę">
+                                                   title="Zmień nazwę klasy wszystkim uczniom, ustaw godziny i okres praktyk albo usuń całą klasę">
                                                 <span aria-hidden="true">⚙️</span> Zarządzaj klasą
                                             </label>
                                         <?php endif; ?>
@@ -895,7 +960,39 @@ $theme_vars = sprintf(
                                                 <p class="modal-hint">Puste pole przenosi uczniów do grupy „Bez klasy”.</p>
                                             </form>
 
-                                            <?php // 2) Usunięcie całej klasy (konta uczniów + dzienniki). ?>
+                                            <?php // 2) Godziny i okres praktyk dla całej klasy (puste pole = bez zmian). ?>
+                                            <form method="post" action="admin.php" class="class-mgr-form class-mgr-params"
+                                                  onsubmit="return confirm('Zapisać te ustawienia praktyk wszystkim uczniom w tej grupie?');">
+                                                <input type="hidden" name="action" value="set_klasa_parametry">
+                                                <input type="hidden" name="from" value="<?= e($stara) ?>">
+                                                <?= csrf_field() ?>
+                                                <div class="manage-item">
+                                                    <label class="manage-label" for="klasa-godz-<?= $idx ?>">🎯 Wymagane godziny praktyk</label>
+                                                    <div class="admin-inline">
+                                                        <input type="number" id="klasa-godz-<?= $idx ?>" name="wymagane_godziny"
+                                                               min="0" max="100000" step="1" placeholder="np. 120"
+                                                               aria-label="Wymagane godziny praktyk dla klasy <?= e($nazwa) ?>">
+                                                    </div>
+                                                </div>
+                                                <div class="manage-item">
+                                                    <label class="manage-label" for="klasa-od-<?= $idx ?>">📅 Okres praktyk (od – do)</label>
+                                                    <div class="admin-inline">
+                                                        <input type="date" id="klasa-od-<?= $idx ?>" name="praktyki_od"
+                                                               aria-label="Okres praktyk od — klasa <?= e($nazwa) ?>">
+                                                        <input type="date" id="klasa-do-<?= $idx ?>" name="praktyki_do"
+                                                               aria-label="Okres praktyk do — klasa <?= e($nazwa) ?>">
+                                                    </div>
+                                                </div>
+                                                <div class="admin-inline">
+                                                    <button type="submit" class="btn btn-sm btn-primary">Zapisz dla całej klasy</button>
+                                                </div>
+                                                <p class="modal-hint">
+                                                    Puste pola zostawiają dotychczasowe wartości bez zmian. Wpisz 0 w godzinach,
+                                                    aby wyczyścić wymaganie. Okres zmienia się tylko, gdy podasz obie daty.
+                                                </p>
+                                            </form>
+
+                                            <?php // 3) Usunięcie całej klasy (konta uczniów + dzienniki). ?>
                                             <?php if ($stara !== ''): ?>
                                                 <form method="post" action="admin.php" class="manage-danger class-mgr-danger"
                                                       onsubmit="return confirm('Usunąć wszystkie konta uczniów tej klasy?\nUsunięte zostaną także ich dzienniki wraz z załącznikami. Tej operacji nie można cofnąć.<?= $dni_grupy > 0 ? '\n\nUwaga: te konta mają łącznie ' . $dni_grupy . ' wpis(ów)!' : '' ?>');">
