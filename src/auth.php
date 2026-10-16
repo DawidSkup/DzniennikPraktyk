@@ -416,23 +416,35 @@ function user_delete(int $id): bool
     return true;
 }
 
-/** Weryfikuje dane logowania i zakłada sesję. */
-function auth_login(string $login, string $haslo): bool
+/**
+ * Weryfikuje dane logowania i rolę, po czym zakłada sesję.
+ * Pusta rola = brak sprawdzania roli (zachowanie jak wcześniej).
+ *
+ * @return string 'ok' (zalogowano) | 'dane' (błędny login/hasło) | 'rola' (konto ma inną rolę)
+ */
+function auth_login_role(string $login, string $haslo, string $rola = ''): string
 {
     $acc = user_by_login($login);
-    if ($acc === null) {
-        return false;
+    if ($acc === null || !password_verify($haslo, (string) $acc['haslo_hash'])) {
+        return 'dane';
     }
 
-    if (!password_verify($haslo, (string) $acc['haslo_hash'])) {
-        return false;
+    // Wybrana na ekranie logowania rola musi zgadzać się z rolą konta.
+    if ($rola !== '' && (string) $acc['rola'] !== $rola) {
+        return 'rola';
     }
 
     auth_session_start();
     session_regenerate_id(true);
     $_SESSION['uid'] = (int) $acc['id'];
 
-    return true;
+    return 'ok';
+}
+
+/** Weryfikuje dane logowania i zakłada sesję. */
+function auth_login(string $login, string $haslo): bool
+{
+    return auth_login_role($login, $haslo) === 'ok';
 }
 
 /** Kończy sesję i usuwa ciasteczko sesyjne. */

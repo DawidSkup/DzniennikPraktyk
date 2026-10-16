@@ -24,12 +24,18 @@ if (!$setup && auth_is_logged_in()) {
 $error = '';
 $info  = '';
 $login = '';
+$rola  = 'uczen'; // domyślnie uczeń; wybór z formularza zachowujemy po błędzie
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $login  = trim((string) ($_POST['login'] ?? ''));
     $haslo  = (string) ($_POST['haslo'] ?? '');
     $haslo2 = (string) ($_POST['haslo2'] ?? '');
     $email  = trim((string) ($_POST['email'] ?? ''));
+
+    $rola_post = (string) ($_POST['rola'] ?? '');
+    if (in_array($rola_post, ['admin', 'uczen'], true)) {
+        $rola = $rola_post;
+    }
 
     if (!csrf_check($_POST['csrf'] ?? null)) {
         $error = 'Sesja wygasła. Odśwież stronę i spróbuj ponownie.';
@@ -41,17 +47,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Zbyt wiele nieudanych prób. Odczekaj ' . $pozostalo . ' s.';
         } elseif ($login === '' || $haslo === '') {
             $error = 'Podaj login i hasło.';
-        } elseif (auth_login($login, $haslo)) {
-            auth_login_reset();
-            header('Location: ' . auth_home_url());
-            exit;
         } else {
-            usleep(400000); // drobne opóźnienie utrudniające zgadywanie hasła
-            $blokada_teraz = auth_login_register_failure();
-            if ($blokada_teraz > 0) {
-                $error = 'Zbyt wiele nieudanych prób. Logowanie zablokowane na ' . $blokada_teraz . ' s.';
+            $wynik = auth_login_role($login, $haslo, $rola);
+
+            if ($wynik === 'ok') {
+                auth_login_reset();
+                header('Location: ' . auth_home_url());
+                exit;
+            }
+
+            if ($wynik === 'rola') {
+                // Dane poprawne, ale konto ma inną rolę niż wybrana — nie logujemy
+                // i NIE liczymy tego do blokady po nieudanych próbach.
+                $error = $rola === 'admin'
+                    ? 'To konto nie jest kontem administratora. Wybierz „🎓 Uczeń".'
+                    : 'To konto nie jest kontem ucznia. Wybierz „👑 Administrator".';
             } else {
-                $error = 'Nieprawidłowy login lub hasło. Pozostało prób: ' . auth_login_attempts_left() . '.';
+                usleep(400000); // drobne opóźnienie utrudniające zgadywanie hasła
+                $blokada_teraz = auth_login_register_failure();
+                if ($blokada_teraz > 0) {
+                    $error = 'Zbyt wiele nieudanych prób. Logowanie zablokowane na ' . $blokada_teraz . ' s.';
+                } else {
+                    $error = 'Nieprawidłowy login lub hasło. Pozostało prób: ' . auth_login_attempts_left() . '.';
+                }
             }
         }
     } else {
@@ -134,6 +152,22 @@ $page_title = $setup ? 'Utwórz konto' : 'Zaloguj się';
 
         <form method="post" action="login.php" class="auth-form" autocomplete="on">
             <?= csrf_field() ?>
+
+            <?php if (!$setup): ?>
+                <fieldset class="role-picker" aria-label="Loguję się jako">
+                    <legend class="role-legend">Loguję się jako</legend>
+                    <div class="role-options">
+                        <label class="role-option">
+                            <input type="radio" name="rola" value="uczen"<?= $rola === 'uczen' ? ' checked' : '' ?>>
+                            <span class="role-face">🎓 Uczeń</span>
+                        </label>
+                        <label class="role-option">
+                            <input type="radio" name="rola" value="admin"<?= $rola === 'admin' ? ' checked' : '' ?>>
+                            <span class="role-face">👑 Administrator</span>
+                        </label>
+                    </div>
+                </fieldset>
+            <?php endif; ?>
 
             <div class="field">
                 <label for="a-login">Login</label>

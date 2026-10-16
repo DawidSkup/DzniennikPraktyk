@@ -1348,6 +1348,65 @@ body.auth-body::before {
 .auth-form input:disabled { background: #f1f5f9; }
 .auth-submit:disabled:hover { box-shadow: none; }
 
+/* Wybór roli przy logowaniu: Uczeń / Administrator (dwa przełączniki) */
+.role-picker {
+    margin: 0 0 15px;
+    padding: 0;
+    border: 0;
+}
+.role-legend {
+    padding: 0;
+    margin-bottom: 7px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+.role-options {
+    display: flex;
+    gap: 8px;
+}
+.role-option {
+    position: relative;
+    flex: 1 1 0;
+    cursor: pointer;
+}
+.role-option input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+.role-face {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 10px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    color: var(--muted);
+    font-size: 14.5px;
+    font-weight: 700;
+    text-align: center;
+    transition: border-color .15s, box-shadow .15s, color .15s, background .15s;
+}
+.role-option:hover .role-face { border-color: #cbd5e1; }
+.role-option input:checked + .role-face {
+    border-color: #6366f1;
+    color: var(--primary-dark);
+    background: var(--tint);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, .18);
+}
+.role-option input:focus-visible + .role-face {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, .28);
+}
+
 /* Komunikat o blokadzie logowania z odliczaniem */
 .auth-lock { margin-bottom: 0; }
 .auth-lock b { font-variant-numeric: tabular-nums; }
@@ -1811,6 +1870,13 @@ body.auth-body::before {
 :root[data-theme="dark"] .btn-logout:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
 :root[data-theme="dark"] .auth-form input { background: #0f172a; border-color: #334155; color: var(--ink); }
+:root[data-theme="dark"] .role-face { background: #0f172a; border-color: #334155; color: var(--muted); }
+:root[data-theme="dark"] .role-option:hover .role-face { border-color: #475569; }
+:root[data-theme="dark"] .role-option input:checked + .role-face {
+    background: rgba(99, 102, 241, .18);
+    border-color: #6366f1;
+    color: #c7d2fe;
+}
 :root[data-theme="dark"] .account-form input[type="email"],
 :root[data-theme="dark"] .account-form input[type="text"] { background: #0f172a; border-color: #334155; color: var(--ink); }
 :root[data-theme="dark"] .account-bar { background: rgba(15, 23, 42, .82); }
