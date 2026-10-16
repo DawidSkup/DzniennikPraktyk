@@ -14,11 +14,23 @@ require_once __DIR__ . '/src/auth.php';
 // Wymagane zalogowanie (brak konta → kreator, brak sesji → logowanie).
 auth_require_login();
 
+// Kontekst: własny dziennik albo podgląd dziennika ucznia (administrator).
+$ctx        = auth_view_context();
+$view_user  = $ctx['user'] ?? null;
+$as_admin   = (bool) ($ctx['as_admin'] ?? false);
+$view_id    = (int) ($view_user['id'] ?? 0);
+$view_name  = $view_user !== null ? user_label_klasa($view_user) : '';
+$view_param = $as_admin ? $view_id : 0; // kontekst ucznia dla adresów kalendarza
+
+// Administrator nie prowadzi własnego dziennika — bez wybranego ucznia
+// wracamy do panelu (`admin.php`).
+auth_guard_own_journal($as_admin);
+
 /* ------------------------------------------------------------------ *
  *  Podsumowanie — liczone z jednego zapytania do bazy
  * ------------------------------------------------------------------ */
 
-$wszystkie    = all_wpisy();          // posortowane rosnąco po dacie
+$wszystkie    = all_wpisy($view_id);   // posortowane rosnąco po dacie
 $ilosc_dni    = count($wszystkie);
 $mapa_min     = [];                   // data => minuty (null, gdy brak godzin)
 $total_min    = 0;
@@ -73,15 +85,20 @@ for ($d = $mies_start; $d <= $mies_end; $d = date_shift($d, 1)) {
     }
 }
 
-$zal_total = array_sum(zal_counts());
+$zal_total = array_sum(zal_counts($view_id));
 $witaj     = isset($_GET['witaj']);
 
 // Pasek postępu: ile godzin już wypracowano z wymaganej liczby godzin.
-$wymagane_godz = wymagane_godziny();
+$wymagane_godz = wymagane_godziny($view_id);
 $wymagane_min  = $wymagane_godz * 60;
 $procent       = $wymagane_min > 0 ? (int) round($total_min / $wymagane_min * 100) : 0;
 $procent_bar   = max(0, min(100, $procent));
 $zostalo_min   = max(0, $wymagane_min - $total_min);
+
+// Okres praktyk (od – do) — wymagany; uczeń podaje go w ustawieniach.
+$praktyki        = praktyki_okres($view_id);
+$praktyki_ok     = praktyki_okres_ustawiony($praktyki);
+$praktyki_koniec = praktyki_do_konca($praktyki, $dzis);
 
 $theme = day_theme($dzis);
 $theme_vars = sprintf(
@@ -113,7 +130,13 @@ $theme_vars = sprintf(
             <span class="brand-icon">📘</span>
             <div>
                 <h1 class="brand-title">Dziennik Praktyk</h1>
-                <p class="brand-sub">Strona główna · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?> w dzienniku</p>
+                <p class="brand-sub">
+                    <?php if ($as_admin): ?>
+                        Dziennik ucznia · <?= e($view_name) ?> · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?>
+                    <?php else: ?>
+                        Strona główna · <?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'wpis' : 'wpisów' ?> w dzienniku
+                    <?php endif; ?>
+                </p>
             </div>
         </div>
     </header>
@@ -126,12 +149,17 @@ $theme_vars = sprintf(
                 <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
                 <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
             </div>
-            <a class="btn btn-today" href="kalendarz.php" title="Przejdź do kalendarza">📅 Kalendarz</a>
+            <?php if (auth_is_admin()): ?>
+                <a class="btn btn-admin" href="admin.php" title="Panel administratora">👑 Panel admina</a>
+            <?php endif; ?>
+            <a class="btn btn-today" href="<?= e(kal_url('', $view_param)) ?>" title="Przejdź do kalendarza">📅 Kalendarz</a>
             <form method="post" action="logout.php" class="logout-form">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn-logout" title="Wyloguj się">🚪 Wyloguj</button>
             </form>
-            <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
+            <?php if (!$as_admin): ?>
+                <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
+            <?php endif; ?>
         </div>
         <button type="button" class="actions-toggle" id="actions-toggle"
                 aria-controls="actions-bar" aria-expanded="true"
@@ -140,6 +168,22 @@ $theme_vars = sprintf(
 
     <main class="main home-main">
 
+        <?php if ($as_admin): ?>
+            <p class="alert alert-info no-print">✏️ Edytujesz dziennik ucznia: <b><?= e($view_name) ?></b>.</p>
+        <?php endif; ?>
+
+        <?php if (!$praktyki_ok): ?>
+            <p class="alert alert-info no-print">
+                <?php if ($as_admin): ?>
+                    📅 Uczeń nie podał jeszcze okresu praktyk (od – do) — ustaw go w karcie ucznia
+                    w <a href="admin.php">panelu administratora</a>.
+                <?php else: ?>
+                    📅 Podaj okres praktyk (od – do) — to wymagane. Zrobisz to w
+                    <a href="ustawienia.php#okres">⚙️ Ustawieniach</a>.
+                <?php endif; ?>
+            </p>
+        <?php endif; ?>
+
         <?php if ($witaj): ?>
             <p class="alert no-print">👋 Konto utworzone. Miłej pracy z dziennikiem!</p>
         <?php endif; ?>
@@ -147,14 +191,19 @@ $theme_vars = sprintf(
         <article class="sheet home-sheet">
             <header class="sheet-head">
                 <div>
-                    <p class="sheet-kicker">Dziennik Praktyk</p>
+                    <p class="sheet-kicker">Dziennik Praktyk<?= $as_admin ? ' · ' . e($view_name) : '' ?></p>
                     <p class="sheet-date">Podsumowanie godzin</p>
                 </div>
-                <?php if ($ilosc_dni > 0): ?>
-                    <span class="status-pill is-done"><?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'dzień' : 'dni' ?> z wpisem</span>
-                <?php else: ?>
-                    <span class="status-pill is-empty">Brak wpisów</span>
-                <?php endif; ?>
+                <div class="sheet-pills">
+                    <?php if ($praktyki_ok): ?>
+                        <span class="status-pill" title="Okres praktyk">📅 <?= e(praktyki_okres_tekst($praktyki)) ?></span>
+                    <?php endif; ?>
+                    <?php if ($ilosc_dni > 0): ?>
+                        <span class="status-pill is-done"><?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'dzień' : 'dni' ?> z wpisem</span>
+                    <?php else: ?>
+                        <span class="status-pill is-empty">Brak wpisów</span>
+                    <?php endif; ?>
+                </div>
             </header>
 
             <?php if ($wymagane_godz > 0): ?>
@@ -179,17 +228,31 @@ $theme_vars = sprintf(
                     </div>
                 </section>
             <?php else: ?>
-                <p class="progress-empty">
-                    🎯 Ustaw liczbę godzin wymaganych do zaliczenia praktyk w
-                    <a href="ustawienia.php">⚙️ Ustawieniach</a>, aby zobaczyć pasek postępu.
+                <?php if ($as_admin): ?>
+                    <p class="progress-empty">🎯 Uczeń nie ustawił jeszcze wymaganej liczby godzin praktyk.</p>
+                <?php else: ?>
+                    <p class="progress-empty">
+                        🎯 Ustaw liczbę godzin wymaganych do zaliczenia praktyk w
+                        <a href="ustawienia.php">⚙️ Ustawieniach</a>, aby zobaczyć pasek postępu.
+                    </p>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <?php // Pod paskiem postępu: ile dni zostało do końca praktyk (liczone od dziś). ?>
+            <?php if ($praktyki_koniec !== null): ?>
+                <p class="progress-days is-<?= e($praktyki_koniec['stan']) ?>">
+                    <span class="progress-days-label"><?= e($praktyki_koniec['label']) ?></span>
+                    <span class="progress-days-value"><?= e($praktyki_koniec['value']) ?></span>
                 </p>
             <?php endif; ?>
 
             <?php if ($ilosc_dni === 0): ?>
-                <p class="empty">Nie masz jeszcze żadnych wpisów. Zacznij od dodania pierwszego dnia praktyk.</p>
+                <p class="empty"><?= $as_admin
+                    ? 'Ten uczeń nie ma jeszcze żadnych wpisów.'
+                    : 'Nie masz jeszcze żadnych wpisów. Zacznij od dodania pierwszego dnia praktyk.' ?></p>
                 <div class="home-actions">
-                    <a class="btn btn-today home-big" href="kalendarz.php?dodaj=1">➕ Dodaj pierwszy wpis</a>
-                    <a class="btn" href="kalendarz.php">📅 Kalendarz</a>
+                    <a class="btn btn-today home-big" href="<?= e(kal_url('dodaj=1', $view_param)) ?>">➕ Dodaj pierwszy wpis</a>
+                    <a class="btn" href="<?= e(kal_url('', $view_param)) ?>">📅 Kalendarz</a>
                 </div>
             <?php else: ?>
                 <div class="home-hero">
@@ -236,16 +299,18 @@ $theme_vars = sprintf(
                 </div>
 
                 <div class="home-actions">
-                    <a class="btn btn-today home-big" href="kalendarz.php">📅 Przejdź do kalendarza</a>
-                    <a class="btn btn-save" href="kalendarz.php?dodaj=1">➕ Dodaj wpis</a>
+                    <a class="btn btn-today home-big" href="<?= e(kal_url('', $view_param)) ?>">📅 Przejdź do kalendarza</a>
+                    <a class="btn btn-save" href="<?= e(kal_url('dodaj=1', $view_param)) ?>">➕ Dodaj wpis</a>
                 </div>
             <?php endif; ?>
         </article>
 
         <nav class="pagefoot no-print" aria-label="Informacje">
-            <a href="index.php" aria-current="page">🏠 Start</a>
-            <a href="kalendarz.php">📅 Kalendarz</a>
-            <a href="ustawienia.php">⚙️ Ustawienia</a>
+            <a href="index.php<?= $as_admin ? '?uczen=' . $view_id : '' ?>" aria-current="page">🏠 Start</a>
+            <a href="<?= e(kal_url('', $view_param)) ?>">📅 Kalendarz</a>
+            <?php if (!$as_admin): ?>
+                <a href="ustawienia.php">⚙️ Ustawienia</a>
+            <?php endif; ?>
             <a href="o-mnie.php">ℹ️ O mnie</a>
         </nav>
 

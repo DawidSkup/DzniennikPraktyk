@@ -9,6 +9,9 @@
  *   3. katalog danych użytkownika (Windows: %LOCALAPPDATA%, Linux: ~/.local/share).
  *
  * Starsza baza z data/dziennik.db jest przenoszona automatycznie.
+ *
+ * Tryb „wiele kont": dziennik każdego ucznia jest osobny (kolumna user_id
+ * w tabelach `wpisy` i `zalaczniki`). Konta mają rolę (administrator/uczeń).
  */
 
 declare(strict_types=1);
@@ -121,44 +124,85 @@ function db(): PDO
     $pdo->exec('PRAGMA temp_store = MEMORY');
     $pdo->exec('PRAGMA cache_size = -20000');
 
-    $pdo->exec(
-        'CREATE TABLE IF NOT EXISTS wpisy (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            data       TEXT NOT NULL UNIQUE,
-            godzina_od TEXT NOT NULL DEFAULT "",
-            godzina_do TEXT NOT NULL DEFAULT "",
-            opis       TEXT NOT NULL DEFAULT ""
-        )'
-    );
-
-    // Konto do logowania (jedno wspólne) — hash hasła, nigdy hasło jawne.
+    // Konta: użytkownicy z rolami (administrator / uczeń). Hasła hashowane.
     // Kolumny reset_* obsługują reset hasła kodem wysyłanym e-mailem.
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS uzytkownicy (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            login         TEXT NOT NULL UNIQUE,
-            haslo_hash    TEXT NOT NULL,
-            email         TEXT NOT NULL DEFAULT "",
-            reset_hash    TEXT NOT NULL DEFAULT "",
-            reset_wygasa  INTEGER NOT NULL DEFAULT 0,
-            reset_proby   INTEGER NOT NULL DEFAULT 0,
-            reset_wyslano INTEGER NOT NULL DEFAULT 0,
-            created_at    TEXT NOT NULL DEFAULT ""
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            login            TEXT NOT NULL UNIQUE,
+            haslo_hash       TEXT NOT NULL,
+            email            TEXT NOT NULL DEFAULT "",
+            rola             TEXT NOT NULL DEFAULT "uczen",
+            imie_nazwisko    TEXT NOT NULL DEFAULT "",
+            klasa            TEXT NOT NULL DEFAULT "",
+            wymagane_godziny INTEGER NOT NULL DEFAULT 0,
+            praktyki_od      TEXT NOT NULL DEFAULT "",
+            praktyki_do      TEXT NOT NULL DEFAULT "",
+            reset_hash       TEXT NOT NULL DEFAULT "",
+            reset_wygasa     INTEGER NOT NULL DEFAULT 0,
+            reset_proby      INTEGER NOT NULL DEFAULT 0,
+            reset_wyslano    INTEGER NOT NULL DEFAULT 0,
+            created_at       TEXT NOT NULL DEFAULT ""
         )'
     );
 
+    // Czy to starsza (jednokontowa) baza? Brak kolumny `rola` to sygnał.
+    $baza_jednokontowa = !db_column_exists($pdo, 'uzytkownicy', 'rola');
+
     // Migracja starszych baz: dokładamy brakujące kolumny (SQLite: ADD COLUMN).
     db_ensure_column($pdo, 'uzytkownicy', 'email', 'TEXT NOT NULL DEFAULT ""');
+    db_ensure_column($pdo, 'uzytkownicy', 'rola', 'TEXT NOT NULL DEFAULT "uczen"');
+    db_ensure_column($pdo, 'uzytkownicy', 'imie_nazwisko', 'TEXT NOT NULL DEFAULT ""');
+    db_ensure_column($pdo, 'uzytkownicy', 'klasa', 'TEXT NOT NULL DEFAULT ""');
+    db_ensure_column($pdo, 'uzytkownicy', 'wymagane_godziny', 'INTEGER NOT NULL DEFAULT 0');
+    db_ensure_column($pdo, 'uzytkownicy', 'praktyki_od', 'TEXT NOT NULL DEFAULT ""');
+    db_ensure_column($pdo, 'uzytkownicy', 'praktyki_do', 'TEXT NOT NULL DEFAULT ""');
     db_ensure_column($pdo, 'uzytkownicy', 'reset_hash', 'TEXT NOT NULL DEFAULT ""');
     db_ensure_column($pdo, 'uzytkownicy', 'reset_wygasa', 'INTEGER NOT NULL DEFAULT 0');
     db_ensure_column($pdo, 'uzytkownicy', 'reset_proby', 'INTEGER NOT NULL DEFAULT 0');
     db_ensure_column($pdo, 'uzytkownicy', 'reset_wyslano', 'INTEGER NOT NULL DEFAULT 0');
 
+    // Wpisy dziennika — przypisane do konta; data unikalna w obrębie konta.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS wpisy (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL DEFAULT 0,
+            data       TEXT NOT NULL,
+            godzina_od TEXT NOT NULL DEFAULT "",
+            godzina_do TEXT NOT NULL DEFAULT "",
+            opis       TEXT NOT NULL DEFAULT "",
+            UNIQUE (user_id, data)
+        )'
+    );
+
+    // Migracja starej tabeli `wpisy` (jedno konto, data unikalna globalnie).
+    if (!db_column_exists($pdo, 'wpisy', 'user_id')) {
+        $domyslny = db_default_user_id($pdo);
+        $pdo->exec('ALTER TABLE wpisy RENAME TO wpisy_stare');
+        $pdo->exec(
+            'CREATE TABLE wpisy (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id    INTEGER NOT NULL DEFAULT 0,
+                data       TEXT NOT NULL,
+                godzina_od TEXT NOT NULL DEFAULT "",
+                godzina_do TEXT NOT NULL DEFAULT "",
+                opis       TEXT NOT NULL DEFAULT "",
+                UNIQUE (user_id, data)
+            )'
+        );
+        $pdo->exec(
+            'INSERT INTO wpisy (id, user_id, data, godzina_od, godzina_do, opis)
+             SELECT id, ' . $domyslny . ', data, godzina_od, godzina_do, opis FROM wpisy_stare'
+        );
+        $pdo->exec('DROP TABLE wpisy_stare');
+    }
+
     // Załączniki do dni (zdjęcia / pliki). Same pliki leżą na dysku w katalogu
-    // danych (poza docroot) — tutaj trzymamy tylko metadane.
+    // danych (poza docroot) — tutaj trzymamy tylko metadane, także per konto.
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS zalaczniki (
             id      INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL DEFAULT 0,
             data    TEXT NOT NULL,
             nazwa   TEXT NOT NULL DEFAULT "",
             plik    TEXT NOT NULL,
@@ -167,10 +211,11 @@ function db(): PDO
             dodano  TEXT NOT NULL DEFAULT ""
         )'
     );
+    db_ensure_column($pdo, 'zalaczniki', 'user_id', 'INTEGER NOT NULL DEFAULT 0');
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_zalaczniki_data ON zalaczniki (data)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_zalaczniki_user ON zalaczniki (user_id, data)');
 
-    // Ustawienia aplikacji (klucz => wartość). Trzymamy tu m.in. wymaganą
-    // liczbę godzin praktyk używaną przez pasek postępu na stronie głównej.
+    // Ustawienia aplikacji (klucz => wartość) — na przyszłość, ustawienia globalne.
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS ustawienia (
             klucz   TEXT PRIMARY KEY,
@@ -178,7 +223,46 @@ function db(): PDO
         )'
     );
 
+    // Migracja ze starej, jednokontowej bazy: pierwsze konto zostaje
+    // administratorem, a wszystkie istniejące wpisy/pliki należą do niego.
+    if ($baza_jednokontowa) {
+        $admin_id = db_default_user_id($pdo);
+        if ($admin_id > 0) {
+            $pdo->exec('UPDATE uzytkownicy SET rola = "admin" WHERE id = ' . $admin_id);
+            $pdo->exec('UPDATE wpisy SET user_id = ' . $admin_id . ' WHERE user_id = 0');
+            $pdo->exec('UPDATE zalaczniki SET user_id = ' . $admin_id . ' WHERE user_id = 0');
+
+            // Przenieś globalne „wymagane godziny" na konto administratora.
+            $stare = $pdo->query('SELECT wartosc FROM ustawienia WHERE klucz = "wymagane_godziny"')->fetchColumn();
+            if ($stare !== false && (int) $stare > 0) {
+                $pdo->prepare('UPDATE uzytkownicy SET wymagane_godziny = :g WHERE id = :id')
+                    ->execute([':g' => (int) $stare, ':id' => $admin_id]);
+            }
+        }
+    }
+
     return $pdo;
+}
+
+/** Czy tabela ma daną kolumnę (prosta migracja SQLite). */
+function db_column_exists(PDO $pdo, string $table, string $column): bool
+{
+    $stmt = $pdo->query('PRAGMA table_info(' . $table . ')');
+    foreach ($stmt->fetchAll() as $kol) {
+        if (($kol['name'] ?? '') === $column) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/** Identyfikator pierwszego (najstarszego) konta lub 0, gdy brak kont. */
+function db_default_user_id(PDO $pdo): int
+{
+    $id = $pdo->query('SELECT id FROM uzytkownicy ORDER BY id ASC LIMIT 1')->fetchColumn();
+
+    return $id !== false ? (int) $id : 0;
 }
 
 /**
@@ -187,11 +271,8 @@ function db(): PDO
  */
 function db_ensure_column(PDO $pdo, string $table, string $column, string $definition): void
 {
-    $stmt = $pdo->query('PRAGMA table_info(' . $table . ')');
-    foreach ($stmt->fetchAll() as $kol) {
-        if (($kol['name'] ?? '') === $column) {
-            return;
-        }
+    if (db_column_exists($pdo, $table, $column)) {
+        return;
     }
 
     $pdo->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $definition);

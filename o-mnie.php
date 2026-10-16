@@ -87,7 +87,7 @@ $theme_vars = sprintf(
                 <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
                 <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
             </div>
-            <a class="btn btn-today" href="kalendarz.php">← Wróć do dziennika</a>
+            <a class="btn btn-today" href="<?= e(auth_home_url()) ?>"><?= auth_is_admin() ? '← Wróć do panelu' : '← Wróć do dziennika' ?></a>
         </div>
     </header>
 
@@ -131,8 +131,10 @@ $theme_vars = sprintf(
         </article>
 
         <nav class="pagefoot" aria-label="Informacje">
-            <a href="index.php">🏠 Start</a>
-            <a href="kalendarz.php">← Kalendarz</a>
+            <a href="<?= e(auth_home_url()) ?>"><?= auth_is_admin() ? '👑 Panel admina' : '🏠 Start' ?></a>
+            <?php if (!auth_is_admin()): ?>
+                <a href="kalendarz.php">← Kalendarz</a>
+            <?php endif; ?>
             <a href="ustawienia.php">⚙️ Ustawienia</a>
             <a href="o-mnie.php" aria-current="page">O mnie</a>
         </nav>

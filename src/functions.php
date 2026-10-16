@@ -7,28 +7,29 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 
-/** Pobiera wpis dla podanej daty (YYYY-MM-DD) lub null. */
-function get_wpis(string $data): ?array
+/** Pobiera wpis użytkownika dla podanej daty (YYYY-MM-DD) lub null. */
+function get_wpis(int $user_id, string $data): ?array
 {
-    $stmt = db()->prepare('SELECT * FROM wpisy WHERE data = :data');
-    $stmt->execute([':data' => $data]);
+    $stmt = db()->prepare('SELECT * FROM wpisy WHERE user_id = :u AND data = :data');
+    $stmt->execute([':u' => $user_id, ':data' => $data]);
     $row = $stmt->fetch();
 
     return $row ?: null;
 }
 
-/** Dodaje lub aktualizuje wpis dla podanej daty. */
-function save_wpis(string $data, string $od, string $do, string $opis): void
+/** Dodaje lub aktualizuje wpis użytkownika dla podanej daty. */
+function save_wpis(int $user_id, string $data, string $od, string $do, string $opis): void
 {
     $stmt = db()->prepare(
-        'INSERT INTO wpisy (data, godzina_od, godzina_do, opis)
-         VALUES (:data, :od, :do, :opis)
-         ON CONFLICT(data) DO UPDATE SET
+        'INSERT INTO wpisy (user_id, data, godzina_od, godzina_do, opis)
+         VALUES (:u, :data, :od, :do, :opis)
+         ON CONFLICT(user_id, data) DO UPDATE SET
             godzina_od = excluded.godzina_od,
             godzina_do = excluded.godzina_do,
             opis       = excluded.opis'
     );
     $stmt->execute([
+        ':u'    => $user_id,
         ':data' => $data,
         ':od'   => $od,
         ':do'   => $do,
@@ -36,52 +37,61 @@ function save_wpis(string $data, string $od, string $do, string $opis): void
     ]);
 }
 
-/** Usuwa wpis dla podanej daty. */
-function delete_wpis(string $data): void
+/** Usuwa wpis użytkownika dla podanej daty. */
+function delete_wpis(int $user_id, string $data): void
 {
-    $stmt = db()->prepare('DELETE FROM wpisy WHERE data = :data');
-    $stmt->execute([':data' => $data]);
+    $stmt = db()->prepare('DELETE FROM wpisy WHERE user_id = :u AND data = :data');
+    $stmt->execute([':u' => $user_id, ':data' => $data]);
 }
 
-/** Usuwa wszystkie wpisy z dziennika. */
-function delete_all_wpisy(): void
+/** Usuwa wszystkie wpisy danego użytkownika. */
+function delete_all_wpisy(int $user_id): void
 {
-    db()->exec('DELETE FROM wpisy');
+    $stmt = db()->prepare('DELETE FROM wpisy WHERE user_id = :u');
+    $stmt->execute([':u' => $user_id]);
 }
 
-/** Zwraca listę wszystkich dat wpisów, rosnąco. */
-function all_dates(): array
+/** Zwraca listę dat wpisów użytkownika, rosnąco. */
+function all_dates(int $user_id): array
 {
-    return db()->query('SELECT data FROM wpisy ORDER BY data ASC')
-        ->fetchAll(PDO::FETCH_COLUMN);
+    $stmt = db()->prepare('SELECT data FROM wpisy WHERE user_id = :u ORDER BY data ASC');
+    $stmt->execute([':u' => $user_id]);
+
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
-/** Data poprzedniego wpisu względem podanej daty (lub null). */
-function prev_date(string $data): ?string
+/** Data poprzedniego wpisu użytkownika względem podanej daty (lub null). */
+function prev_date(int $user_id, string $data): ?string
 {
-    $stmt = db()->prepare('SELECT data FROM wpisy WHERE data < :data ORDER BY data DESC LIMIT 1');
-    $stmt->execute([':data' => $data]);
+    $stmt = db()->prepare(
+        'SELECT data FROM wpisy WHERE user_id = :u AND data < :data ORDER BY data DESC LIMIT 1'
+    );
+    $stmt->execute([':u' => $user_id, ':data' => $data]);
     $row = $stmt->fetchColumn();
 
     return $row !== false ? (string) $row : null;
 }
 
-/** Data następnego wpisu względem podanej daty (lub null). */
-function next_date(string $data): ?string
+/** Data następnego wpisu użytkownika względem podanej daty (lub null). */
+function next_date(int $user_id, string $data): ?string
 {
-    $stmt = db()->prepare('SELECT data FROM wpisy WHERE data > :data ORDER BY data ASC LIMIT 1');
-    $stmt->execute([':data' => $data]);
+    $stmt = db()->prepare(
+        'SELECT data FROM wpisy WHERE user_id = :u AND data > :data ORDER BY data ASC LIMIT 1'
+    );
+    $stmt->execute([':u' => $user_id, ':data' => $data]);
     $row = $stmt->fetchColumn();
 
     return $row !== false ? (string) $row : null;
 }
 
-/** Data ostatniego wpisu (do widoku startowego) lub null. */
-function last_date(): ?string
+/** Data ostatniego wpisu użytkownika (do widoku startowego) lub null. */
+function last_date(int $user_id): ?string
 {
-    $row = db()->query('SELECT MAX(data) FROM wpisy')->fetchColumn();
+    $stmt = db()->prepare('SELECT MAX(data) FROM wpisy WHERE user_id = :u');
+    $stmt->execute([':u' => $user_id]);
+    $row = $stmt->fetchColumn();
 
-    return $row !== null ? (string) $row : null;
+    return $row !== null && $row !== false ? (string) $row : null;
 }
 
 /** Waliduje datę w formacie YYYY-MM-DD. */
@@ -92,17 +102,20 @@ function is_valid_date(string $data): bool
     return $d !== false && $d->format('Y-m-d') === $data;
 }
 
-/** Zwraca wszystkie wpisy, posortowane rosnąco po dacie. */
-function all_wpisy(): array
+/** Zwraca wszystkie wpisy użytkownika, posortowane rosnąco po dacie. */
+function all_wpisy(int $user_id): array
 {
-    return db()->query('SELECT * FROM wpisy ORDER BY data ASC')->fetchAll();
+    $stmt = db()->prepare('SELECT * FROM wpisy WHERE user_id = :u ORDER BY data ASC');
+    $stmt->execute([':u' => $user_id]);
+
+    return $stmt->fetchAll();
 }
 
-/** Wpisy w formie mapy [data => wiersz]. */
-function wpisy_map(): array
+/** Wpisy użytkownika w formie mapy [data => wiersz]. */
+function wpisy_map(int $user_id): array
 {
     $map = [];
-    foreach (all_wpisy() as $w) {
+    foreach (all_wpisy($user_id) as $w) {
         $map[$w['data']] = $w;
     }
 
@@ -296,6 +309,28 @@ function e(?string $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Buduje adres kalendarza, zachowując kontekst ucznia (administrator, który
+ * edytuje dziennik wybranego ucznia — parametr `uczen=ID`).
+ *
+ * @param string $params   dodatkowe parametry zapytania (bez wiodącego „?" ani „&")
+ * @param int    $uczen_id ID ucznia lub 0, gdy oglądamy własny dziennik
+ */
+function kal_url(string $params = '', int $uczen_id = 0): string
+{
+    $parts = [];
+    if ($uczen_id > 0) {
+        $parts[] = 'uczen=' . $uczen_id;
+    }
+
+    $params = ltrim($params, '?&');
+    if ($params !== '') {
+        $parts[] = $params;
+    }
+
+    return 'kalendarz.php' . ($parts !== [] ? '?' . implode('&', $parts) : '');
+}
+
 /** Formatuje datę ISO na czytelną wersję (np. poniedziałek, 09.10.2026). */
 function format_date_full(string $data): string
 {
@@ -363,20 +398,22 @@ function zal_rozszerzenie(string $nazwa): string
     return $ext;
 }
 
-/** Lista załączników dla dnia (rosnąco po dacie dodania). */
-function zal_list(string $data): array
+/** Lista załączników użytkownika dla dnia (rosnąco po dacie dodania). */
+function zal_list(int $user_id, string $data): array
 {
-    $stmt = db()->prepare('SELECT * FROM zalaczniki WHERE data = :d ORDER BY id ASC');
-    $stmt->execute([':d' => $data]);
+    $stmt = db()->prepare('SELECT * FROM zalaczniki WHERE user_id = :u AND data = :d ORDER BY id ASC');
+    $stmt->execute([':u' => $user_id, ':d' => $data]);
 
     return $stmt->fetchAll();
 }
 
-/** Liczba załączników wg dnia: [data => liczba]. */
-function zal_counts(): array
+/** Liczba załączników użytkownika wg dnia: [data => liczba]. */
+function zal_counts(int $user_id): array
 {
-    $out = [];
-    foreach (db()->query('SELECT data, COUNT(*) AS ile FROM zalaczniki GROUP BY data') as $r) {
+    $out  = [];
+    $stmt = db()->prepare('SELECT data, COUNT(*) AS ile FROM zalaczniki WHERE user_id = :u GROUP BY data');
+    $stmt->execute([':u' => $user_id]);
+    foreach ($stmt->fetchAll() as $r) {
         $out[(string) $r['data']] = (int) $r['ile'];
     }
 
@@ -408,12 +445,12 @@ function zal_is_inline(string $typ): bool
 }
 
 /**
- * Dodaje załącznik do dnia.
+ * Dodaje załącznik do dnia (konto użytkownika).
  *
  * @param array|null $file wpis z $_FILES
  * @return string kod: 'ok' | 'brak' | 'za-duzy' | 'typ' | 'blad-uploadu' | 'blad-zapisu'
  */
-function zal_add(string $data, ?array $file): string
+function zal_add(int $user_id, string $data, ?array $file): string
 {
     if (!is_array($file) || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
         return 'brak';
@@ -476,10 +513,11 @@ function zal_add(string $data, ?array $file): string
     @chmod($cel, 0644);
 
     $stmt = db()->prepare(
-        'INSERT INTO zalaczniki (data, nazwa, plik, typ, rozmiar, dodano)
-         VALUES (:d, :n, :p, :t, :r, :c)'
+        'INSERT INTO zalaczniki (user_id, data, nazwa, plik, typ, rozmiar, dodano)
+         VALUES (:u, :d, :n, :p, :t, :r, :c)'
     );
     $stmt->execute([
+        ':u' => $user_id,
         ':d' => $data,
         ':n' => $nazwa,
         ':p' => $naDysku,
@@ -510,18 +548,20 @@ function zal_delete(int $id): bool
 }
 
 /** Usuwa wszystkie załączniki danego dnia (pliki + wpisy). */
-function zal_delete_for_date(string $data): void
+function zal_delete_for_date(int $user_id, string $data): void
 {
-    foreach (zal_list($data) as $row) {
+    foreach (zal_list($user_id, $data) as $row) {
         zal_delete((int) $row['id']);
     }
 }
 
-/** Usuwa wszystkie załączniki w dzienniku (pliki + wpisy). */
-function zal_delete_all(): void
+/** Usuwa wszystkie załączniki danego użytkownika (pliki + wpisy). */
+function zal_delete_all(int $user_id): void
 {
-    foreach (db()->query('SELECT id FROM zalaczniki') as $row) {
-        zal_delete((int) $row['id']);
+    $stmt = db()->prepare('SELECT id FROM zalaczniki WHERE user_id = :u');
+    $stmt->execute([':u' => $user_id]);
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $id) {
+        zal_delete((int) $id);
     }
 }
 
@@ -568,8 +608,120 @@ function ustawienie_set(string $klucz, string $wartosc): void
     $stmt->execute([':k' => $klucz, ':w' => $wartosc]);
 }
 
-/** Liczba godzin praktyk do wypracowania (0 = jeszcze nie ustawiono). */
-function wymagane_godziny(): int
+/** Liczba godzin praktyk użytkownika do wypracowania (0 = nie ustawiono). */
+function wymagane_godziny(int $user_id): int
 {
-    return max(0, (int) ustawienie('wymagane_godziny', '0'));
+    $stmt = db()->prepare('SELECT wymagane_godziny FROM uzytkownicy WHERE id = :id');
+    $stmt->execute([':id' => $user_id]);
+    $row = $stmt->fetchColumn();
+
+    return $row !== false ? max(0, (int) $row) : 0;
+}
+
+/** Ustawia wymaganą liczbę godzin praktyk dla użytkownika. */
+function wymagane_godziny_set(int $user_id, int $godziny): void
+{
+    $stmt = db()->prepare('UPDATE uzytkownicy SET wymagane_godziny = :g WHERE id = :id');
+    $stmt->execute([':g' => max(0, $godziny), ':id' => $user_id]);
+}
+
+/**
+ * Okres praktyk ucznia — daty „od" i „do" (puste = uczeń jeszcze nie podał).
+ *
+ * @return array{od: string, do: string}
+ */
+function praktyki_okres(int $user_id): array
+{
+    $stmt = db()->prepare('SELECT praktyki_od, praktyki_do FROM uzytkownicy WHERE id = :id');
+    $stmt->execute([':id' => $user_id]);
+    $row = $stmt->fetch();
+
+    return $row !== false
+        ? ['od' => (string) $row['praktyki_od'], 'do' => (string) $row['praktyki_do']]
+        : ['od' => '', 'do' => ''];
+}
+
+/** Czy okres praktyk jest już podany w całości (obydwie daty poprawne)? */
+function praktyki_okres_ustawiony(array $okres): bool
+{
+    return is_valid_date((string) ($okres['od'] ?? ''))
+        && is_valid_date((string) ($okres['do'] ?? ''));
+}
+
+/**
+ * Zapisuje okres praktyk ucznia. Wymaga dwóch poprawnych dat (YYYY-MM-DD)
+ * oraz kolejności — data „od" nie może być późniejsza niż „do".
+ *
+ * @return bool false, gdy daty są niepoprawne albo w złej kolejności
+ */
+function praktyki_okres_set(int $user_id, string $od, string $do): bool
+{
+    $od = trim($od);
+    $do = trim($do);
+
+    if (!is_valid_date($od) || !is_valid_date($do) || $od > $do) {
+        return false;
+    }
+
+    $stmt = db()->prepare('UPDATE uzytkownicy SET praktyki_od = :od, praktyki_do = :do WHERE id = :id');
+    $stmt->execute([':od' => $od, ':do' => $do, ':id' => $user_id]);
+
+    return true;
+}
+
+/** Czytelny zapis okresu praktyk, np. „01.04.2026 – 30.06.2026". */
+function praktyki_okres_tekst(array $okres): string
+{
+    if (!praktyki_okres_ustawiony($okres)) {
+        return '';
+    }
+
+    return (new DateTime((string) $okres['od']))->format('d.m.Y')
+        . ' – '
+        . (new DateTime((string) $okres['do']))->format('d.m.Y');
+}
+
+/**
+ * Ile dni zostało do końca praktyk względem podanej daty (ujemne = praktyki
+ * już się skończyły). Zwraca gotowe podpisy do wyświetlenia albo null, gdy
+ * okresu praktyk nie podano.
+ *
+ * @return array{stan: string, dni: int, label: string, value: string}|null
+ */
+function praktyki_do_konca(array $okres, string $dzis): ?array
+{
+    if (!praktyki_okres_ustawiony($okres)) {
+        return null;
+    }
+
+    $koniec = new DateTimeImmutable((string) $okres['do']);
+    $dni    = (int) (new DateTimeImmutable($dzis))->diff($koniec)->format('%r%a');
+    $data   = $koniec->format('d.m.Y');
+
+    if ($dni > 0) {
+        return [
+            'stan'  => 'w-trakcie',
+            'dni'   => $dni,
+            'label' => '📅 Do końca praktyk',
+            'value' => $dni . ' ' . ($dni === 1 ? 'dzień' : 'dni') . ' (do ' . $data . ')',
+        ];
+    }
+
+    if ($dni === 0) {
+        return [
+            'stan'  => 'ostatni',
+            'dni'   => 0,
+            'label' => '⏳ Ostatni dzień praktyk',
+            'value' => $data,
+        ];
+    }
+
+    $ile = abs($dni);
+
+    return [
+        'stan'  => 'po',
+        'dni'   => $dni,
+        'label' => '🏁 Praktyki zakończone',
+        'value' => 'minęło ' . $ile . ' ' . ($ile === 1 ? 'dzień' : 'dni') . ' (' . $data . ')',
+    ];
 }

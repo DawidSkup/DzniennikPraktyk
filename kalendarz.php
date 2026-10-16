@@ -14,6 +14,19 @@ require_once __DIR__ . '/src/auth.php';
 // Wymagane zalogowanie (brak konta → kreator, brak sesji → logowanie).
 auth_require_login();
 
+// Kontekst: własny dziennik albo dziennik ucznia (administrator edytuje go w imieniu ucznia).
+$ctx        = auth_view_context();
+$view_user  = $ctx['user'] ?? null;
+$as_admin   = (bool) ($ctx['as_admin'] ?? false);
+$view_id    = (int) ($view_user['id'] ?? 0);
+$view_name  = $view_user !== null ? user_label_klasa($view_user) : '';
+$view_param = $as_admin ? $view_id : 0;           // kontekst ucznia dla adresów
+$ctx_qs     = $as_admin ? '&uczen=' . $view_id : ''; // doklejane do linków GET
+
+// Administrator nie prowadzi własnego dziennika — bez wybranego ucznia
+// wracamy do panelu (`admin.php`).
+auth_guard_own_journal($as_admin);
+
 /* ------------------------------------------------------------------ *
  *  Obsługa akcji (POST) — wzorzec POST/Redirect/GET
  * ------------------------------------------------------------------ */
@@ -25,47 +38,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Przekroczony limit post_max_size (np. zbyt duży załącznik) — PHP nie
     // wypełnia wtedy $_POST/$_FILES. Zgłaszamy czytelny błąd zamiast CSRF.
     if ($_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
-        header('Location: kalendarz.php?zal=za-duzy');
+        header('Location: ' . kal_url('zal=za-duzy', $view_param));
         exit;
     }
 
     // Token CSRF wymagany przy każdej zmianie stanu.
     if (!csrf_check($_POST['csrf'] ?? null)) {
-        $target = 'kalendarz.php' . (is_valid_date($data) ? '?data=' . urlencode($data) . '&blad_csrf=1' : '?blad_csrf=1');
+        $target = kal_url(is_valid_date($data) ? 'data=' . urlencode($data) . '&blad_csrf=1' : 'blad_csrf=1', $view_param);
         header('Location: ' . $target);
         exit;
     }
 
     if ($action === 'add_file' && is_valid_date($data)) {
-        $kod = zal_add($data, $_FILES['zal'] ?? null);
-        header('Location: kalendarz.php?data=' . urlencode($data) . '&zal=' . urlencode($kod));
+        $kod = zal_add($view_id, $data, $_FILES['zal'] ?? null);
+        header('Location: ' . kal_url('data=' . urlencode($data) . '&zal=' . urlencode($kod), $view_param));
         exit;
     }
 
     if ($action === 'delete_file' && is_valid_date($data)) {
         $plik_id = (int) ($_POST['id'] ?? 0);
         $plik    = $plik_id > 0 ? zal_get($plik_id) : null;
-        // Usuwamy tylko plik należący do oglądanego dnia.
-        if ($plik !== null && (string) $plik['data'] === $data) {
+        // Usuwamy tylko plik należący do oglądanego dnia i konta.
+        if ($plik !== null && (string) $plik['data'] === $data && (int) $plik['user_id'] === $view_id) {
             zal_delete($plik_id);
         }
-        header('Location: kalendarz.php?data=' . urlencode($data) . '&zal=usunieto');
+        header('Location: ' . kal_url('data=' . urlencode($data) . '&zal=usunieto', $view_param));
         exit;
     }
 
     if ($action === 'delete_all') {
-        delete_all_wpisy();
-        zal_delete_all();
-        header('Location: kalendarz.php?usunieto=1');
+        delete_all_wpisy($view_id);
+        zal_delete_all($view_id);
+        header('Location: ' . kal_url('usunieto=1', $view_param));
         exit;
     }
 
     if (($action === 'save' || $action === 'delete') && is_valid_date($data)) {
         if ($action === 'delete') {
-            zal_delete_for_date($data);
-            delete_wpis($data);
-            $target = prev_date($data) ?? next_date($data);
-            header('Location: kalendarz.php' . ($target ? '?data=' . urlencode($target) : ''));
+            zal_delete_for_date($view_id, $data);
+            delete_wpis($view_id, $data);
+            $target = prev_date($view_id, $data) ?? next_date($view_id, $data);
+            header('Location: ' . kal_url($target ? 'data=' . urlencode($target) : '', $view_param));
             exit;
         }
 
@@ -74,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $opis = trim((string) ($_POST['opis'] ?? ''));
 
         if (is_valid_time($od) && is_valid_time($do)) {
-            save_wpis($data, $od, $do, $opis);
+            save_wpis($view_id, $data, $od, $do, $opis);
 
             // Plik opcjonalnie dołączony w oknie „Dodaj wpis" — zapisujemy
             // razem z wpisem. Gdy nie wybrano pliku, nie robimy nic (żadnego
@@ -82,27 +95,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $zal_kod = null;
             if (isset($_FILES['zal']) && is_array($_FILES['zal'])
                 && (int) $_FILES['zal']['error'] !== UPLOAD_ERR_NO_FILE) {
-                $zal_kod = zal_add($data, $_FILES['zal']);
+                $zal_kod = zal_add($view_id, $data, $_FILES['zal']);
             }
 
-            $qs = 'kalendarz.php?data=' . urlencode($data) . '&zapisano=1';
+            $qs = 'data=' . urlencode($data) . '&zapisano=1';
             if ($zal_kod !== null) {
                 $qs .= '&zal=' . urlencode($zal_kod);
             }
-            header('Location: ' . $qs);
+            header('Location: ' . kal_url($qs, $view_param));
             exit;
         }
     }
 
     // Nieprawidłowe dane – wracamy na stronę bez zapisu.
-    header('Location: kalendarz.php' . (is_valid_date($data) ? '?data=' . urlencode($data) : ''));
+    header('Location: ' . kal_url(is_valid_date($data) ? 'data=' . urlencode($data) : '', $view_param));
     exit;
 }
 
 // --- Pobranie wpisów (jedno zapytanie) i wyliczenie danych pochodnych ----
 // Listę dat, mapę wpisów, czasy pracy i statystyki liczymy z jednego
 // zapytania, zamiast odpytywać bazę wielokrotnie.
-$wszystkie    = all_wpisy();          // posortowane rosnąco po dacie
+$wszystkie    = all_wpisy($view_id);   // posortowane rosnąco po dacie
 $ilosc_dni    = count($wszystkie);
 $mapa_wpisow  = [];
 $czas_wg_dnia = [];
@@ -137,10 +150,17 @@ foreach ($dates as $d) {
 
 $dzis = date('Y-m-d');
 
+// Okres praktyk oglądanego ucznia. Używany w JS tylko po to, by przed zapisem
+// wpisu w dniu spoza okresu zapytać „Nie masz praktyk w ten dzień." — okres
+// nie blokuje zapisu (zasada: dowolny zakres dat wpisów).
+$okres    = praktyki_okres($view_id);
+$okres_js = praktyki_okres_ustawiony($okres) ? $okres : null;
+
 // --- Wybrany widok: „dzien" (jeden dzień) lub „tydzien" ------------------
 $widok      = (($_GET['widok'] ?? 'dzien') === 'tydzien') ? 'tydzien' : 'dzien';
 $tydzien    = $widok === 'tydzien';
 $widok_qs   = $tydzien ? '&widok=tydzien' : ''; // doklejane do linków GET
+$link_qs    = $widok_qs . $ctx_qs;               // widok + kontekst (podgląd ucznia)
 
 // Tryb „Dodaj": po kliknięciu „Dodaj dzień" pokazujemy od razu sam formularz „Dodaj wpis".
 $dodaj_flow = !$tydzien && (($_GET['dodaj'] ?? '') === '1');
@@ -220,8 +240,8 @@ $blad_csrf    = isset($_GET['blad_csrf']);
 $zal_kod      = trim((string) ($_GET['zal'] ?? ''));
 
 // Załączniki oglądanego dnia oraz liczba plików wg dnia (lista + widok tygodnia).
-$zalaczniki = zal_list($data);
-$zal_counts = zal_counts();
+$zalaczniki = zal_list($view_id, $data);
+$zal_counts = zal_counts($view_id);
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -242,7 +262,13 @@ $zal_counts = zal_counts();
             <span class="brand-icon">📘</span>
             <div>
                 <h1 class="brand-title">Dziennik Praktyk</h1>
-                <p class="brand-sub"><?= count($dates) ?> <?= count($dates) === 1 ? 'wpis' : 'wpisów' ?> w dzienniku</p>
+                <p class="brand-sub">
+                    <?php if ($as_admin): ?>
+                        Dziennik ucznia · <?= e($view_name) ?> · <?= count($dates) ?> <?= count($dates) === 1 ? 'wpis' : 'wpisów' ?>
+                    <?php else: ?>
+                        <?= count($dates) ?> <?= count($dates) === 1 ? 'wpis' : 'wpisów' ?> w dzienniku
+                    <?php endif; ?>
+                </p>
             </div>
         </div>
     </header>
@@ -250,17 +276,22 @@ $zal_counts = zal_counts();
     <!-- Akcje: pasek chowający się w bok + przycisk „⋮" do przywołania -->
     <div class="actions-dock no-print">
         <div class="topbar-actions" id="actions-bar" role="toolbar" aria-label="Akcje">
-            <a class="btn" href="index.php" title="Strona główna — podsumowanie godzin">🏠 Start</a>
+            <a class="btn" href="index.php<?= $as_admin ? '?uczen=' . $view_id : '' ?>" title="Strona główna — podsumowanie godzin">🏠 Start</a>
             <div class="theme-switch no-print" role="group" aria-label="Motyw: jasny, ciemny lub automatyczny">
                 <button type="button" class="theme-btn" data-theme-mode="light" aria-pressed="false" title="Tryb jasny (dzień)">☀️</button>
                 <button type="button" class="theme-btn" data-theme-mode="dark" aria-pressed="false" title="Tryb ciemny (noc)">🌙</button>
                 <button type="button" class="theme-btn" data-theme-mode="auto" aria-pressed="true" title="Automatyczny (ustawienie systemu)">🌓</button>
             </div>
-            <a class="btn btn-today" href="kalendarz.php?data=<?= e(date('Y-m-d')) ?><?= $widok_qs ?>">Dzisiaj</a>
+            <?php if (auth_is_admin()): ?>
+                <a class="btn btn-admin" href="admin.php" title="Panel administratora">👑 Panel admina</a>
+            <?php endif; ?>
+            <a class="btn btn-today" href="<?= e(kal_url('data=' . date('Y-m-d') . $widok_qs, $view_param)) ?>">Dzisiaj</a>
             <button type="button" class="btn btn-save" data-open-dodaj
                     title="Dodaj kolejny dzień (<?= e(format_date_full($dodaj_data)) ?>)">➕ Dodaj</button>
             <button type="button" class="btn btn-print" onclick="window.print()">🖨 Drukuj</button>
-            <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
+            <?php if (!$as_admin): ?>
+                <a class="btn btn-icon" href="ustawienia.php" title="Ustawienia dziennika" aria-label="Ustawienia">⚙️</a>
+            <?php endif; ?>
         </div>
         <button type="button" class="actions-toggle" id="actions-toggle"
                 aria-controls="actions-bar" aria-expanded="true"
@@ -277,7 +308,7 @@ $zal_counts = zal_counts();
                     <ul class="day-list">
                         <?php foreach ($dates as $d): ?>
                             <li>
-                                <a href="kalendarz.php?data=<?= e($d) ?><?= $widok_qs ?>"
+                                <a href="kalendarz.php?data=<?= e($d) ?><?= $link_qs ?>"
                                    class="<?= $d === $data ? 'active' : '' ?><?= (int) (new DateTime($d))->format('N') >= 6 ? ' is-weekend' : '' ?>">
                                     <span class="day-list-date"><?= e(format_date_short($d)) ?></span>
                                     <?php $mm = $czas_wg_dnia[$d] ?? null; ?>
@@ -302,22 +333,25 @@ $zal_counts = zal_counts();
     <!-- Przełącznik widoku: dzień / tydzień -->
     <div class="viewswitch no-print" role="group" aria-label="Przełącz widok">
         <a class="btn viewswitch-btn<?= $tydzien ? '' : ' btn-today' ?>"
-           href="kalendarz.php?data=<?= e($data) ?>"<?= $tydzien ? '' : ' aria-current="true"' ?>>
+           href="kalendarz.php?data=<?= e($data) ?><?= $ctx_qs ?>"<?= $tydzien ? '' : ' aria-current="true"' ?>>
             <span class="viewswitch-ico" aria-hidden="true">📅</span> Dzień
         </a>
         <a class="btn viewswitch-btn<?= $tydzien ? ' btn-today' : '' ?>"
-           href="kalendarz.php?data=<?= e($data) ?>&widok=tydzien"<?= $tydzien ? ' aria-current="true"' : '' ?>>
+           href="kalendarz.php?data=<?= e($data) ?>&widok=tydzien<?= $ctx_qs ?>"<?= $tydzien ? ' aria-current="true"' : '' ?>>
             <span class="viewswitch-ico" aria-hidden="true">🗓️</span> Tydzień
         </a>
     </div>
 
     <!-- Nawigacja między dniami / tygodniami -->
     <nav class="daynav no-print">
-        <a class="daynav-arrow daynav-prev" href="kalendarz.php?data=<?= e($nav_prev ?? $data) ?><?= $widok_qs ?>"
+        <a class="daynav-arrow daynav-prev" href="kalendarz.php?data=<?= e($nav_prev ?? $data) ?><?= $link_qs ?>"
            <?= $prev_off ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>
            title="<?= e($nav_label_prev) ?>">←</a>
 
         <form class="jump" method="get" action="kalendarz.php">
+            <?php if ($as_admin): ?>
+                <input type="hidden" name="uczen" value="<?= $view_id ?>">
+            <?php endif; ?>
             <?php if ($tydzien): ?>
                 <input type="hidden" name="widok" value="tydzien">
             <?php endif; ?>
@@ -348,10 +382,14 @@ $zal_counts = zal_counts();
             <?php endif; ?>
         </form>
 
-        <a class="daynav-arrow daynav-next" href="kalendarz.php?data=<?= e($nav_next ?? $data) ?><?= $widok_qs ?>"
+        <a class="daynav-arrow daynav-next" href="kalendarz.php?data=<?= e($nav_next ?? $data) ?><?= $link_qs ?>"
            <?= $next_off ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : '' ?>
            title="<?= e($nav_label_next) ?>">→</a>
     </nav>
+
+    <?php if ($as_admin): ?>
+        <p class="alert alert-info no-print">✏️ Edytujesz dziennik ucznia: <b><?= e($view_name) ?></b>. Wpisy zapisują się na jego koncie.</p>
+    <?php endif; ?>
 
     <?php if ($zapisano): ?>
         <p class="alert no-print">✔ Wpis został zapisany.</p>
@@ -474,16 +512,16 @@ $zal_counts = zal_counts();
                         </td>
                         <td class="wk-edit no-print">
                             <?php if ($w): ?>
-                                <a class="btn wk-edit-link" href="kalendarz.php?data=<?= e($d) ?>">
+                                <a class="btn wk-edit-link" href="kalendarz.php?data=<?= e($d) ?><?= $ctx_qs ?>">
                                     <span class="wk-edit-ico" aria-hidden="true">📄</span> Otwórz
                                 </a>
                             <?php elseif ($weekend): ?>
-                                <a class="btn btn-today wk-edit-link" href="kalendarz.php?data=<?= e($d) ?>"
+                                <a class="btn btn-today wk-edit-link" href="kalendarz.php?data=<?= e($d) ?><?= $ctx_qs ?>"
                                    onclick="return confirm('Czy na pewno chcesz dodać wpis w weekend?\nSobota i niedziela to dni bez praktyk.');">
                                     <span class="wk-edit-ico" aria-hidden="true">➕</span> Dodaj
                                 </a>
                             <?php else: ?>
-                                <a class="btn btn-today wk-edit-link" href="kalendarz.php?data=<?= e($d) ?>">
+                                <a class="btn btn-today wk-edit-link" href="kalendarz.php?data=<?= e($d) ?><?= $ctx_qs ?>">
                                     <span class="wk-edit-ico" aria-hidden="true">➕</span> Dodaj
                                 </a>
                             <?php endif; ?>
@@ -573,6 +611,7 @@ $zal_counts = zal_counts();
                             <input type="hidden" name="action" value="delete_file">
                             <input type="hidden" name="data" value="<?= e($data) ?>">
                             <input type="hidden" name="id" value="<?= (int) $z['id'] ?>">
+                            <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                             <?= csrf_field() ?>
                             <button type="submit" class="btn btn-danger btn-sm" title="Usuń plik">🗑</button>
                         </form>
@@ -595,7 +634,7 @@ $zal_counts = zal_counts();
     <?php if ($tydzien): ?>
         <p class="week-notice no-print">
             To podgląd całego tygodnia — do przeglądu i wydruku. Aby dodać nowy lub poprawić
-            istniejący wpis, <a href="kalendarz.php?data=<?= e($data) ?>">przejdź do widoku dnia</a>
+            istniejący wpis, <a href="kalendarz.php?data=<?= e($data) ?><?= $ctx_qs ?>">przejdź do widoku dnia</a>
             albo skorzystaj z przycisku przy wybranym dniu.
         </p>
     <?php else: ?>
@@ -613,6 +652,7 @@ $zal_counts = zal_counts();
 
         <form method="post" action="kalendarz.php" class="form-body">
             <input type="hidden" name="action" value="save">
+            <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
             <?= csrf_field() ?>
 
             <div class="form-grid">
@@ -649,6 +689,7 @@ $zal_counts = zal_counts();
                   onsubmit="return confirm('Usunąć wpis z dnia <?= e($data) ?>?\nUsunięte zostaną też załączniki tego dnia.');">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="data" value="<?= e($data) ?>">
+                <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                 <?= csrf_field() ?>
             </form>
         <?php endif; ?>
@@ -658,6 +699,7 @@ $zal_counts = zal_counts();
             <form method="post" action="kalendarz.php" enctype="multipart/form-data" class="zal-upload-form">
                 <input type="hidden" name="action" value="add_file">
                 <input type="hidden" name="data" value="<?= e($data) ?>">
+                <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                 <?= csrf_field() ?>
                 <input class="zal-file" type="file" name="zal" required
                        aria-label="Wybierz zdjęcie lub plik">
@@ -710,6 +752,7 @@ $zal_counts = zal_counts();
             <form method="post" action="kalendarz.php"
                   onsubmit="return confirm('UWAGA! Trwale usuniesz WSZYSTKIE wpisy z dziennika. Kontynuować?');">
                 <input type="hidden" name="action" value="delete_all">
+                <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn-danger">🗑 Usuń wszystko</button>
             </form>
@@ -718,8 +761,11 @@ $zal_counts = zal_counts();
 
     <!-- Linki informacyjne na samym dole -->
     <nav class="pagefoot no-print" aria-label="Informacje">
-        <a href="index.php">🏠 Start</a>
-        <a href="ustawienia.php">⚙️ Ustawienia</a>
+        <a href="index.php<?= $as_admin ? '?uczen=' . $view_id : '' ?>">🏠 Start</a>
+        <a href="kalendarz.php?data=<?= e($data) ?><?= $link_qs ?>" aria-current="page">📅 Kalendarz</a>
+        <?php if (!$as_admin): ?>
+            <a href="ustawienia.php">⚙️ Ustawienia</a>
+        <?php endif; ?>
         <a href="o-mnie.php">ℹ️ O mnie</a>
     </nav>
 
@@ -736,6 +782,7 @@ $zal_counts = zal_counts();
             </header>
             <form method="post" action="kalendarz.php" class="modal-form" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="save">
+                <?php if ($as_admin): ?><input type="hidden" name="uczen" value="<?= $view_id ?>"><?php endif; ?>
                 <?= csrf_field() ?>
                 <div class="field">
                     <label for="m-data">Data</label>
@@ -774,6 +821,9 @@ $zal_counts = zal_counts();
 
 </div>
 <?php if ($dodaj_flow): ?><script>window.__dpDodajAutoOpen = true;</script><?php endif; ?>
+<?php if ($okres_js !== null): ?>
+<script>window.__dpOkres = {od: <?= json_encode($okres_js['od']) ?>, do: <?= json_encode($okres_js['do']) ?>};</script>
+<?php endif; ?>
 <script src="assets/app.js?v=<?= @filemtime(__DIR__ . '/assets/app.js') ?: time() ?>"></script>
 </body>
 </html>

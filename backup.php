@@ -14,8 +14,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/src/auth.php';
 
-// Kopia zapasowa dostępna tylko po zalogowaniu.
-auth_require_login();
+// Kopia zapasowa (całej bazy) dostępna tylko dla administratora.
+auth_require_admin();
 
 /**
  * Tworzy tymczasowy plik ze spójną kopią bazy i zwraca jego ścieżkę.

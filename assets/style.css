@@ -460,6 +460,17 @@ body::before {
     box-shadow: 0 6px 16px rgba(30, 41, 59, .25);
 }
 
+/* Przycisk „Nowe konto" w pasku akcji (prawy górny róg) */
+.btn-new {
+    background: linear-gradient(135deg, #059669, #0891b2);
+    border-color: #059669;
+    color: #fff;
+}
+.btn-new:hover {
+    border-color: #047857;
+    box-shadow: 0 6px 16px rgba(5, 150, 105, .35);
+}
+
 .btn-save {
     background: linear-gradient(135deg, var(--save), #10b981);
     border-color: var(--save);
@@ -560,6 +571,7 @@ body::before {
 .sheet-pills {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     flex-shrink: 0;
 }
@@ -720,6 +732,10 @@ body::before {
     gap: 6px;
     margin-bottom: 16px;
 }
+
+/* Pole chowane przez JS (np. klasa konta administratora) — także w oknie zakładania konta */
+.field[hidden],
+.admin-create .field[hidden] { display: none; }
 
 .field label {
     font-size: 12px;
@@ -1332,6 +1348,65 @@ body.auth-body::before {
 .auth-form input:disabled { background: #f1f5f9; }
 .auth-submit:disabled:hover { box-shadow: none; }
 
+/* Wybór roli przy logowaniu: Uczeń / Administrator (dwa przełączniki) */
+.role-picker {
+    margin: 0 0 15px;
+    padding: 0;
+    border: 0;
+}
+.role-legend {
+    padding: 0;
+    margin-bottom: 7px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+.role-options {
+    display: flex;
+    gap: 8px;
+}
+.role-option {
+    position: relative;
+    flex: 1 1 0;
+    cursor: pointer;
+}
+.role-option input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+.role-face {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 10px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    color: var(--muted);
+    font-size: 14.5px;
+    font-weight: 700;
+    text-align: center;
+    transition: border-color .15s, box-shadow .15s, color .15s, background .15s;
+}
+.role-option:hover .role-face { border-color: #cbd5e1; }
+.role-option input:checked + .role-face {
+    border-color: #6366f1;
+    color: var(--primary-dark);
+    background: var(--tint);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, .18);
+}
+.role-option input:focus-visible + .role-face {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, .28);
+}
+
 /* Komunikat o blokadzie logowania z odliczaniem */
 .auth-lock { margin-bottom: 0; }
 .auth-lock b { font-variant-numeric: tabular-nums; }
@@ -1795,6 +1870,13 @@ body.auth-body::before {
 :root[data-theme="dark"] .btn-logout:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
 :root[data-theme="dark"] .auth-form input { background: #0f172a; border-color: #334155; color: var(--ink); }
+:root[data-theme="dark"] .role-face { background: #0f172a; border-color: #334155; color: var(--muted); }
+:root[data-theme="dark"] .role-option:hover .role-face { border-color: #475569; }
+:root[data-theme="dark"] .role-option input:checked + .role-face {
+    background: rgba(99, 102, 241, .18);
+    border-color: #6366f1;
+    color: #c7d2fe;
+}
 :root[data-theme="dark"] .account-form input[type="email"],
 :root[data-theme="dark"] .account-form input[type="text"] { background: #0f172a; border-color: #334155; color: var(--ink); }
 :root[data-theme="dark"] .account-bar { background: rgba(15, 23, 42, .82); }
@@ -2442,6 +2524,40 @@ body.auth-body::before {
     font-weight: 600;
 }
 
+/* Pod paskiem postępu: ile dni zostało do końca praktyk */
+.progress-days {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 3px 10px;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    background: var(--tint);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    color: var(--muted);
+}
+
+.progress-days-label {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+}
+
+.progress-days-value {
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-days.is-ostatni { border-left-color: var(--accent); }
+.progress-days.is-ostatni .progress-days-value { color: var(--accent-dark); }
+.progress-days.is-po { border-left-color: var(--save); }
+.progress-days.is-po .progress-days-value { color: var(--save); }
+
 .progress-form {
     display: flex;
     flex-wrap: wrap;
@@ -2456,7 +2572,8 @@ body.auth-body::before {
     color: var(--muted);
 }
 
-.progress-form input[type="number"] {
+.progress-form input[type="number"],
+.progress-form input[type="date"] {
     width: 120px;
     padding: 9px 12px;
     font: inherit;
@@ -2466,7 +2583,9 @@ body.auth-body::before {
     border: 2px solid var(--line);
     border-radius: var(--radius-sm);
 }
-.progress-form input[type="number"]:focus {
+.progress-form input[type="date"] { width: 155px; }
+.progress-form input[type="number"]:focus,
+.progress-form input[type="date"]:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(79, 70, 229, .18);
@@ -2476,7 +2595,8 @@ body.auth-body::before {
     .home-actions { flex-direction: column; }
     .home-actions .btn { justify-content: center; }
     .progress-foot { flex-direction: column; }
-    .progress-form input[type="number"] { flex: 1; width: auto; }
+    .progress-form input[type="number"],
+    .progress-form input[type="date"] { flex: 1; width: auto; }
 }
 
 :root[data-theme="dark"] .home-hero,
@@ -2484,11 +2604,760 @@ body.auth-body::before {
 :root[data-theme="dark"] .home-hero-value,
 :root[data-theme="dark"] .home-fact b { color: #a5b4fc; }
 :root[data-theme="dark"] .progress,
-:root[data-theme="dark"] .progress-empty { background: #16202f; }
+:root[data-theme="dark"] .progress-empty,
+:root[data-theme="dark"] .progress-days { background: #16202f; }
 :root[data-theme="dark"] .progress-track { background: #0f172a; }
 :root[data-theme="dark"] .progress-pct,
 :root[data-theme="dark"] .progress-foot b { color: #a5b4fc; }
-:root[data-theme="dark"] .progress-form input[type="number"] {
+:root[data-theme="dark"] .progress-form input[type="number"],
+:root[data-theme="dark"] .progress-form input[type="date"] {
     background: #0f172a;
     color: #e2e8f0;
 }
+/* Natywny wybór daty w ciemnym motywie (ikona kalendarza i podgląd) */
+:root[data-theme="dark"] input[type="date"] { color-scheme: dark; }
+
+/* ================================================================== *
+ *  Tryb „wiele kont": role, panel administratora, podgląd ucznia
+ * ================================================================== */
+
+/* Znaczek roli konta (Administrator / Uczeń) */
+.role-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    margin-left: 4px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    vertical-align: middle;
+}
+.role-admin { background: #fef3c7; color: #92400e; }
+.role-uczen { background: #e0e7ff; color: #3730a3; }
+
+/* Przycisk „Panel admina" — ciepły, złoty akcent */
+.btn-admin {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+.btn-admin:hover {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, .35);
+}
+
+/* Informacyjny komunikat (np. baner podglądu ucznia) */
+.alert-info {
+    background: linear-gradient(90deg, #e0f2fe, #ede9fe);
+    border-left-color: #6366f1;
+    color: #3730a3;
+}
+
+/* --- Panel administratora --- */
+.admin-main { max-width: 980px; }
+
+/* Formularz zakładania konta — siatka pól */
+.admin-create {
+    padding: 16px 18px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+.admin-create-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    margin-bottom: 16px;
+}
+.admin-create-wide { grid-column: 1 / -1; }
+
+.admin-create .field { display: flex; flex-direction: column; gap: 5px; }
+.admin-create label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+}
+.admin-create input,
+.admin-create select,
+.admin-inline input,
+.admin-inline select {
+    padding: 9px 12px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+}
+.admin-create input:focus,
+.admin-create select:focus,
+.admin-inline input:focus,
+.admin-inline select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .18);
+}
+
+/* Lista kont */
+.admin-users { display: flex; flex-direction: column; gap: 12px; }
+
+/* Zakładki: uczniowie / administratorzy */
+.admin-tab-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.admin-tabbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.admin-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--tint);
+    color: var(--primary-dark);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    border: 2px solid transparent;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.admin-tabbar label[for="tab-uczniowie"] { background: #eef2ff; color: #4338ca; }
+.admin-tabbar label[for="tab-admini"]   { background: #fffbeb; color: #b45309; }
+.admin-tabbar label[for="tab-uczniowie"]:hover { border-color: #4f46e5; }
+.admin-tabbar label[for="tab-admini"]:hover   { border-color: #d97706; }
+.admin-tab-count {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--primary-dark);
+    font-size: 11.5px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.admin-tabpanel { display: none; }
+
+#tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"] {
+    background: linear-gradient(135deg, #4f46e5, #0891b2);
+    color: #fff;
+    border-color: #4f46e5;
+}
+#tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] {
+    background: linear-gradient(135deg, #d97706, #e11d48);
+    color: #fff;
+    border-color: #d97706;
+}
+#tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"] .admin-tab-count,
+#tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] .admin-tab-count {
+    background: rgba(255, 255, 255, .25);
+    color: #fff;
+}
+#tab-uczniowie:focus-visible ~ .admin-tabbar label[for="tab-uczniowie"],
+#tab-admini:focus-visible ~ .admin-tabbar label[for="tab-admini"] {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+#tab-uczniowie:checked ~ .admin-tabpanel[data-tab="uczniowie"],
+#tab-admini:checked ~ .admin-tabpanel[data-tab="admini"] { display: block; }
+
+/* Zakładki panelu: „Edycja kont" / „Nowe konto" */
+.panel-tabs { margin-bottom: 4px; }
+.panel-tab-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.panel-tabbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+.panel-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    user-select: none;
+    border: 2px solid transparent;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.panel-tabbar label[for="ptab-edycja"]:hover { border-color: #4f46e5; }
+.panel-tabbar label[for="ptab-nowe"] { background: #ecfdf5; color: #047857; }
+.panel-tabbar label[for="ptab-nowe"]:hover { border-color: #059669; }
+.panel-tab-count {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #fff;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.panel-tabpanel { display: none; }
+#ptab-edycja:checked ~ .panel-tabbar label[for="ptab-edycja"] {
+    background: linear-gradient(135deg, #4f46e5, #0891b2);
+    color: #fff;
+    border-color: #4f46e5;
+}
+#ptab-nowe:checked ~ .panel-tabbar label[for="ptab-nowe"] {
+    background: linear-gradient(135deg, #059669, #0891b2);
+    color: #fff;
+    border-color: #059669;
+}
+#ptab-edycja:checked ~ .panel-tabbar label[for="ptab-edycja"] .panel-tab-count,
+#ptab-nowe:checked ~ .panel-tabbar label[for="ptab-nowe"] .panel-tab-count {
+    background: rgba(255, 255, 255, .25);
+    color: #fff;
+}
+#ptab-edycja:focus-visible ~ .panel-tabbar label[for="ptab-edycja"],
+#ptab-nowe:focus-visible ~ .panel-tabbar label[for="ptab-nowe"] {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+#ptab-edycja:checked ~ .panel-tabpanel[data-ptab="edycja"],
+#ptab-nowe:checked ~ .panel-tabpanel[data-ptab="nowe"] { display: block; }
+
+/* Okienko „Nowe konto" jako popup: panel staje się nakładką na cały ekran,
+   tło przyciemnione, formularz wyśrodkowany jako karta. */
+#ptab-nowe:checked ~ .panel-tabpanel[data-ptab="nowe"] {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    padding: 24px 16px;
+    overflow-y: auto;
+}
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: rgba(15, 23, 42, .55);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+}
+.modal-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    background: var(--card);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, .45);
+    animation: modal-in .16s ease-out;
+}
+.modal-card.settings-block { padding: 22px 24px 24px; }
+@keyframes modal-in {
+    from { opacity: 0; transform: translateY(10px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+}
+@media print {
+    .modal-backdrop { display: none; }
+    .modal-card { max-height: none; box-shadow: none; }
+}
+body:has(#ptab-nowe:checked) { overflow: hidden; }
+.modal-close {
+    margin-left: auto;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 2px solid var(--line);
+    border-radius: 50%;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s, transform .12s;
+}
+.modal-close:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+    transform: scale(1.05);
+}
+:root[data-theme="dark"] .modal-close { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+:root[data-theme="dark"] .modal-close:hover { background: #e11d48; border-color: #e11d48; color: #fff; }
+:root[data-theme="dark"] .modal-backdrop { background: rgba(2, 6, 23, .7); }
+
+.admin-empty { margin: 0; padding: 10px 2px; color: var(--muted); font-size: 13.5px; }
+
+/* Wyszukiwanie uczniów po imieniu i nazwisku */
+.admin-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.admin-search-ico { font-size: 15px; line-height: 1; }
+.admin-search input[type="search"] {
+    flex: 1 1 220px;
+    min-width: 160px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+}
+.admin-search input[type="search"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--tint);
+}
+.admin-search-info {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--muted);
+}
+.admin-search-info b { color: var(--primary-dark); }
+
+/* Grupy uczniów według klasy (rozwijany pasek) — każda klasa w innym kolorze */
+.admin-accordion-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.admin-class-group {
+    --cls: #4f46e5;
+    --cls-tint: #eef2ff;
+    --cls-ink: #4338ca;
+    margin-bottom: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--cls);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.admin-class-group:nth-of-type(6n+1) { --cls: #4f46e5; --cls-tint: #eef2ff; --cls-ink: #4338ca; }
+.admin-class-group:nth-of-type(6n+2) { --cls: #0891b2; --cls-tint: #ecfeff; --cls-ink: #0e7490; }
+.admin-class-group:nth-of-type(6n+3) { --cls: #059669; --cls-tint: #ecfdf5; --cls-ink: #047857; }
+.admin-class-group:nth-of-type(6n+4) { --cls: #d97706; --cls-tint: #fffbeb; --cls-ink: #b45309; }
+.admin-class-group:nth-of-type(6n+5) { --cls: #e11d48; --cls-tint: #fff1f2; --cls-ink: #be123c; }
+.admin-class-group:nth-of-type(6n+6) { --cls: #7c3aed; --cls-tint: #f5f3ff; --cls-ink: #6d28d9; }
+.admin-class-group:last-of-type { margin-bottom: 0; }
+
+.admin-class-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    background: linear-gradient(90deg, var(--cls-tint), var(--card));
+}
+.admin-class-head::-webkit-details-marker { display: none; }
+.admin-class-head:hover { background: var(--cls-tint); }
+.admin-class-head:focus-visible { outline: 2px solid var(--cls); outline-offset: -2px; }
+
+.admin-class-chevron {
+    flex: 0 0 auto;
+    font-size: 12px;
+    line-height: 1;
+    color: var(--cls-ink);
+    transition: transform .15s ease;
+}
+.admin-class-group[open] .admin-class-chevron { transform: rotate(90deg); }
+
+.admin-class-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--cls-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.admin-class-count {
+    flex: 0 0 auto;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--cls);
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.admin-class-group .admin-users { padding: 14px; }
+
+/* „Zarządzaj klasą" — przycisk w nagłówku paska i okienko (działa też przy zwiniętym pasku) */
+.admin-class-head .admin-class-manage {
+    flex: 0 0 auto;
+    padding: 4px 12px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--cls-ink);
+    background: var(--card);
+    border: 1px solid var(--cls);
+    border-radius: 999px;
+    cursor: pointer;
+}
+.admin-class-head .admin-class-manage:hover { background: var(--cls); border-color: var(--cls); color: #fff; }
+.admin-class-group:has(~ .class-mgr-input:focus-visible) .admin-class-manage {
+    outline: 2px solid var(--cls);
+    outline-offset: 2px;
+}
+
+/* Stan otwarcia okienka trzyma ukryty checkbox — działa też bez JS */
+.class-mgr-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.class-mgr { display: none; }
+.class-mgr-input:checked + .class-mgr {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+}
+body:has(.class-mgr-input:checked) { overflow: hidden; }
+
+.class-mgr .modal-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 560px;
+    padding: 22px 24px 24px;
+    border-radius: var(--radius);
+}
+.class-mgr-head { display: flex; align-items: flex-start; gap: 12px; }
+.class-mgr-ico {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--tint);
+    font-size: 20px;
+}
+.class-mgr-head > div { flex: 1 1 auto; min-width: 0; }
+.class-mgr-name { color: var(--primary-dark); }
+.class-mgr-form { display: flex; flex-direction: column; gap: 8px; }
+.class-mgr-label { font-size: 13px; font-weight: 700; color: var(--muted); }
+.class-mgr-form .modal-hint { margin: 0; }
+.class-mgr-params,
+.class-mgr-add { padding-top: 14px; border-top: 1px dashed var(--line); }
+.class-mgr-danger { margin: 0; }
+.class-mgr-note { margin: 0; }
+
+/* Popup „Dodaj ucznia" — otwierany przyciskiem z sekcji „Dodaj ucznia" w oknie klasy.
+   Stan otwarcia trzyma ukryty checkbox (jak w oknie „Zarządzaj klasą"), więc działa też bez JS. */
+.class-add-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.class-add { display: none; }
+.class-add-input:checked + .class-add {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+}
+.class-add .modal-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 480px;
+    padding: 22px 24px 24px;
+    border-radius: var(--radius);
+}
+
+.admin-user {
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+.admin-user.is-me { border-color: #f59e0b; box-shadow: inset 0 0 0 1px #fde68a; }
+
+.admin-user-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+}
+/* Inicjały w kółku — szybkie rozpoznanie konta na liście */
+.admin-user-avatar {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .04em;
+}
+.admin-user.is-me .admin-user-avatar { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.admin-user-id {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1 1 220px;
+    min-width: 0;
+}
+.admin-user-line1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+}
+.admin-user-line2 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+}
+.admin-user-name { font-size: 15.5px; font-weight: 800; color: var(--primary-dark); }
+.admin-you {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 11px;
+    font-weight: 800;
+}
+.admin-user-login {
+    font-size: 12.5px;
+    color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.admin-user-class {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--tint);
+    color: var(--primary-dark);
+    font-size: 11px;
+    font-weight: 800;
+}
+.admin-user-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-left: auto;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Pasek postępu praktyk w karcie ucznia (kompaktowy) */
+.admin-user-progress {
+    margin: 12px 0 0;
+    padding: 12px 14px 13px;
+}
+.admin-user-progress .progress-head { margin-bottom: 8px; }
+.admin-user-progress .progress-title { font-size: 11.5px; }
+.admin-user-progress .progress-pct { font-size: 17px; }
+.admin-user-progress .progress-track { height: 12px; }
+.admin-user-progress .progress-foot { margin-top: 8px; font-size: 12.5px; }
+.admin-user-progress-empty {
+    margin: 12px 0 0;
+    padding: 9px 14px;
+    background: var(--tint);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.admin-user-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+}
+.admin-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    flex-wrap: wrap;
+}
+.admin-inline input,
+.admin-inline select { padding: 7px 10px; font-size: 13.5px; }
+.admin-inline input[type="text"],
+.admin-inline input[type="password"] { min-width: 150px; }
+.admin-inline input[type="number"] { min-width: 120px; }
+.admin-inline input[type="date"] { min-width: 155px; }
+
+/* Rozwijana sekcja „Zarządzaj kontem" — domyślnie schowana, żeby karta była czytelna */
+.btn-manage { flex: 0 0 auto; background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+.btn-manage:hover { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.btn-manage::after { content: "▾"; margin-left: 4px; font-size: 11px; line-height: 1; }
+.admin-user-manage { flex: 1 1 100%; min-width: 0; }
+.admin-user-manage > summary { list-style: none; }
+.admin-user-manage > summary::-webkit-details-marker { display: none; }
+.admin-user-manage[open] > summary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.admin-user-manage[open] > summary::after { content: "▴"; }
+.manage-body {
+    margin-top: 10px;
+    padding: 14px;
+    background: var(--tint);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+.manage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px 18px;
+}
+.manage-item {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 0;
+    min-width: 0;
+}
+.manage-label {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.manage-hint { font-size: 11.5px; color: var(--muted); }
+/* Konto innego administratora: hasła i imienia zmienić nie można */
+.manage-note {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 9px 12px;
+    border: 1px dashed #f59e0b;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, .12);
+    color: #92400e;
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+.manage-danger {
+    display: flex;
+    justify-content: flex-end;
+    margin: 14px 0 0;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+}
+
+@media (max-width: 620px) {
+    .admin-create-grid { grid-template-columns: 1fr; }
+    .admin-user-actions { flex-direction: column; align-items: stretch; }
+    .admin-inline { width: 100%; }
+    .admin-inline input,
+    .admin-inline select { flex: 1 1 auto; }
+    .manage-body { padding: 12px; }
+    .manage-danger { justify-content: stretch; }
+    .manage-danger .btn { width: 100%; }
+    /* Klasa: przycisk „Zarządzaj klasą" przechodzi w drugą linię nagłówka paska */
+    .admin-class-head { flex-wrap: wrap; }
+    .admin-class-head .admin-class-manage { margin-left: auto; }
+}
+
+/* Tryb ciemny — znaczek roli, przycisk admina, panel, baner podglądu */
+:root[data-theme="dark"] .role-admin { background: #3a2c07; color: #fcd34d; }
+:root[data-theme="dark"] .role-uczen { background: #232a52; color: #c7d2fe; }
+:root[data-theme="dark"] .btn-admin { background: #2a2210; border-color: #d97706; color: #fcd34d; }
+:root[data-theme="dark"] .btn-admin:hover { background: #d97706; border-color: #d97706; color: #fff; }
+:root[data-theme="dark"] .alert-info {
+    background: #16203a;
+    border-left-color: #6366f1;
+    color: #c7d2fe;
+}
+:root[data-theme="dark"] .admin-user { background: #16202f; }
+:root[data-theme="dark"] .admin-user-name { color: #a5b4fc; }
+:root[data-theme="dark"] .admin-user-head { border-bottom-color: #1e293b; }
+:root[data-theme="dark"] .admin-user-avatar { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+:root[data-theme="dark"] .admin-user-class { background: #1e293b; color: #a5b4fc; }
+:root[data-theme="dark"] .admin-user-progress-empty { background: #16202f; }
+:root[data-theme="dark"] .btn-manage { background: #1e1b4b; border-color: #4338ca; color: #c7d2fe; }
+:root[data-theme="dark"] .btn-manage:hover,
+:root[data-theme="dark"] .admin-user-manage[open] > summary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+:root[data-theme="dark"] .manage-body { background: #0f172a; border-color: #334155; }
+:root[data-theme="dark"] .manage-danger { border-top-color: #334155; }
+:root[data-theme="dark"] .class-mgr-params,
+:root[data-theme="dark"] .class-mgr-add { border-top-color: #334155; }
+:root[data-theme="dark"] .manage-note { background: rgba(245, 158, 11, .16); border-color: #b45309; color: #fcd34d; }
+:root[data-theme="dark"] .admin-tabbar label[for="tab-uczniowie"] { background: #1e1b4b; color: #c7d2fe; }
+:root[data-theme="dark"] .admin-tabbar label[for="tab-admini"] { background: #3a2c07; color: #fcd34d; }
+:root[data-theme="dark"] .panel-tabbar { border-bottom-color: var(--line); }
+:root[data-theme="dark"] .panel-tab { background: #1e1b4b; color: #c7d2fe; }
+:root[data-theme="dark"] .panel-tabbar label[for="ptab-nowe"] { background: #0e3326; color: #6ee7b7; }
+:root[data-theme="dark"] .panel-tab-count { background: rgba(255, 255, 255, .15); }
+:root[data-theme="dark"] #ptab-edycja:checked ~ .panel-tabbar label[for="ptab-edycja"],
+:root[data-theme="dark"] #ptab-nowe:checked ~ .panel-tabbar label[for="ptab-nowe"] { color: #fff; }
+:root[data-theme="dark"] .admin-tab-count { background: rgba(255, 255, 255, .15); color: inherit; }
+:root[data-theme="dark"] .admin-search input[type="search"] { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+:root[data-theme="dark"] .class-mgr input[type="text"] { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+:root[data-theme="dark"] .class-mgr-ico { background: #1e293b; }
+:root[data-theme="dark"] .admin-search-info b { color: #c7d2fe; }
+:root[data-theme="dark"] #tab-uczniowie:checked ~ .admin-tabbar label[for="tab-uczniowie"],
+:root[data-theme="dark"] #tab-admini:checked ~ .admin-tabbar label[for="tab-admini"] { color: #fff; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+1) { --cls: #818cf8; --cls-tint: #1e1b4b; --cls-ink: #c7d2fe; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+2) { --cls: #22d3ee; --cls-tint: #0c3441; --cls-ink: #a5f3fc; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+3) { --cls: #34d399; --cls-tint: #0e3326; --cls-ink: #6ee7b7; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+4) { --cls: #fbbf24; --cls-tint: #3a2c07; --cls-ink: #fcd34d; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+5) { --cls: #fb7185; --cls-tint: #3a1220; --cls-ink: #fda4af; }
+:root[data-theme="dark"] .admin-class-group:nth-of-type(6n+6) { --cls: #a78bfa; --cls-tint: #2e1065; --cls-ink: #ddd6fe; }
+:root[data-theme="dark"] .admin-class-count { color: #0f172a; }
+:root[data-theme="dark"] .admin-you { background: #3a2c07; color: #fcd34d; }
+:root[data-theme="dark"] .admin-create input,
+:root[data-theme="dark"] .admin-create select,
+:root[data-theme="dark"] .admin-inline input,
+:root[data-theme="dark"] .admin-inline select {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+:root[data-theme="dark"] .admin-create { background: #16202f; }
