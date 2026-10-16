@@ -149,6 +149,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'add_klasa_uczen') {
+        // Dodanie nowego ucznia od razu do wskazanej klasy (okienko „Zarządzaj klasą").
+        // Klasa jest stała — pochodzi z grupy, dla której otwarto okienko.
+        $klasa = trim((string) ($_POST['klasa'] ?? ''));
+        if ($klasa === '' || mb_strlen($klasa) > 40) {
+            header('Location: admin.php?err=dodano-klasa');
+            exit;
+        }
+        $kod = user_create(
+            (string) ($_POST['login'] ?? ''),
+            (string) ($_POST['haslo'] ?? ''),
+            'uczen',
+            (string) ($_POST['imie_nazwisko'] ?? ''),
+            $klasa,
+            (string) ($_POST['email'] ?? '')
+        );
+        if ($kod !== 'ok') {
+            header('Location: admin.php?err=dodano-' . $kod);
+            exit;
+        }
+        header('Location: admin.php?ok=klasa-uczen&k=' . rawurlencode($klasa));
+        exit;
+    }
+
     if ($action === 'set_klasa') {
         $from = (string) ($_POST['from'] ?? '');
         $to   = (string) ($_POST['klasa'] ?? '');
@@ -324,7 +348,7 @@ $ok_kod   = trim((string) ($_GET['ok'] ?? ''));
 $err_kod  = trim((string) ($_GET['err'] ?? ''));
 
 // Zakładka kont wymuszona przez wyszukiwanie (albo po zmianie klasy).
-$tab_wymuszony = ($q !== '' || $ok_kod === 'klasa' || $ok_kod === 'klasa-parametry') ? 'tab-uczniowie' : ($qa !== '' ? 'tab-admini' : '');
+$tab_wymuszony = ($q !== '' || $ok_kod === 'klasa' || $ok_kod === 'klasa-parametry' || $ok_kod === 'klasa-uczen') ? 'tab-uczniowie' : ($qa !== '' ? 'tab-admini' : '');
 
 $ok_msg = [
     'dodano'  => '✔ Konto zostało utworzone.',
@@ -362,6 +386,14 @@ if ($ok_kod === 'usun-klase') {
 if ($ok_kod === 'klasa-parametry') {
     $ile    = (int) ($_GET['ile'] ?? 0);
     $ok_msg = '✔ Zapisano ustawienia praktyk (' . $ile . ' ' . $forma_konta($ile) . ').';
+}
+
+// Dodanie ucznia do klasy: pokazujemy, do której klasy trafił.
+if ($ok_kod === 'klasa-uczen') {
+    $klasa_dod = trim((string) ($_GET['k'] ?? ''));
+    $ok_msg    = $klasa_dod !== ''
+        ? '✔ Dodano ucznia do klasy ' . $klasa_dod . '.'
+        : '✔ Dodano nowego ucznia.';
 }
 
 $err_msg = [
@@ -960,7 +992,61 @@ $theme_vars = sprintf(
                                                 <p class="modal-hint">Puste pole przenosi uczniów do grupy „Bez klasy”.</p>
                                             </form>
 
-                                            <?php // 2) Godziny i okres praktyk dla całej klasy (puste pole = bez zmian). ?>
+                                            <?php // 2) Dodanie nowego ucznia od razu do tej klasy. ?>
+                                            <?php if ($stara !== ''): ?>
+                                                <form method="post" action="admin.php" class="class-mgr-form class-mgr-add">
+                                                    <input type="hidden" name="action" value="add_klasa_uczen">
+                                                    <input type="hidden" name="klasa" value="<?= e($stara) ?>">
+                                                    <?= csrf_field() ?>
+                                                    <span class="class-mgr-label">➕ Dodaj ucznia do tej klasy</span>
+                                                    <div class="manage-grid">
+                                                        <div class="manage-item">
+                                                            <label class="manage-label" for="add-login-<?= $idx ?>">👤 Nazwa konta (login)</label>
+                                                            <div class="admin-inline">
+                                                                <input type="text" id="add-login-<?= $idx ?>" name="login" minlength="3" maxlength="64"
+                                                                       placeholder="np. jan.kowalski" required
+                                                                       aria-label="Nazwa konta nowego ucznia w klasie <?= e($nazwa) ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="manage-item">
+                                                            <label class="manage-label" for="add-imie-<?= $idx ?>">🪪 Imię i nazwisko</label>
+                                                            <div class="admin-inline">
+                                                                <input type="text" id="add-imie-<?= $idx ?>" name="imie_nazwisko" maxlength="120"
+                                                                       placeholder="np. Jan Kowalski"
+                                                                       aria-label="Imię i nazwisko nowego ucznia w klasie <?= e($nazwa) ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="manage-item">
+                                                            <label class="manage-label" for="add-haslo-<?= $idx ?>">🔑 Hasło (min. 6 znaków)</label>
+                                                            <div class="admin-inline">
+                                                                <input type="password" id="add-haslo-<?= $idx ?>" name="haslo" minlength="6"
+                                                                       autocomplete="new-password" required
+                                                                       aria-label="Hasło nowego ucznia w klasie <?= e($nazwa) ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="manage-item">
+                                                            <label class="manage-label" for="add-email-<?= $idx ?>">📧 E-mail (opcjonalnie)</label>
+                                                            <div class="admin-inline">
+                                                                <input type="email" id="add-email-<?= $idx ?>" name="email" maxlength="190"
+                                                                       placeholder="np. jan.kowalski@example.com"
+                                                                       aria-label="E-mail nowego ucznia w klasie <?= e($nazwa) ?>">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="admin-inline">
+                                                        <button type="submit" class="btn btn-sm btn-primary">➕ Dodaj ucznia</button>
+                                                    </div>
+                                                    <p class="modal-hint">
+                                                        Nowe konto ucznia od razu trafi do klasy <b><?= e($stara) ?></b>.
+                                                    </p>
+                                                </form>
+                                            <?php else: ?>
+                                                <p class="class-mgr-note">
+                                                    Aby dodać ucznia, najpierw nadaj tej grupie nazwę klasy (sekcja „Nowa nazwa klasy”).
+                                                </p>
+                                            <?php endif; ?>
+
+                                            <?php // 3) Godziny i okres praktyk dla całej klasy (puste pole = bez zmian). ?>
                                             <form method="post" action="admin.php" class="class-mgr-form class-mgr-params"
                                                   onsubmit="return confirm('Zapisać te ustawienia praktyk wszystkim uczniom w tej grupie?');">
                                                 <input type="hidden" name="action" value="set_klasa_parametry">
@@ -992,7 +1078,7 @@ $theme_vars = sprintf(
                                                 </p>
                                             </form>
 
-                                            <?php // 3) Usunięcie całej klasy (konta uczniów + dzienniki). ?>
+                                            <?php // 4) Usunięcie całej klasy (konta uczniów + dzienniki). ?>
                                             <?php if ($stara !== ''): ?>
                                                 <form method="post" action="admin.php" class="manage-danger class-mgr-danger"
                                                       onsubmit="return confirm('Usunąć wszystkie konta uczniów tej klasy?\nUsunięte zostaną także ich dzienniki wraz z załącznikami. Tej operacji nie można cofnąć.<?= $dni_grupy > 0 ? '\n\nUwaga: te konta mają łącznie ' . $dni_grupy . ' wpis(ów)!' : '' ?>');">
