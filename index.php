@@ -96,8 +96,9 @@ $procent_bar   = max(0, min(100, $procent));
 $zostalo_min   = max(0, $wymagane_min - $total_min);
 
 // Okres praktyk (od – do) — wymagany; uczeń podaje go w ustawieniach.
-$praktyki    = praktyki_okres($view_id);
-$praktyki_ok = praktyki_okres_ustawiony($praktyki);
+$praktyki        = praktyki_okres($view_id);
+$praktyki_ok     = praktyki_okres_ustawiony($praktyki);
+$praktyki_koniec = praktyki_do_konca($praktyki, $dzis);
 
 $theme = day_theme($dzis);
 $theme_vars = sprintf(
@@ -235,6 +236,14 @@ $theme_vars = sprintf(
                         <a href="ustawienia.php">⚙️ Ustawieniach</a>, aby zobaczyć pasek postępu.
                     </p>
                 <?php endif; ?>
+            <?php endif; ?>
+
+            <?php // Pod paskiem postępu: ile dni zostało do końca praktyk (liczone od dziś). ?>
+            <?php if ($praktyki_koniec !== null): ?>
+                <p class="progress-days is-<?= e($praktyki_koniec['stan']) ?>">
+                    <span class="progress-days-label"><?= e($praktyki_koniec['label']) ?></span>
+                    <span class="progress-days-value"><?= e($praktyki_koniec['value']) ?></span>
+                </p>
             <?php endif; ?>
 
             <?php if ($ilosc_dni === 0): ?>

@@ -2458,6 +2458,40 @@ body.auth-body::before {
     font-weight: 600;
 }
 
+/* Pod paskiem postępu: ile dni zostało do końca praktyk */
+.progress-days {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 3px 10px;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    background: var(--tint);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    color: var(--muted);
+}
+
+.progress-days-label {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+}
+
+.progress-days-value {
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-days.is-ostatni { border-left-color: var(--accent); }
+.progress-days.is-ostatni .progress-days-value { color: var(--accent-dark); }
+.progress-days.is-po { border-left-color: var(--save); }
+.progress-days.is-po .progress-days-value { color: var(--save); }
+
 .progress-form {
     display: flex;
     flex-wrap: wrap;
@@ -2504,7 +2538,8 @@ body.auth-body::before {
 :root[data-theme="dark"] .home-hero-value,
 :root[data-theme="dark"] .home-fact b { color: #a5b4fc; }
 :root[data-theme="dark"] .progress,
-:root[data-theme="dark"] .progress-empty { background: #16202f; }
+:root[data-theme="dark"] .progress-empty,
+:root[data-theme="dark"] .progress-days { background: #16202f; }
 :root[data-theme="dark"] .progress-track { background: #0f172a; }
 :root[data-theme="dark"] .progress-pct,
 :root[data-theme="dark"] .progress-foot b { color: #a5b4fc; }

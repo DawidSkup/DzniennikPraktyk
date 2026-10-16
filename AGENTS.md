@@ -17,7 +17,12 @@
   Podsumowanie godzin znajduje się **tylko** na stronie głównej
 - **Pasek postępu praktyk** na stronie głównej: pokazuje, ile godzin już wypracowano
   z wymaganej liczby godzin (procent oraz „zostało N h"). Wymaganą liczbę godzin
-  wpisuje się bezpośrednio na stronie głównej (edytowalna w aplikacji)
+  wpisuje się bezpośrednio na stronie głównej (edytowalna w aplikacji). **Pod paskiem
+  widnieje licznik dni do końca praktyk** (liczony od dzisiejszej daty do daty „do"
+  z okresu praktyk): „📅 Do końca praktyk — N dni (do …)", w ostatnim dniu
+  „⏳ Ostatni dzień praktyk", a po zakończeniu „🏁 Praktyki zakończone — minęło N dni".
+  Licznik pokazuje się także, gdy wymagane godziny nie są ustawione, a przy braku
+  okresu praktyk go nie ma
 - **Okres praktyk (od – do)**: uczeń **musi podać, od kiedy do kiedy ma praktyki** —
   obie daty są wymagane. Uczeń ustawia go w **Ustawieniach** (sekcja „📅 Okres praktyk"),
   a administrator może go uzupełnić/poprawić w karcie ucznia w panelu. Dopóki okres nie

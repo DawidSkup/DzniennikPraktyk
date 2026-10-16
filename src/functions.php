@@ -680,3 +680,48 @@ function praktyki_okres_tekst(array $okres): string
         . ' – '
         . (new DateTime((string) $okres['do']))->format('d.m.Y');
 }
+
+/**
+ * Ile dni zostało do końca praktyk względem podanej daty (ujemne = praktyki
+ * już się skończyły). Zwraca gotowe podpisy do wyświetlenia albo null, gdy
+ * okresu praktyk nie podano.
+ *
+ * @return array{stan: string, dni: int, label: string, value: string}|null
+ */
+function praktyki_do_konca(array $okres, string $dzis): ?array
+{
+    if (!praktyki_okres_ustawiony($okres)) {
+        return null;
+    }
+
+    $koniec = new DateTimeImmutable((string) $okres['do']);
+    $dni    = (int) (new DateTimeImmutable($dzis))->diff($koniec)->format('%r%a');
+    $data   = $koniec->format('d.m.Y');
+
+    if ($dni > 0) {
+        return [
+            'stan'  => 'w-trakcie',
+            'dni'   => $dni,
+            'label' => '📅 Do końca praktyk',
+            'value' => $dni . ' ' . ($dni === 1 ? 'dzień' : 'dni') . ' (do ' . $data . ')',
+        ];
+    }
+
+    if ($dni === 0) {
+        return [
+            'stan'  => 'ostatni',
+            'dni'   => 0,
+            'label' => '⏳ Ostatni dzień praktyk',
+            'value' => $data,
+        ];
+    }
+
+    $ile = abs($dni);
+
+    return [
+        'stan'  => 'po',
+        'dni'   => $dni,
+        'label' => '🏁 Praktyki zakończone',
+        'value' => 'minęło ' . $ile . ' ' . ($ile === 1 ? 'dzień' : 'dni') . ' (' . $data . ')',
+    ];
+}
