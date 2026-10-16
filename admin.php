@@ -992,54 +992,15 @@ $theme_vars = sprintf(
                                                 <p class="modal-hint">Puste pole przenosi uczniów do grupy „Bez klasy”.</p>
                                             </form>
 
-                                            <?php // 2) Dodanie nowego ucznia od razu do tej klasy. ?>
+                                            <?php // 2) Dodanie nowego ucznia — przycisk otwiera popup z formularzem. ?>
                                             <?php if ($stara !== ''): ?>
-                                                <form method="post" action="admin.php" class="class-mgr-form class-mgr-add">
-                                                    <input type="hidden" name="action" value="add_klasa_uczen">
-                                                    <input type="hidden" name="klasa" value="<?= e($stara) ?>">
-                                                    <?= csrf_field() ?>
-                                                    <span class="class-mgr-label">➕ Dodaj ucznia do tej klasy</span>
-                                                    <div class="manage-grid">
-                                                        <div class="manage-item">
-                                                            <label class="manage-label" for="add-login-<?= $idx ?>">👤 Nazwa konta (login)</label>
-                                                            <div class="admin-inline">
-                                                                <input type="text" id="add-login-<?= $idx ?>" name="login" minlength="3" maxlength="64"
-                                                                       placeholder="np. jan.kowalski" required
-                                                                       aria-label="Nazwa konta nowego ucznia w klasie <?= e($nazwa) ?>">
-                                                            </div>
-                                                        </div>
-                                                        <div class="manage-item">
-                                                            <label class="manage-label" for="add-imie-<?= $idx ?>">🪪 Imię i nazwisko</label>
-                                                            <div class="admin-inline">
-                                                                <input type="text" id="add-imie-<?= $idx ?>" name="imie_nazwisko" maxlength="120"
-                                                                       placeholder="np. Jan Kowalski"
-                                                                       aria-label="Imię i nazwisko nowego ucznia w klasie <?= e($nazwa) ?>">
-                                                            </div>
-                                                        </div>
-                                                        <div class="manage-item">
-                                                            <label class="manage-label" for="add-haslo-<?= $idx ?>">🔑 Hasło (min. 6 znaków)</label>
-                                                            <div class="admin-inline">
-                                                                <input type="password" id="add-haslo-<?= $idx ?>" name="haslo" minlength="6"
-                                                                       autocomplete="new-password" required
-                                                                       aria-label="Hasło nowego ucznia w klasie <?= e($nazwa) ?>">
-                                                            </div>
-                                                        </div>
-                                                        <div class="manage-item">
-                                                            <label class="manage-label" for="add-email-<?= $idx ?>">📧 E-mail (opcjonalnie)</label>
-                                                            <div class="admin-inline">
-                                                                <input type="email" id="add-email-<?= $idx ?>" name="email" maxlength="190"
-                                                                       placeholder="np. jan.kowalski@example.com"
-                                                                       aria-label="E-mail nowego ucznia w klasie <?= e($nazwa) ?>">
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                <div class="class-mgr-form class-mgr-add">
                                                     <div class="admin-inline">
-                                                        <button type="submit" class="btn btn-sm btn-primary">➕ Dodaj ucznia</button>
+                                                        <label for="class-add-<?= $idx ?>" class="btn btn-sm btn-primary class-add-open">
+                                                            <span aria-hidden="true">➕</span> Dodaj ucznia
+                                                        </label>
                                                     </div>
-                                                    <p class="modal-hint">
-                                                        Nowe konto ucznia od razu trafi do klasy <b><?= e($stara) ?></b>.
-                                                    </p>
-                                                </form>
+                                                </div>
                                             <?php else: ?>
                                                 <p class="class-mgr-note">
                                                     Aby dodać ucznia, najpierw nadaj tej grupie nazwę klasy (sekcja „Nowa nazwa klasy”).
@@ -1095,6 +1056,68 @@ $theme_vars = sprintf(
                                             <?php endif; ?>
                                         </div>
                                     </div>
+                                    <?php // Popup „Dodaj ucznia" — otwierany przyciskiem z sekcji 2 powyżej (CSS + ukryty checkbox). ?>
+                                    <?php if ($stara !== ''): ?>
+                                        <input type="checkbox" class="class-add-input" id="class-add-<?= $idx ?>"
+                                               aria-label="Dodaj ucznia do klasy <?= e($nazwa) ?>">
+                                        <div class="class-add no-print" role="dialog" aria-modal="true"
+                                             aria-label="Dodaj ucznia do klasy <?= e($nazwa) ?>">
+                                            <label for="class-add-<?= $idx ?>" class="modal-backdrop" aria-label="Zamknij okno"></label>
+                                            <div class="modal-card">
+                                                <div class="class-mgr-head">
+                                                    <span class="class-mgr-ico" aria-hidden="true">➕</span>
+                                                    <div class="class-mgr-titles">
+                                                        <h2 class="modal-title">Dodaj ucznia do klasy <span class="class-mgr-name"><?= e($stara) ?></span></h2>
+                                                        <p class="modal-hint">Nowe konto ucznia od razu trafi do tej klasy.</p>
+                                                    </div>
+                                                    <label for="class-add-<?= $idx ?>" class="modal-close no-print"
+                                                           title="Zamknij (Esc)" aria-label="Zamknij">✕</label>
+                                                </div>
+                                                <form method="post" action="admin.php" class="class-mgr-form">
+                                                    <input type="hidden" name="action" value="add_klasa_uczen">
+                                                    <input type="hidden" name="klasa" value="<?= e($stara) ?>">
+                                                    <?= csrf_field() ?>
+                                                    <div class="manage-grid">
+                                                        <div class="manage-item">
+                                                            <label class="manage-label" for="add-login-<?= $idx ?>">👤 Nazwa konta (login)</label>
+                                                            <div class="admin-inline">
+                                                                <input type="text" id="add-login-<?= $idx ?>" name="login" minlength="3" maxlength="64"
+                                                                       placeholder="np. jan.kowalski" required
+                                                                       aria-label="Nazwa konta nowego ucznia w klasie <?= e($nazwa) ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="manage-item">
+                                                            <label class="manage-label" for="add-imie-<?= $idx ?>">🪪 Imię i nazwisko</label>
+                                                            <div class="admin-inline">
+                                                                <input type="text" id="add-imie-<?= $idx ?>" name="imie_nazwisko" maxlength="120"
+                                                                       placeholder="np. Jan Kowalski"
+                                                                       aria-label="Imię i nazwisko nowego ucznia w klasie <?= e($nazwa) ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="manage-item">
+                                                            <label class="manage-label" for="add-haslo-<?= $idx ?>">🔑 Hasło (min. 6 znaków)</label>
+                                                            <div class="admin-inline">
+                                                                <input type="password" id="add-haslo-<?= $idx ?>" name="haslo" minlength="6"
+                                                                       autocomplete="new-password" required
+                                                                       aria-label="Hasło nowego ucznia w klasie <?= e($nazwa) ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="manage-item">
+                                                            <label class="manage-label" for="add-email-<?= $idx ?>">📧 E-mail (opcjonalnie)</label>
+                                                            <div class="admin-inline">
+                                                                <input type="email" id="add-email-<?= $idx ?>" name="email" maxlength="190"
+                                                                       placeholder="np. jan.kowalski@example.com"
+                                                                       aria-label="E-mail nowego ucznia w klasie <?= e($nazwa) ?>">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="admin-inline">
+                                                        <button type="submit" class="btn btn-sm btn-primary">➕ Dodaj ucznia</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             <?php endforeach; ?>
 
@@ -1290,6 +1313,63 @@ $theme_vars = sprintf(
             grupy.forEach(function (g) { g.open = otworz; });
             zapisz();
         });
+    });
+})();
+
+(function () {
+    // Popup „Dodaj ucznia" wewnątrz okna „Zarządzaj klasą": Esc zamyka SAM popup
+    // (a nie całe okno klasy), kursor wskakuje w pole loginu, Tab nie ucieka poza popup.
+    var wejscia = document.querySelectorAll('.class-add-input');
+    if (!wejscia.length) { return; }
+
+    function popup(inp) {
+        var el = inp.nextElementSibling;
+        return el && el.classList.contains('class-add') ? el : null;
+    }
+    function zamknij(inp) {
+        inp.checked = false;
+        var lbl = document.querySelector('label.class-add-open[for="' + inp.id + '"]');
+        if (lbl) { try { lbl.focus({ preventScroll: true }); } catch (e) { lbl.focus(); } }
+    }
+
+    wejscia.forEach(function (inp) {
+        inp.addEventListener('change', function () {
+            if (!inp.checked) { return; }
+            var box  = popup(inp);
+            var pole = box ? box.querySelector('input[name="login"]') : null;
+            if (!pole) { return; }
+            try { pole.focus({ preventScroll: true }); } catch (e) { pole.focus(); }
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        var otwarte = null;
+        wejscia.forEach(function (inp) { if (inp.checked) { otwarte = inp; } });
+        if (!otwarte) { return; }
+
+        if (e.key === 'Escape' || e.key === 'Esc') {
+            // Nie pozwól, by ten sam klawisz zamknął także okno klasy pod spodem.
+            e.stopImmediatePropagation();
+            zamknij(otwarte);
+            return;
+        }
+
+        if (e.key !== 'Tab') { return; }
+        var box = popup(otwarte);
+        if (!box) { return; }
+        var f = box.querySelectorAll(
+            'button:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), label[tabindex]'
+        );
+        if (!f.length) { return; }
+        var first = f[0];
+        var last  = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
     });
 })();
 

@@ -3081,6 +3081,35 @@ body:has(.class-mgr-input:checked) { overflow: hidden; }
 .class-mgr-danger { margin: 0; }
 .class-mgr-note { margin: 0; }
 
+/* Popup „Dodaj ucznia" — otwierany przyciskiem z sekcji „Dodaj ucznia" w oknie klasy.
+   Stan otwarcia trzyma ukryty checkbox (jak w oknie „Zarządzaj klasą"), więc działa też bez JS. */
+.class-add-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.class-add { display: none; }
+.class-add-input:checked + .class-add {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+}
+.class-add .modal-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 480px;
+    padding: 22px 24px 24px;
+    border-radius: var(--radius);
+}
+
 .admin-user {
     padding: 14px 16px;
     background: var(--card);
