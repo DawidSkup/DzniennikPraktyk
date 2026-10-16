@@ -101,6 +101,29 @@
         openDodajModal();
     }
 
+    // Dzień spoza okresu praktyk: przed zapisem wpisu pytamy o potwierdzenie.
+    // Okres nie blokuje zapisu — po potwierdzeniu wpis zapisuje się normalnie.
+    document.addEventListener('submit', function (event) {
+        const okres = window.__dpOkres;
+        if (!okres) return;
+
+        const form = event.target;
+        if (!form || form.tagName !== 'FORM') return;
+
+        const akcja = form.querySelector('input[name="action"]');
+        if (!akcja || akcja.value !== 'save') return;
+
+        const poleDaty = form.querySelector('input[name="data"]');
+        if (!poleDaty || !poleDaty.value) return;
+
+        const dzien = poleDaty.value;
+        if (dzien < okres.od || dzien > okres.do) {
+            if (!window.confirm('Nie masz praktyk w ten dzień. Zapisać mimo to?')) {
+                event.preventDefault();
+            }
+        }
+    });
+
     // Popup „Zmień hasło".
     const passwordModal = document.getElementById('password-modal');
     const openPasswordBtn = document.querySelector('[data-open-password]');

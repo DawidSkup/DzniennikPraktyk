@@ -150,6 +150,12 @@ foreach ($dates as $d) {
 
 $dzis = date('Y-m-d');
 
+// Okres praktyk oglądanego ucznia. Używany w JS tylko po to, by przed zapisem
+// wpisu w dniu spoza okresu zapytać „Nie masz praktyk w ten dzień." — okres
+// nie blokuje zapisu (zasada: dowolny zakres dat wpisów).
+$okres    = praktyki_okres($view_id);
+$okres_js = praktyki_okres_ustawiony($okres) ? $okres : null;
+
 // --- Wybrany widok: „dzien" (jeden dzień) lub „tydzien" ------------------
 $widok      = (($_GET['widok'] ?? 'dzien') === 'tydzien') ? 'tydzien' : 'dzien';
 $tydzien    = $widok === 'tydzien';
@@ -815,6 +821,9 @@ $zal_counts = zal_counts($view_id);
 
 </div>
 <?php if ($dodaj_flow): ?><script>window.__dpDodajAutoOpen = true;</script><?php endif; ?>
+<?php if ($okres_js !== null): ?>
+<script>window.__dpOkres = {od: <?= json_encode($okres_js['od']) ?>, do: <?= json_encode($okres_js['do']) ?>};</script>
+<?php endif; ?>
 <script src="assets/app.js?v=<?= @filemtime(__DIR__ . '/assets/app.js') ?: time() ?>"></script>
 </body>
 </html>

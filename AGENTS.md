@@ -29,7 +29,10 @@
   jest podany, na stronie głównej i w ustawieniach widać przypomnienie; gdy jest podany,
   na stronie głównej pokazuje się jako pigułka przy dacie (a w karcie ucznia w statystykach).
   Data „od" nie może być późniejsza niż data „do". Zakres dat wpisów pozostaje **dowolny** —
-  aplikacja **nie blokuje** wpisów spoza podanego okresu (okres to informacja, nie ograniczenie)
+  aplikacja **nie blokuje** wpisów spoza podanego okresu (okres to informacja, nie ograniczenie),
+  ale gdy uczeń **zapisuje wpis w dniu spoza okresu**, przed zapisem pokazuje się pytanie
+  „**Nie masz praktyk w ten dzień. Zapisać mimo to?**" — po potwierdzeniu wpis zapisuje się
+  normalnie, a anulowanie wstrzymuje zapis (działa w formularzu dnia i w okienku „Dodaj wpis")
 - Kalendarz (`kalendarz.php`) — widok dnia i tygodnia z wpisami
 - Możliwość wpisywania **daty** oraz **co zrobiłem/am** danego dnia (opis czynności)
 - Każdy wpis zawiera dodatkowo **godziny pracy (od – do)**
