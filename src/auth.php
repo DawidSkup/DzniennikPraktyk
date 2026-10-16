@@ -248,19 +248,6 @@ function user_set_password(int $id, string $haslo): bool
     return true;
 }
 
-/** Ustawia rolę konta. */
-function user_set_role(int $id, string $rola): bool
-{
-    if (!in_array($rola, ['admin', 'uczen'], true)) {
-        return false;
-    }
-
-    $stmt = db()->prepare('UPDATE uzytkownicy SET rola = :r WHERE id = :id');
-    $stmt->execute([':r' => $rola, ':id' => $id]);
-
-    return true;
-}
-
 /** Etykieta „konto o takiej nazwie już istnieje" dla panelu administratora. */
 function user_login_exists(string $login, int $pomin = 0): bool
 {

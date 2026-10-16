@@ -88,6 +88,11 @@ if (($_GET['zresetowano'] ?? '') === '1') {
     $info = 'Hasło zostało zmienione. Zaloguj się nowym hasłem.';
 }
 
+// Informacja po usunięciu własnego konta administratora (przekierowanie z admin.php).
+if (($_GET['usunieto'] ?? '') === '1') {
+    $info = 'Twoje konto administratora zostało usunięte.';
+}
+
 $page_title = $setup ? 'Utwórz konto' : 'Zaloguj się';
 ?>
 <!DOCTYPE html>

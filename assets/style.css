@@ -571,6 +571,7 @@ body::before {
 .sheet-pills {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     flex-shrink: 0;
 }
@@ -731,6 +732,10 @@ body::before {
     gap: 6px;
     margin-bottom: 16px;
 }
+
+/* Pole chowane przez JS (np. klasa konta administratora) — także w oknie zakładania konta */
+.field[hidden],
+.admin-create .field[hidden] { display: none; }
 
 .field label {
     font-size: 12px;
@@ -2467,7 +2472,8 @@ body.auth-body::before {
     color: var(--muted);
 }
 
-.progress-form input[type="number"] {
+.progress-form input[type="number"],
+.progress-form input[type="date"] {
     width: 120px;
     padding: 9px 12px;
     font: inherit;
@@ -2477,7 +2483,9 @@ body.auth-body::before {
     border: 2px solid var(--line);
     border-radius: var(--radius-sm);
 }
-.progress-form input[type="number"]:focus {
+.progress-form input[type="date"] { width: 155px; }
+.progress-form input[type="number"]:focus,
+.progress-form input[type="date"]:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(79, 70, 229, .18);
@@ -2487,7 +2495,8 @@ body.auth-body::before {
     .home-actions { flex-direction: column; }
     .home-actions .btn { justify-content: center; }
     .progress-foot { flex-direction: column; }
-    .progress-form input[type="number"] { flex: 1; width: auto; }
+    .progress-form input[type="number"],
+    .progress-form input[type="date"] { flex: 1; width: auto; }
 }
 
 :root[data-theme="dark"] .home-hero,
@@ -2499,10 +2508,13 @@ body.auth-body::before {
 :root[data-theme="dark"] .progress-track { background: #0f172a; }
 :root[data-theme="dark"] .progress-pct,
 :root[data-theme="dark"] .progress-foot b { color: #a5b4fc; }
-:root[data-theme="dark"] .progress-form input[type="number"] {
+:root[data-theme="dark"] .progress-form input[type="number"],
+:root[data-theme="dark"] .progress-form input[type="date"] {
     background: #0f172a;
     color: #e2e8f0;
 }
+/* Natywny wybór daty w ciemnym motywie (ikona kalendarza i podgląd) */
+:root[data-theme="dark"] input[type="date"] { color-scheme: dark; }
 
 /* ================================================================== *
  *  Tryb „wiele kont": role, panel administratora, podgląd ucznia
@@ -3089,6 +3101,7 @@ body:has(.class-mgr-input:checked) { overflow: hidden; }
 .admin-inline input[type="text"],
 .admin-inline input[type="password"] { min-width: 150px; }
 .admin-inline input[type="number"] { min-width: 120px; }
+.admin-inline input[type="date"] { min-width: 155px; }
 
 /* Rozwijana sekcja „Zarządzaj kontem" — domyślnie schowana, żeby karta była czytelna */
 .btn-manage { flex: 0 0 auto; background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }

@@ -136,6 +136,8 @@ function db(): PDO
             imie_nazwisko    TEXT NOT NULL DEFAULT "",
             klasa            TEXT NOT NULL DEFAULT "",
             wymagane_godziny INTEGER NOT NULL DEFAULT 0,
+            praktyki_od      TEXT NOT NULL DEFAULT "",
+            praktyki_do      TEXT NOT NULL DEFAULT "",
             reset_hash       TEXT NOT NULL DEFAULT "",
             reset_wygasa     INTEGER NOT NULL DEFAULT 0,
             reset_proby      INTEGER NOT NULL DEFAULT 0,
@@ -153,6 +155,8 @@ function db(): PDO
     db_ensure_column($pdo, 'uzytkownicy', 'imie_nazwisko', 'TEXT NOT NULL DEFAULT ""');
     db_ensure_column($pdo, 'uzytkownicy', 'klasa', 'TEXT NOT NULL DEFAULT ""');
     db_ensure_column($pdo, 'uzytkownicy', 'wymagane_godziny', 'INTEGER NOT NULL DEFAULT 0');
+    db_ensure_column($pdo, 'uzytkownicy', 'praktyki_od', 'TEXT NOT NULL DEFAULT ""');
+    db_ensure_column($pdo, 'uzytkownicy', 'praktyki_do', 'TEXT NOT NULL DEFAULT ""');
     db_ensure_column($pdo, 'uzytkownicy', 'reset_hash', 'TEXT NOT NULL DEFAULT ""');
     db_ensure_column($pdo, 'uzytkownicy', 'reset_wygasa', 'INTEGER NOT NULL DEFAULT 0');
     db_ensure_column($pdo, 'uzytkownicy', 'reset_proby', 'INTEGER NOT NULL DEFAULT 0');

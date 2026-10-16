@@ -4,6 +4,7 @@
  *
  * Dostępna tylko po zalogowaniu. Zbiera w jednym miejscu:
  *  - wymaganą liczbę godzin praktyk (steruje paskiem postępu na stronie głównej),
+ *  - okres praktyk od–do (wymagany — uczeń podaje go sam),
  *  - ustawienia konta (zmiana hasła, e-mail do resetu, wylogowanie),
  *  - kopię zapasową (pobranie i przywrócenie dziennika).
  */
@@ -30,6 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $kod = 'login=csrf';
         } elseif ($action === 'change_password') {
             $kod = 'haslo=csrf';
+        } elseif ($action === 'save_praktyki_okres') {
+            $kod = 'okres=csrf';
         } else {
             $kod = 'godziny=csrf';
         }
@@ -50,6 +53,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         wymagane_godziny_set((int) auth_user()['id'], (int) $godz);
         header('Location: ustawienia.php?godziny=ok');
+        exit;
+    }
+
+    if ($action === 'save_praktyki_okres') {
+        // Okres praktyk ustawia uczeń — admin nie prowadzi własnego dziennika.
+        if (auth_is_admin()) {
+            header('Location: ustawienia.php');
+            exit;
+        }
+        $od = trim((string) ($_POST['praktyki_od'] ?? ''));
+        $do = trim((string) ($_POST['praktyki_do'] ?? ''));
+
+        if ($od === '' || $do === '') {
+            header('Location: ustawienia.php?okres=pusty');
+            exit;
+        }
+        if (!is_valid_date($od) || !is_valid_date($do)) {
+            header('Location: ustawienia.php?okres=zle');
+            exit;
+        }
+        if ($od > $do) {
+            header('Location: ustawienia.php?okres=kolejnosc');
+            exit;
+        }
+        praktyki_okres_set((int) auth_user()['id'], $od, $do);
+        header('Location: ustawienia.php?okres=ok');
         exit;
     }
 
@@ -118,6 +147,10 @@ $me_id = (int) ($me['id'] ?? 0);
 $wymagane_godz = wymagane_godziny($me_id);
 $wymagane_min  = $wymagane_godz * 60;
 
+// Okres praktyk (od – do) — wymagany, uczeń podaje go sam.
+$praktyki    = praktyki_okres($me_id);
+$praktyki_ok = praktyki_okres_ustawiony($praktyki);
+
 // Ile godzin już wypracowano (suma z wpisów).
 $total_min = 0;
 foreach (all_wpisy($me_id) as $w) {
@@ -130,6 +163,7 @@ $zostalo_min = max(0, $wymagane_min - $total_min);
 $gotowe      = $wymagane_min > 0 && $total_min >= $wymagane_min;
 
 $godziny_kod = isset($_GET['godziny']) ? (string) $_GET['godziny'] : null;
+$okres_kod   = trim((string) ($_GET['okres'] ?? ''));
 $haslo_kod   = trim((string) ($_GET['haslo'] ?? ''));
 $email_kod   = trim((string) ($_GET['email'] ?? ''));
 $login_kod   = trim((string) ($_GET['login'] ?? ''));
@@ -195,6 +229,25 @@ $theme_vars = sprintf(
     </div>
 
     <main class="main settings-main">
+
+        <?php if (!auth_is_admin() && !$praktyki_ok): ?>
+            <p class="alert alert-info no-print">
+                📅 Podaj okres praktyk (od – do) — to wymagane. Znajdziesz go w sekcji
+                <a href="#okres">„Okres praktyk"</a> poniżej.
+            </p>
+        <?php endif; ?>
+
+        <?php if ($okres_kod === 'ok'): ?>
+            <p class="alert no-print">📅 Okres praktyk został zapisany.</p>
+        <?php elseif ($okres_kod === 'pusty'): ?>
+            <p class="alert alert-danger no-print">⚠ Podaj obie daty okresu: od i do.</p>
+        <?php elseif ($okres_kod === 'zle'): ?>
+            <p class="alert alert-danger no-print">⚠ Podaj poprawne daty (format RRRR-MM-DD).</p>
+        <?php elseif ($okres_kod === 'kolejnosc'): ?>
+            <p class="alert alert-danger no-print">⚠ Data „od" nie może być późniejsza niż data „do".</p>
+        <?php elseif ($okres_kod === 'csrf'): ?>
+            <p class="alert alert-danger no-print">⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.</p>
+        <?php endif; ?>
 
         <?php if ($godziny_kod === 'ok'): ?>
             <p class="alert no-print">🎯 Zapisano wymaganą liczbę godzin praktyk.</p>
@@ -288,6 +341,41 @@ $theme_vars = sprintf(
                 <?php endif; ?>
             </section>
             <?php endif; /* wymagane godziny — tylko uczniowie */ ?>
+
+            <?php if (!auth_is_admin()): /* okres praktyk — tylko uczniowie */ ?>
+            <section class="settings-block" id="okres">
+                <div class="settings-head">
+                    <span class="settings-ico" aria-hidden="true">📅</span>
+                    <div>
+                        <h2 class="settings-title">Okres praktyk</h2>
+                        <p class="settings-desc">
+                            Podaj, od kiedy do kiedy trwają Twoje praktyki. To pole wymagane —
+                            obie daty są obowiązkowe.
+                        </p>
+                    </div>
+                </div>
+
+                <form method="post" action="ustawienia.php" class="progress-form">
+                    <input type="hidden" name="action" value="save_praktyki_okres">
+                    <?= csrf_field() ?>
+                    <label for="praktyki-od">Od</label>
+                    <input id="praktyki-od" type="date" name="praktyki_od"
+                           value="<?= e($praktyki['od']) ?>" required>
+                    <label for="praktyki-do">Do</label>
+                    <input id="praktyki-do" type="date" name="praktyki_do"
+                           value="<?= e($praktyki['do']) ?>" required>
+                    <button type="submit" class="btn btn-save">💾 Zapisz</button>
+                </form>
+
+                <?php if ($praktyki_ok): ?>
+                    <p class="settings-summary">
+                        📅 Aktualny okres: <b><?= e(praktyki_okres_tekst($praktyki)) ?></b>.
+                    </p>
+                <?php else: ?>
+                    <p class="settings-summary">Nie podano jeszcze okresu praktyk (od – do).</p>
+                <?php endif; ?>
+            </section>
+            <?php endif; /* okres praktyk — tylko uczniowie */ ?>
 
             <section class="settings-block" id="konto">
                 <div class="settings-head">

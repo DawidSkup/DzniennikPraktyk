@@ -95,6 +95,10 @@ $procent       = $wymagane_min > 0 ? (int) round($total_min / $wymagane_min * 10
 $procent_bar   = max(0, min(100, $procent));
 $zostalo_min   = max(0, $wymagane_min - $total_min);
 
+// Okres praktyk (od – do) — wymagany; uczeń podaje go w ustawieniach.
+$praktyki    = praktyki_okres($view_id);
+$praktyki_ok = praktyki_okres_ustawiony($praktyki);
+
 $theme = day_theme($dzis);
 $theme_vars = sprintf(
     '--primary:%s;--primary-dark:%s;--accent:%s;--accent-dark:%s;--tint:%s;--tint2:%s;--font:%s;',
@@ -167,6 +171,18 @@ $theme_vars = sprintf(
             <p class="alert alert-info no-print">✏️ Edytujesz dziennik ucznia: <b><?= e($view_name) ?></b>.</p>
         <?php endif; ?>
 
+        <?php if (!$praktyki_ok): ?>
+            <p class="alert alert-info no-print">
+                <?php if ($as_admin): ?>
+                    📅 Uczeń nie podał jeszcze okresu praktyk (od – do) — ustaw go w karcie ucznia
+                    w <a href="admin.php">panelu administratora</a>.
+                <?php else: ?>
+                    📅 Podaj okres praktyk (od – do) — to wymagane. Zrobisz to w
+                    <a href="ustawienia.php#okres">⚙️ Ustawieniach</a>.
+                <?php endif; ?>
+            </p>
+        <?php endif; ?>
+
         <?php if ($witaj): ?>
             <p class="alert no-print">👋 Konto utworzone. Miłej pracy z dziennikiem!</p>
         <?php endif; ?>
@@ -177,11 +193,16 @@ $theme_vars = sprintf(
                     <p class="sheet-kicker">Dziennik Praktyk<?= $as_admin ? ' · ' . e($view_name) : '' ?></p>
                     <p class="sheet-date">Podsumowanie godzin</p>
                 </div>
-                <?php if ($ilosc_dni > 0): ?>
-                    <span class="status-pill is-done"><?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'dzień' : 'dni' ?> z wpisem</span>
-                <?php else: ?>
-                    <span class="status-pill is-empty">Brak wpisów</span>
-                <?php endif; ?>
+                <div class="sheet-pills">
+                    <?php if ($praktyki_ok): ?>
+                        <span class="status-pill" title="Okres praktyk">📅 <?= e(praktyki_okres_tekst($praktyki)) ?></span>
+                    <?php endif; ?>
+                    <?php if ($ilosc_dni > 0): ?>
+                        <span class="status-pill is-done"><?= $ilosc_dni ?> <?= $ilosc_dni === 1 ? 'dzień' : 'dni' ?> z wpisem</span>
+                    <?php else: ?>
+                        <span class="status-pill is-empty">Brak wpisów</span>
+                    <?php endif; ?>
+                </div>
             </header>
 
             <?php if ($wymagane_godz > 0): ?>

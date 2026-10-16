@@ -624,3 +624,59 @@ function wymagane_godziny_set(int $user_id, int $godziny): void
     $stmt = db()->prepare('UPDATE uzytkownicy SET wymagane_godziny = :g WHERE id = :id');
     $stmt->execute([':g' => max(0, $godziny), ':id' => $user_id]);
 }
+
+/**
+ * Okres praktyk ucznia — daty „od" i „do" (puste = uczeń jeszcze nie podał).
+ *
+ * @return array{od: string, do: string}
+ */
+function praktyki_okres(int $user_id): array
+{
+    $stmt = db()->prepare('SELECT praktyki_od, praktyki_do FROM uzytkownicy WHERE id = :id');
+    $stmt->execute([':id' => $user_id]);
+    $row = $stmt->fetch();
+
+    return $row !== false
+        ? ['od' => (string) $row['praktyki_od'], 'do' => (string) $row['praktyki_do']]
+        : ['od' => '', 'do' => ''];
+}
+
+/** Czy okres praktyk jest już podany w całości (obydwie daty poprawne)? */
+function praktyki_okres_ustawiony(array $okres): bool
+{
+    return is_valid_date((string) ($okres['od'] ?? ''))
+        && is_valid_date((string) ($okres['do'] ?? ''));
+}
+
+/**
+ * Zapisuje okres praktyk ucznia. Wymaga dwóch poprawnych dat (YYYY-MM-DD)
+ * oraz kolejności — data „od" nie może być późniejsza niż „do".
+ *
+ * @return bool false, gdy daty są niepoprawne albo w złej kolejności
+ */
+function praktyki_okres_set(int $user_id, string $od, string $do): bool
+{
+    $od = trim($od);
+    $do = trim($do);
+
+    if (!is_valid_date($od) || !is_valid_date($do) || $od > $do) {
+        return false;
+    }
+
+    $stmt = db()->prepare('UPDATE uzytkownicy SET praktyki_od = :od, praktyki_do = :do WHERE id = :id');
+    $stmt->execute([':od' => $od, ':do' => $do, ':id' => $user_id]);
+
+    return true;
+}
+
+/** Czytelny zapis okresu praktyk, np. „01.04.2026 – 30.06.2026". */
+function praktyki_okres_tekst(array $okres): string
+{
+    if (!praktyki_okres_ustawiony($okres)) {
+        return '';
+    }
+
+    return (new DateTime((string) $okres['od']))->format('d.m.Y')
+        . ' – '
+        . (new DateTime((string) $okres['do']))->format('d.m.Y');
+}

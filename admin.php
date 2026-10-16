@@ -6,8 +6,9 @@
  *  - zakładać konta uczniów i administratorów,
  *  - przeglądać listę kont z liczbą wpisów i wypracowanych godzin,
  *  - otwierać i edytować dzienniczki uczniów (w imieniu ucznia),
- *  - zmieniać hasło, rolę i nazwę oraz usuwać konta.
+ *  - zmieniać hasło i nazwę, ustawiać klasę/godziny/okres praktyk oraz usuwać konta.
  *
+ * Role kont są stałe — ustala się je tylko przy zakładaniu konta.
  * Dzienniczki uczniów są dziennikami per konto (kolumna `user_id`).
  */
 
@@ -38,8 +39,8 @@ $cudzy_admin = static function (int $id) use ($me): bool {
 /**
  * Czy podane konto ma rangę administratora?
  *
- * Rangi administratora nie zmieniamy (ani własnej, ani cudzej) i takich kont
- * nie usuwamy — konto administratora jest trwałe.
+ * Roli nie zmienia się nikomu (role są stałe), a cudzych kont administratorów
+ * nie usuwamy — swoje konto administrator usunąć może (patrz `delete_user`).
  */
 $konto_admina = static function (int $id): bool {
     if ($id <= 0) {
@@ -77,12 +78,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete_user') {
         $id = (int) ($_POST['id'] ?? 0);
-        // Kont administratorów nie usuwamy — ani cudzych (także ostatniego), ani własnego.
-        if ($konto_admina($id)) {
+        $moje = $id === (int) ($me['id'] ?? 0);
+        // Cudzego konta administratora nie usuwamy. Swoje konto administrator
+        // może usunąć (chyba że jest ostatnim administratorem — pilnuje tego
+        // user_delete()).
+        if ($konto_admina($id) && !$moje) {
             header('Location: admin.php?err=admin-nieusuwalny');
             exit;
         }
         $ok = user_delete($id);
+        if ($ok && $moje) {
+            // Właściciel usunął właśnie własne konto — kończymy sesję.
+            auth_logout();
+            header('Location: login.php?usunieto=1');
+            exit;
+        }
         header('Location: admin.php?' . ($ok ? 'ok=usunieto' : 'err=usun-ostatni'));
         exit;
     }
@@ -100,15 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'set_role') {
-        $id    = (int) ($_POST['id'] ?? 0);
-        $rola  = (string) ($_POST['rola'] ?? '');
-        // Rangi administratora nie zmieniamy — ani sobie, ani innemu administratorowi.
-        if ($konto_admina($id)) {
-            header('Location: admin.php?err=rola-admin');
-            exit;
-        }
-        $ok = user_set_role($id, $rola);
-        header('Location: admin.php?' . ($ok ? 'ok=rola' : 'err=rola'));
+        // Roli konta nie zmieniamy — uczeń zawsze pozostaje uczniem, a administrator
+        // administratorem. Rolę wybiera się raz, przy zakładaniu konta („Nowe konto").
+        header('Location: admin.php?err=rola-stala');
         exit;
     }
 
@@ -198,6 +202,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'set_praktyki_okres') {
+        $id = (int) ($_POST['id'] ?? 0);
+        $u  = user_get($id);
+        // Okres praktyk (od – do) dotyczy tylko uczniów.
+        if ($u === null || ($u['rola'] ?? '') === 'admin') {
+            header('Location: admin.php?err=okres');
+            exit;
+        }
+        $od = trim((string) ($_POST['praktyki_od'] ?? ''));
+        $do = trim((string) ($_POST['praktyki_do'] ?? ''));
+
+        if ($od === '' || $do === '') {
+            header('Location: admin.php?err=okres-pusty');
+            exit;
+        }
+        if (!is_valid_date($od) || !is_valid_date($do)) {
+            header('Location: admin.php?err=okres-zle');
+            exit;
+        }
+        if ($od > $do) {
+            header('Location: admin.php?err=okres-kolejnosc');
+            exit;
+        }
+        praktyki_okres_set($id, $od, $do);
+        header('Location: admin.php?ok=okres');
+        exit;
+    }
+
     header('Location: admin.php');
     exit;
 }
@@ -245,10 +277,10 @@ $ok_msg = [
     'dodano'  => '✔ Konto zostało utworzone.',
     'usunieto' => '✔ Konto zostało usunięte wraz z dziennikiem.',
     'haslo'   => '✔ Hasło konta zostało zmienione.',
-    'rola'    => '✔ Rola konta została zmieniona.',
     'nazwa'   => '✔ Nazwa konta została zapisana.',
     'login'   => '✔ Login konta został zmieniony.',
     'godziny' => '✔ Wymagane godziny praktyk zostały zapisane.',
+    'okres'   => '✔ Okres praktyk (od – do) został zapisany.',
     'klasa'   => '✔ Klasa uczniów została zmieniona.',
     'usun-klase' => '✔ Cała klasa została usunięta.',
 ][$ok_kod] ?? '';
@@ -275,13 +307,12 @@ if ($ok_kod === 'usun-klase') {
 $err_msg = [
     'csrf'           => '⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.',
     'usun-ostatni'   => '⚠ Nie można usunąć ostatniego administratora.',
-    'admin-nieusuwalny' => '⚠ Konta administratora nie można usunąć.',
-    'rola-admin'     => '⚠ Rangi administratora nie można zmienić — ani własnej, ani innemu administratorowi.',
+    'admin-nieusuwalny' => '⚠ Konta innego administratora nie można usunąć — swoje konto możesz usunąć sam.',
+    'rola-stala'     => '⚠ Roli konta nie można zmienić — uczeń zawsze pozostaje uczniem, a administrator administratorem. Nowe konto administratora zakłada się w zakładce „➕ Nowe konto".',
     'admin-chroniony' => '⚠ Innemu administratorowi nie można zmienić hasła, imienia i nazwiska ani loginu — te dane zmienia tylko właściciel konta.',
     'login'          => '⚠ Podaj login (nazwę konta) — co najmniej 3 znaki.',
     'login-zajety'   => '⚠ Konto o takim loginie już istnieje.',
     'haslo-krotkie'  => '⚠ Hasło musi mieć co najmniej 6 znaków.',
-    'rola'           => '⚠ Nie udało się zmienić roli.',
     'blad'           => '⚠ Nie udało się zapisać zmian.',
     'dodano-login'   => '⚠ Podaj nazwę konta (login).',
     'dodano-krotki'  => '⚠ Nazwa konta musi mieć co najmniej 3 znaki.',
@@ -291,6 +322,10 @@ $err_msg = [
     'dodano-klasa'   => '⚠ Podaj klasę ucznia.',
     'dodano-zajety'  => '⚠ Konto o tej nazwie już istnieje.',
     'godziny'        => '⚠ Podaj poprawną liczbę godzin (1–100000) albo zostaw puste, aby wyczyścić.',
+    'okres'          => '⚠ Okres praktyk można ustawić tylko uczniowi.',
+    'okres-pusty'    => '⚠ Podaj obie daty okresu praktyk: od i do.',
+    'okres-zle'      => '⚠ Podaj poprawne daty (format RRRR-MM-DD).',
+    'okres-kolejnosc' => '⚠ Data „od" nie może być późniejsza niż data „do".',
     'klasa'          => '⚠ Nazwa klasy może mieć maksymalnie 40 znaków.',
     'klasa-pusto'    => '⚠ Nie znaleziono uczniów w tej klasie (odśwież stronę i spróbuj ponownie).',
 ][$err_kod] ?? '';
@@ -421,8 +456,9 @@ $theme_vars = sprintf(
                         </div>
                         <div class="field" id="nu-klasa-field">
                             <label for="nu-klasa">🎓 Klasa (wymagana dla ucznia)</label>
+                            <!-- `required` dokłada JS przy roli „Uczeń"; dla administratora pole znika. -->
                             <input id="nu-klasa" type="text" name="klasa" maxlength="40"
-                                   placeholder="np. 3T" required>
+                                   placeholder="np. 3T">
                         </div>
                         <div class="field">
                             <label for="nu-haslo">🔑 Hasło (min. 6 znaków)</label>
@@ -450,8 +486,8 @@ $theme_vars = sprintf(
                         <h2 class="settings-title">Konta</h2>
                         <p class="settings-desc">
                             Uczniowie i administratorzy w osobnych zakładkach. Otwieraj i edytuj dzienniczki
-                            (przycisk „Otwórz"), ustawiaj uczniom wymagane godziny praktyk, zmieniaj hasło,
-                            rolę, nazwę i klasę albo usuwaj konta.
+                            (przycisk „Otwórz"), ustawiaj uczniom wymagane godziny i okres praktyk,
+                            zmieniaj hasło, nazwę i klasę albo usuwaj konta.
                         </p>
                     </div>
                 </div>
@@ -504,13 +540,16 @@ $theme_vars = sprintf(
                 });
 
                 /** Karta pojedynczego konta na liście (wspólna dla obu zakładek). */
-                $karta = function (array $u) use ($stat, $me): void {
+                $karta = function (array $u) use ($stat, $me, $ilosc_adminow): void {
                     $uid    = (int) $u['id'];
                     $rola   = ($u['rola'] ?? '') === 'admin' ? 'admin' : 'uczen';
                     $rola_l = $rola === 'admin' ? 'Administrator' : 'Uczeń';
                     $klasa  = user_klasa($u);
                     $dni    = (int) ($stat[$uid]['dni'] ?? 0);
                     $min    = (int) ($stat[$uid]['min'] ?? 0);
+                    // Okres praktyk (od – do) — wymagany, uczeń podaje go sam.
+                    $okres_u    = $rola === 'uczen' ? praktyki_okres($uid) : ['od' => '', 'do' => ''];
+                    $okres_ok_u = $rola === 'uczen' && praktyki_okres_ustawiony($okres_u);
                     $jestem = $uid === (int) $me['id'];
                     // Inny administrator: nie zmieniamy mu hasła ani imienia/nazwiska.
                     $cudzy_konto = $rola === 'admin' && !$jestem;
@@ -545,6 +584,9 @@ $theme_vars = sprintf(
                                 <div class="admin-user-stats">
                                     <span title="Liczba dni z wpisem">📄 <?= $dni ?> <?= $dni === 1 ? 'wpis' : 'wpisów' ?></span>
                                     <span title="Łączny czas praktyk">⏱ <?= e(format_duration_compact($min)) ?></span>
+                                    <?php if ($okres_ok_u): ?>
+                                        <span title="Okres praktyk (od – do)">📅 <?= e(praktyki_okres_tekst($okres_u)) ?></span>
+                                    <?php endif; ?>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -582,6 +624,13 @@ $theme_vars = sprintf(
                             <p class="admin-user-progress-empty">🎯 Nie ustawiono wymaganej liczby godzin praktyk.</p>
                         <?php endif; ?>
 
+                        <?php if ($rola === 'uczen' && !$okres_ok_u): ?>
+                            <p class="admin-user-progress-empty">
+                                📅 Nie podano jeszcze okresu praktyk (od – do) — to wymagane.
+                                Uzupełnij je poniżej w „Zarządzaj kontem".
+                            </p>
+                        <?php endif; ?>
+
                         <div class="admin-user-actions">
                             <?php if ($rola === 'uczen'): ?>
                                 <a class="btn btn-today" href="index.php?uczen=<?= $uid ?>"
@@ -599,29 +648,18 @@ $theme_vars = sprintf(
                                                     hasła, loginu ani rangi — i nie możesz go usunąć.
                                                     Te dane ustawia wyłącznie właściciel konta.
                                                 <?php else: ?>
-                                                    🔒 To Twoje konto: nie możesz zmienić własnej rangi ani usunąć
-                                                    swojego konta.
+                                                    🔒 To Twoje konto: nie możesz zmienić własnej rangi.
+                                                    <?= $ilosc_adminow > 1
+                                                        ? 'Możesz natomiast usunąć swoje konto — zniknie trwale wraz z danymi.'
+                                                        : 'Jesteś jedynym administratorem, więc nie możesz usunąć swojego konta.' ?>
                                                 <?php endif; ?>
                                             </p>
                                         <?php endif; ?>
                                         <?php if ($rola === 'uczen'): ?>
-                                        <!-- Zmiana roli -->
-                                        <form method="post" action="admin.php" class="manage-item">
-                                            <input type="hidden" name="action" value="set_role">
-                                            <input type="hidden" name="id" value="<?= $uid ?>">
-                                            <?= csrf_field() ?>
-                                            <span class="manage-label">🎭 Rola konta</span>
-                                            <div class="admin-inline">
-                                                <select name="rola" aria-label="Rola konta <?= e((string) $u['login']) ?>">
-                                                    <option value="uczen" <?= $rola === 'uczen' ? 'selected' : '' ?>>Uczeń</option>
-                                                    <option value="admin" <?= $rola === 'admin' ? 'selected' : '' ?>>Administrator</option>
-                                                </select>
-                                                <button type="submit" class="btn btn-sm">Zmień rolę</button>
-                                            </div>
-                                        </form>
-                                        <?php endif; ?>
-
-                                        <?php if ($rola === 'uczen'): ?>
+                                            <p class="manage-note">
+                                                🔒 Rola konta jest stała — uczeń zawsze pozostaje uczniem.
+                                                Konto administratora zakładasz w zakładce „➕ Nowe konto".
+                                            </p>
                                             <!-- Wymagane godziny praktyk -->
                                             <form method="post" action="admin.php" class="manage-item">
                                                 <input type="hidden" name="action" value="set_wymagane">
@@ -636,6 +674,30 @@ $theme_vars = sprintf(
                                                     <button type="submit" class="btn btn-sm">Zapisz godziny</button>
                                                 </div>
                                                 <span class="manage-hint">Puste pole (albo 0) usuwa wymaganie.</span>
+                                            </form>
+
+                                            <!-- Okres praktyk (od – do) — wymagany -->
+                                            <form method="post" action="admin.php" class="manage-item">
+                                                <input type="hidden" name="action" value="set_praktyki_okres">
+                                                <input type="hidden" name="id" value="<?= $uid ?>">
+                                                <?= csrf_field() ?>
+                                                <span class="manage-label">📅 Okres praktyk (od – do)</span>
+                                                <div class="admin-inline">
+                                                    <input type="date" name="praktyki_od" value="<?= e($okres_u['od']) ?>"
+                                                           aria-label="Okres praktyk od — <?= e((string) $u['login']) ?>"
+                                                           title="Od (początek praktyk)" required>
+                                                    <input type="date" name="praktyki_do" value="<?= e($okres_u['do']) ?>"
+                                                           aria-label="Okres praktyk do — <?= e((string) $u['login']) ?>"
+                                                           title="Do (koniec praktyk)" required>
+                                                    <button type="submit" class="btn btn-sm">Zapisz okres</button>
+                                                </div>
+                                                <span class="manage-hint">
+                                                    <?php if ($okres_ok_u): ?>
+                                                        Aktualnie: <?= e(praktyki_okres_tekst($okres_u)) ?>.
+                                                    <?php else: ?>
+                                                        Uczeń musi podać, od kiedy do kiedy ma praktyki.
+                                                    <?php endif; ?>
+                                                </span>
                                             </form>
                                         <?php endif; ?>
 
@@ -693,7 +755,7 @@ $theme_vars = sprintf(
                                         <?php endif; ?>
                                     </div>
 
-                                    <!-- Usunięcie konta (konta administratorów są trwałe) -->
+                                    <!-- Usunięcie konta: uczniów oraz własnego konta administratora -->
                                     <?php if ($rola === 'uczen'): ?>
                                     <form method="post" action="admin.php" class="manage-danger"
                                           onsubmit="return confirm('Usunąć konto „<?= e((string) $u['login']) ?>”?\nZostanie usunięty także jego dziennik wraz z załącznikami.<?= $dni > 0 ? '\n\nUwaga: konto ma ' . $dni . ' wpis(ów)!' : '' ?>');">
@@ -701,6 +763,14 @@ $theme_vars = sprintf(
                                         <input type="hidden" name="id" value="<?= $uid ?>">
                                         <?= csrf_field() ?>
                                         <button type="submit" class="btn btn-danger btn-sm" title="Usuń konto">🗑 Usuń konto</button>
+                                    </form>
+                                    <?php elseif ($jestem && $ilosc_adminow > 1): ?>
+                                    <form method="post" action="admin.php" class="manage-danger"
+                                          onsubmit="return confirm('Usunąć własne konto administratora „<?= e((string) $u['login']) ?>”?\nZostaniesz wylogowany, a konto zniknie trwale wraz z danymi. Tej operacji nie można cofnąć.');">
+                                        <input type="hidden" name="action" value="delete_user">
+                                        <input type="hidden" name="id" value="<?= $uid ?>">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Usuń moje konto">🗑 Usuń moje konto</button>
                                     </form>
                                     <?php endif; ?>
                                 </div>
