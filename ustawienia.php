@@ -33,6 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $kod = 'haslo=csrf';
         } elseif ($action === 'save_praktyki_okres') {
             $kod = 'okres=csrf';
+        } elseif ($action === 'save_name') {
+            $kod = 'nazwa=csrf';
         } else {
             $kod = 'godziny=csrf';
         }
@@ -98,6 +100,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         header('Location: ustawienia.php?haslo=' . urlencode($haslo_kod));
+        exit;
+    }
+
+    if ($action === 'save_name') {
+        $imie = trim((string) ($_POST['imie_nazwisko'] ?? ''));
+        // Ten sam limit co pole nazwy w panelu admina (maxlength="120").
+        if (mb_strlen($imie) > 120) {
+            header('Location: ustawienia.php?nazwa=zle');
+            exit;
+        }
+        auth_set_name($imie);
+        // Pusta nazwa czyści etykietę — w dzienniku pokaże się login.
+        header('Location: ustawienia.php?nazwa=' . ($imie === '' ? 'pusto' : 'ok'));
         exit;
     }
 
@@ -167,10 +182,12 @@ $okres_kod   = trim((string) ($_GET['okres'] ?? ''));
 $haslo_kod   = trim((string) ($_GET['haslo'] ?? ''));
 $email_kod   = trim((string) ($_GET['email'] ?? ''));
 $login_kod   = trim((string) ($_GET['login'] ?? ''));
+$nazwa_kod   = trim((string) ($_GET['nazwa'] ?? ''));
 $przywrocono = isset($_GET['przywrocono']);
 $blad_kopii  = trim((string) ($_GET['blad'] ?? ''));
 $konto_login = (string) (auth_user()['login'] ?? '');
 $konto_email = trim((string) (auth_user()['email'] ?? ''));
+$konto_nazwa = trim((string) (auth_user()['imie_nazwisko'] ?? ''));
 $konto_rola  = auth_is_admin() ? 'Administrator' : 'Uczeń';
 
 $theme = day_theme(date('Y-m-d'));
@@ -291,6 +308,16 @@ $theme_vars = sprintf(
             <p class="alert alert-danger no-print">⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.</p>
         <?php endif; ?>
 
+        <?php if ($nazwa_kod === 'ok'): ?>
+            <p class="alert no-print">✔ Imię i nazwisko zostały zapisane.</p>
+        <?php elseif ($nazwa_kod === 'pusto'): ?>
+            <p class="alert no-print">✔ Wyczyszczono imię i nazwisko — w dzienniku będzie widoczny login (<b><?= e($konto_login) ?></b>).</p>
+        <?php elseif ($nazwa_kod === 'zle'): ?>
+            <p class="alert alert-danger no-print">⚠ Imię i nazwisko może mieć maksymalnie 120 znaków.</p>
+        <?php elseif ($nazwa_kod === 'csrf'): ?>
+            <p class="alert alert-danger no-print">⚠ Sesja wygasła. Odśwież stronę i spróbuj ponownie.</p>
+        <?php endif; ?>
+
         <?php if ($przywrocono): ?>
             <p class="alert no-print">✔ Dziennik przywrócony z kopii zapasowej. Kopia poprzedniego stanu została zapisana na serwerze.</p>
         <?php elseif ($blad_kopii !== ''): ?>
@@ -385,7 +412,7 @@ $theme_vars = sprintf(
                         <p class="settings-desc">
                             Zalogowany jako <b><?= e($konto_login) ?></b>
                             <span class="role-badge role-<?= auth_is_admin() ? 'admin' : 'uczen' ?>"><?= e($konto_rola) ?></span>.
-                            Tutaj zmienisz nazwę konta, hasło do dziennika oraz adres e-mail używany do resetowania hasła.
+                            Tutaj zmienisz imię i nazwisko, nazwę konta, hasło do dziennika oraz adres e-mail używany do resetowania hasła.
                         </p>
                     </div>
                 </div>
@@ -400,6 +427,15 @@ $theme_vars = sprintf(
                 </div>
 
                 <div class="account-fields">
+                    <form method="post" action="ustawienia.php" class="account-form">
+                        <input type="hidden" name="action" value="save_name">
+                        <?= csrf_field() ?>
+                        <label for="acc-name">🪪 Imię i nazwisko</label>
+                        <input id="acc-name" type="text" name="imie_nazwisko" value="<?= e($konto_nazwa) ?>"
+                               maxlength="120" placeholder="np. Jan Kowalski" autocomplete="name">
+                        <button type="submit" class="btn btn-account" title="Zapisz imię i nazwisko">💾 Zapisz</button>
+                    </form>
+
                     <form method="post" action="ustawienia.php" class="account-form">
                         <input type="hidden" name="action" value="save_login">
                         <?= csrf_field() ?>

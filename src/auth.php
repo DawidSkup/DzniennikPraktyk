@@ -515,6 +515,21 @@ function auth_set_login(string $login): bool
     return true;
 }
 
+/**
+ * Ustawia imię i nazwisko (etykietę) zalogowanego użytkownika.
+ * Puste pole czyści nazwę — w dzienniku pokaże się wtedy login.
+ * Klasa ucznia pozostaje bez zmian.
+ */
+function auth_set_name(string $imie): bool
+{
+    $acc = auth_user();
+    if ($acc === null) {
+        return false;
+    }
+
+    return user_set_name((int) $acc['id'], $imie, null);
+}
+
 /* ------------------------------------------------------------------ *
  *  Kontekst widoku: własny dziennik albo podgląd dziennika ucznia
  * ------------------------------------------------------------------ */
